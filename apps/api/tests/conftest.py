@@ -17,7 +17,7 @@ def client() -> TestClient:
 
 @pytest.fixture
 def fixtures_dir() -> Path:
-    return REPO_ROOT / "Arquivos-pdf" / "Design Digital"
+    return REPO_ROOT / "sample-pdfs" / "Design Digital"
 
 
 @pytest.fixture
@@ -33,8 +33,8 @@ def small_pdf(fixtures_dir: Path) -> Path:
 def tagged_pdf() -> Path:
     """An IREB syllabus expected to be tagged (PDF/UA). Used to validate /api/inspect-pdf."""
     candidates = [
-        REPO_ROOT / "Arquivos-pdf" / "Requisito" / "cpre_foundationlevel_syllabus_br_v.3.2.2.pdf",
-        REPO_ROOT / "Arquivos-pdf" / "Requisito" / "ireb_cpre_re@agileprimersyllabusandstudyguide_pt_v1.4.pdf",
+        REPO_ROOT / "sample-pdfs" / "Requisito" / "cpre_foundationlevel_syllabus_br_v.3.2.2.pdf",
+        REPO_ROOT / "sample-pdfs" / "Requisito" / "ireb_cpre_re@agileprimersyllabusandstudyguide_pt_v1.4.pdf",
     ]
     for p in candidates:
         if p.exists():

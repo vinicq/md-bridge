@@ -1,6 +1,6 @@
 """Golden-file regression for the pdf-to-markdown skill.
 
-For every PDF in `Arquivos-pdf/Design Digital/`, run the heuristic converter
+For every PDF in `sample-pdfs/Design Digital/`, run the heuristic converter
 and diff line-by-line against the stored snapshot. Drift above 2% of total
 golden lines fails the test. Run `pytest tests/ --update-golden` to refresh
 all snapshots after a deliberate change.

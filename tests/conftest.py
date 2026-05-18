@@ -31,7 +31,7 @@ def update_golden(request) -> bool:
 
 @pytest.fixture(scope="session")
 def fixtures_dir() -> Path:
-    return ROOT / "Arquivos-pdf" / "Design Digital"
+    return ROOT / "sample-pdfs" / "Design Digital"
 
 
 @pytest.fixture(scope="session")

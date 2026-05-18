@@ -1,10 +1,10 @@
 :root {
-  /* Tipografia */
+  /* Typography */
   --font-display: "Fraunces", "Spectral", Georgia, serif;
   --font-body: "IBM Plex Sans", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Consolas", monospace;
 
-  /* Escala tipográfica (modular ratio 1.25) */
+  /* Type scale (modular ratio 1.25) */
   --fs-xs: 0.8rem;
   --fs-sm: 1rem;
   --fs-md: 1.25rem;
@@ -12,7 +12,7 @@
   --fs-xl: 2.441rem;
   --fs-2xl: 3.815rem;
 
-  /* Cor */
+  /* Color */
   --c-bg: #f7f3ec;
   --c-bg-elev: #fdfaf3;
   --c-ink: #1a1a1a;
@@ -23,7 +23,7 @@
   --c-ok: #2e7d4a;
   --c-warn: #b8860b;
 
-  /* Espaço (escala de 4) */
+  /* Spacing (4-step scale) */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
@@ -33,11 +33,11 @@
   --s-12: 48px;
   --s-16: 64px;
 
-  /* Raio */
+  /* Radius */
   --r-sm: 2px;
   --r-md: 6px;
 
-  /* Sombras */
+  /* Shadows */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.08);
 

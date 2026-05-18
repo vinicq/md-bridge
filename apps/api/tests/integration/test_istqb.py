@@ -1,4 +1,4 @@
-"""End-to-end coverage with an ISTQB syllabus PDF — the project's canonical
+"""End-to-end coverage with an ISTQB syllabus PDF, the project's canonical
 real-world document. Verifies that the routes correctly handle a multi-page,
 structurally rich syllabus the way the project's target users would submit it.
 """

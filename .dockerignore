@@ -36,7 +36,7 @@ CLAUDE.md
 CODEX.md
 
 # Local fixtures and ephemeral outputs (image gets them only if tests run inside)
-Arquivos-pdf
+sample-pdfs
 output
 
 # Docs and planning that don't need to live inside the image

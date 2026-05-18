@@ -26,7 +26,7 @@ def test_regex_does_not_match_unrelated_assignments():
 
 def test_regex_does_not_eat_preceding_newline():
     """The substitution should only comment out the offending line itself,
-    not collapse onto the previous line — this is the bug we fixed earlier.
+    not collapse onto the previous line. This is the bug we fixed earlier.
     """
     src = "from pypdf import PdfReader\n\nsys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')"
     patched = _STDIO_REBIND_RE.sub(lambda m: "# stripped " + m.group(0), src)

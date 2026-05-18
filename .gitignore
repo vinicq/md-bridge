@@ -39,6 +39,6 @@ ARCHITECTURE.md
 
 # Local fixtures dump (developer machine, not versioned). The committed test
 # fixtures live under apps/api/tests/fixtures/ and are not affected.
-Arquivos-pdf/*
-!Arquivos-pdf/.gitkeep
+sample-pdfs/*
+!sample-pdfs/.gitkeep
 output/
