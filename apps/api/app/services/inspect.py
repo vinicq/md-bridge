@@ -1,7 +1,8 @@
 """PDF diagnostics for the inspect endpoint.
 
-Reuses `check_tagged` from the skill; computes everything else (sizes, fonts,
-OCR heuristic) directly with PyMuPDF to keep the result shape stable.
+Reuses `check_tagged` from the vendored inspector. Everything else (sizes,
+fonts, OCR heuristic) is computed directly with PyMuPDF to keep the result
+shape stable.
 """
 from __future__ import annotations
 
@@ -60,7 +61,7 @@ def inspect_pdf_bytes(pdf_bytes: bytes, filename: str) -> InspectPdfResponse:
             for (size, name), count in font_counter.most_common(20)
         ]
 
-        # Tagged-PDF check via the skill helper (works on a path).
+        # Tagged-PDF check via the vendored inspector helper (works on a path).
         tag_info = pdf_inspect_module().check_tagged(tmp_path)
         tagged = bool(tag_info.get("tagged"))
 

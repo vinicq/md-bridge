@@ -1,0 +1,19 @@
+# Runtime dependencies for the md-bridge API.
+# This file mirrors the [project.dependencies] section of pyproject.toml and
+# is provided for tooling that prefers a plain requirements file.
+#
+# Recommended install (uses pyproject and picks up dev extras when needed):
+#   python -m venv .venv
+#   .venv/bin/pip install -e ".[dev]"
+#
+# Plain pip install:
+#   pip install -r requirements.txt
+
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+python-multipart>=0.0.20
+PyMuPDF>=1.24
+pypdf>=5.0
+markdown>=3.7
+playwright>=1.49

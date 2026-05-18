@@ -1,4 +1,4 @@
-"""Wrapper around the markdown-to-pdf skill.
+"""Wrapper around the vendored markdown-to-pdf renderer.
 
 Renders Markdown to a PDF via the existing Playwright-backed convert script.
 Writes through tempfiles, returns the PDF bytes, cleans up everything.

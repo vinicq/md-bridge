@@ -1,0 +1,47 @@
+# Version control
+.git
+.gitignore
+
+# Python venvs and caches
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.coverage
+**/htmlcov
+**/*.egg-info
+
+# Node dependencies and build output (rebuilt inside the image)
+**/node_modules
+apps/web/dist
+apps/web/coverage
+apps/web/test-results
+apps/web/playwright-report
+
+# Editor / OS
+.DS_Store
+.idea
+.vscode
+*.swp
+
+# Local AI assistant / agent tooling
+.claude
+.agents
+.aider*
+.cursor
+.cursorrules
+.copilot
+AGENTS.md
+CLAUDE.md
+CODEX.md
+
+# Local fixtures and ephemeral outputs (image gets them only if tests run inside)
+Arquivos-pdf
+output
+
+# Docs and planning that don't need to live inside the image
+ARCHITECTURE.md
+IMPLEMENT.md
+
+# Tests at repo root (only relevant to dev, not the runtime image)
+tests

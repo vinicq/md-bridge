@@ -44,8 +44,8 @@ curl -X POST http://localhost:8000/api/inspect-pdf \\
 }
 ```
 
-`needs_ocr=true` means PyMuPDF extracted very little text per page — almost
-certainly a scanned PDF, run Tesseract before submitting.
+`needs_ocr=true` means PyMuPDF extracted very little text per page. The PDF
+is almost certainly scanned, so run Tesseract before submitting.
 """
 
 

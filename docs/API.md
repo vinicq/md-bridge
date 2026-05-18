@@ -1,7 +1,7 @@
 # API reference
 
-Beginner-friendly walkthrough of every endpoint exposed by **md-bridge**. If
-you prefer an interactive playground, the running API serves Swagger UI at
+Walkthrough of every endpoint exposed by **md-bridge**. If you prefer an
+interactive playground, the running API serves Swagger UI at
 `http://localhost:8000/docs` and ReDoc at `http://localhost:8000/redoc`.
 
 > All examples assume the API is running on `http://localhost:8000`. Change
@@ -49,7 +49,7 @@ curl http://localhost:8000/api/health
 
 ## `POST /api/pdf-to-md`
 
-Convert a PDF into structured Markdown. Heuristic, no AI.
+Convert a PDF into structured Markdown using deterministic heuristics.
 
 ### Request fields
 
@@ -69,13 +69,13 @@ Convert a PDF into structured Markdown. Heuristic, no AI.
 }
 ```
 
-- `page_break` (default `false`) — when `true`, inserts a `---` between pages.
-- `with_images` (default `false`) — when `true`, the converter extracts images
+- `page_break` (default `false`): when `true`, inserts a `---` between pages.
+- `with_images` (default `false`): when `true`, the converter extracts images
   to a temporary folder. The HTTP API does not serve images back, so use the
   CLI from `packages/pdf-to-markdown` if you want them.
-- `front_matter` (default `true`) — adds a YAML preamble with `title`,
+- `front_matter` (default `true`): adds a YAML preamble with `title`,
   `author`, `date`, `source`, `pages`.
-- `lang` (default `"pt-BR"`) — informational tag stored in the front matter.
+- `lang` (default `"pt-BR"`): informational tag stored in the front matter.
 
 ### Example: minimal
 
@@ -109,7 +109,7 @@ curl -X POST http://localhost:8000/api/pdf-to-md \
 }
 ```
 
-`warnings` is non-empty when the PDF looks problematic — typically when the
+`warnings` is non-empty when the PDF looks problematic, typically when the
 converter extracted little text (signal of a scanned PDF) or when image
 extraction was requested but cannot round-trip through the HTTP layer.
 
@@ -143,10 +143,10 @@ Render Markdown into a PDF through headless Chromium.
 }
 ```
 
-- `theme` (default `"default"`) — name of a `.css` file under
+- `theme` (default `"default"`): name of a `.css` file under
   `packages/markdown-to-pdf/templates/`. Use `GET /api/themes` to discover
   what is installed.
-- `lang` (default `"pt-BR"`) — written into `<html lang>`.
+- `lang` (default `"pt-BR"`): written into `<html lang>`.
 
 ### Example: render and save
 
@@ -181,7 +181,7 @@ content-disposition: attachment; filename="notes.pdf"
 
 ## `POST /api/inspect-pdf`
 
-Read-only diagnostics about a PDF — useful as a pre-flight before converting.
+Read-only diagnostics about a PDF, useful as a pre-flight before converting.
 
 ### Request fields
 
@@ -212,9 +212,9 @@ curl -X POST http://localhost:8000/api/inspect-pdf \
 }
 ```
 
-- `tagged` — true when the PDF advertises PDF/UA structure tags (good for
+- `tagged`: true when the PDF advertises PDF/UA structure tags (good for
   accessibility, helpful for heading detection).
-- `needs_ocr` — true when very little extractable text was found per page.
+- `needs_ocr`: true when very little extractable text was found per page.
   Scanned PDFs need Tesseract (or another OCR tool) before they can be
   converted.
 
@@ -222,7 +222,7 @@ curl -X POST http://localhost:8000/api/inspect-pdf \
 
 ## `GET /api/themes`
 
-List CSS themes available for Markdown → PDF rendering.
+List CSS themes available for Markdown to PDF rendering.
 
 ### Request
 

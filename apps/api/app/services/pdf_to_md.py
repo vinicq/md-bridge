@@ -1,8 +1,8 @@
-"""Wrapper around the pdf-to-markdown skill.
+"""Wrapper around the vendored pdf-to-markdown converter.
 
-Heuristic conversion, no AI. Reads a PDF from bytes, writes/reads via tempfiles
-so the existing `convert_document` function (which is file-based) keeps working
-without modification. Cleans up tempfiles in `finally`.
+Deterministic, heuristic conversion. Reads a PDF from bytes, writes and reads
+via tempfiles so the existing file-based `convert_document` function keeps
+working without modification. Cleans up tempfiles in `finally`.
 """
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { DropZone } from '../src/components/DropZone'
-import { I18nProvider } from '../src/i18n'
+import { DropZone } from '../../src/components/DropZone'
+import { I18nProvider } from '../../src/i18n'
 
 function makeFile(name: string, type: string, size = 100) {
   return new File([new Uint8Array(size)], name, { type })

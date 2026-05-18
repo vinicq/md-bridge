@@ -41,11 +41,12 @@ def test_pdf_to_md_rejects_invalid_options(client, small_pdf: Path):
     assert resp.json()["error"]["code"] == "invalid_options"
 
 
-def test_pdf_to_md_rejects_oversize(client, monkeypatch):
-    from app.routes import convert as convert_module
+def test_pdf_to_md_rejects_oversize(client):
+    # Send a real payload above the 50 MB cap so the route returns 413 the
+    # same way it would in production. No patching of internal constants.
+    from app.config import MAX_UPLOAD_BYTES
 
-    monkeypatch.setattr(convert_module, "MAX_UPLOAD_BYTES", 1024)
-    payload = b"%PDF-1.4\n" + b"0" * 2000
+    payload = b"%PDF-1.4\n" + b"0" * (MAX_UPLOAD_BYTES + 1)
     resp = client.post(
         "/api/pdf-to-md",
         files={"file": ("big.pdf", payload, "application/pdf")},

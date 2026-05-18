@@ -1,6 +1,6 @@
 """Shared fixtures for the conversion-layer regression suite.
 
-Reuses the skill scripts in `.claude/skills/` directly via the loader from
+Imports the skill scripts in `packages/` via the loader from
 `apps/api/app/services/skills_loader.py`. The same venv used for the API
 (`apps/api/.venv`) hosts all dependencies.
 """
@@ -44,6 +44,14 @@ def golden_dir() -> Path:
 @pytest.fixture(scope="session")
 def design_digital_pdfs(fixtures_dir: Path) -> list[Path]:
     return sorted(fixtures_dir.glob("*.pdf"))
+
+
+@pytest.fixture(scope="session")
+def istqb_pdf() -> Path:
+    """Committed ISTQB CTAL-TA English syllabus, available on every clone."""
+    p = ROOT / "apps" / "api" / "tests" / "fixtures" / "istqb-ctal-ta-syllabus-en.pdf"
+    assert p.exists(), f"committed ISTQB fixture missing: {p}"
+    return p
 
 
 @pytest.fixture(scope="session")

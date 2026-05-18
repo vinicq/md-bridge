@@ -1,7 +1,8 @@
-"""Load skill scripts as Python modules without modifying them.
+"""Load the vendored converter scripts as Python modules without modifying them.
 
-The skills live under `.claude/skills/<skill>/scripts/` outside this package,
-so we resolve them by path via importlib.util and cache the loaded modules.
+The scripts live under `packages/<name>/scripts/` outside this package, so
+they are resolved by path via importlib.util and the loaded modules are
+cached.
 """
 from __future__ import annotations
 
@@ -22,17 +23,18 @@ _STDIO_REBIND_RE = re.compile(
 
 
 def _load(name: str, path: Path) -> ModuleType:
-    """Import a skill script by path without letting it hijack the host stdout.
+    """Import a converter script by path without letting it hijack the host stdout.
 
     The CLI scripts rebind `sys.stdout` / `sys.stderr` to UTF-8 TextIOWrappers
     at module import time so they print correctly when run from the command
-    line on Windows. Inside a server / test process that is fatal: the wrapper
-    grabs the buffer of pytest's capture tmpfile and, when the wrapper is later
-    garbage-collected, closes that tmpfile. Subsequent capture reads then fail
-    with `ValueError: I/O operation on closed file`.
+    line on Windows. Inside a server or test process that is fatal: the
+    wrapper grabs the buffer of pytest's capture tmpfile and, when the wrapper
+    is later garbage-collected, closes that tmpfile. Subsequent capture reads
+    then fail with `ValueError: I/O operation on closed file`.
 
-    We read the source, comment those lines out, compile, and exec_module — so
-    the skill modules import cleanly without touching host stdio.
+    The source is read, those lines are commented out, compiled, and
+    exec_module is called, so the modules import cleanly without touching
+    host stdio.
     """
     if not path.exists():
         raise FileNotFoundError(f"Skill script not found: {path}")

@@ -24,9 +24,9 @@ log = logging.getLogger(__name__)
 PDF_TO_MD_DESCRIPTION = """
 Extract a structured Markdown document from a PDF.
 
-The conversion is **fully heuristic** — no language models, no external API
-calls. Headings are detected from font size and the PDF outline, lists from
-bullet glyphs, tables from PyMuPDF's table finder.
+The conversion is deterministic and heuristic. Headings are detected from
+font size and the PDF outline, lists from bullet glyphs, tables from
+PyMuPDF's table finder.
 
 ### Request
 

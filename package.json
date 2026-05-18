@@ -2,17 +2,26 @@
   "name": "md-bridge",
   "version": "0.1.0",
   "private": true,
-  "description": "PDF and Markdown conversions exposed as a local web app. Heuristic, no AI.",
+  "description": "PDF and Markdown conversions exposed as a local web app. Heuristic, deterministic.",
   "scripts": {
     "dev": "concurrently -n api,web -c blue,magenta \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "apps/api/.venv/Scripts/python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir apps/api",
     "dev:web": "npm --prefix apps/web run dev",
     "build": "npm --prefix apps/web run build",
-    "test:api": "apps/api/.venv/Scripts/python.exe -m pytest apps/api/tests",
-    "test:regression": "apps/api/.venv/Scripts/python.exe -m pytest tests",
-    "test:web": "npm --prefix apps/web run test",
+
+    "test:unit": "npm run test:unit:api && npm run test:unit:regression && npm run test:unit:web",
+    "test:unit:api": "apps/api/.venv/Scripts/python.exe -m pytest apps/api/tests/unit",
+    "test:unit:regression": "apps/api/.venv/Scripts/python.exe -m pytest tests/unit",
+    "test:unit:web": "npm --prefix apps/web run test:unit",
+
+    "test:integration": "npm run test:integration:api && npm run test:integration:regression && npm run test:integration:web",
+    "test:integration:api": "apps/api/.venv/Scripts/python.exe -m pytest apps/api/tests/integration",
+    "test:integration:regression": "apps/api/.venv/Scripts/python.exe -m pytest tests/regression",
+    "test:integration:web": "npm --prefix apps/web run test:integration",
+
     "test:e2e": "npm --prefix apps/web run test:e2e",
-    "test:all": "npm run test:api && npm run test:regression && npm run test:web && npm run test:e2e"
+
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

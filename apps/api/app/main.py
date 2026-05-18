@@ -20,16 +20,16 @@ from app.routes import convert, health, inspect, themes
 
 API_DESCRIPTION = """
 **md-bridge** is a small, opinionated HTTP service that converts between PDF
-and Markdown using hand-written heuristics. No language models, no external
-calls, deterministic output.
+and Markdown using hand-written heuristics. No external calls, deterministic
+output: same input, same output, every run.
 
 ## What it does
 
-- **`POST /api/pdf-to-md`** — extract structured Markdown from a PDF.
-- **`POST /api/md-to-pdf`** — render a Markdown file to PDF through Chromium.
-- **`POST /api/inspect-pdf`** — return diagnostics about a PDF (fonts, sizes, tagged-PDF check).
-- **`GET  /api/themes`** — list CSS themes available for Markdown → PDF.
-- **`GET  /api/health`** — liveness probe.
+- **`POST /api/pdf-to-md`**: extract structured Markdown from a PDF.
+- **`POST /api/md-to-pdf`**: render a Markdown file to PDF through Chromium.
+- **`POST /api/inspect-pdf`**: return diagnostics about a PDF (fonts, sizes, tagged-PDF check).
+- **`GET  /api/themes`**: list CSS themes available for Markdown to PDF rendering.
+- **`GET  /api/health`**: liveness probe.
 
 ## Try it out
 
@@ -37,7 +37,7 @@ The interactive docs you are reading right now (powered by Swagger UI) let
 you call any endpoint with a real file. Click **Try it out**, attach a file,
 press **Execute**.
 
-A friendlier walkthrough with `curl` examples lives in
+A walkthrough with `curl` examples lives in
 [docs/API.md](https://github.com/your-org/md-bridge/blob/main/docs/API.md).
 
 ## Limits
@@ -59,7 +59,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="md-bridge API",
         version=__version__,
-        summary="Heuristic, no-AI conversions between PDF and Markdown.",
+        summary="Deterministic, heuristic conversions between PDF and Markdown.",
         description=API_DESCRIPTION,
         contact={
             "name": "md-bridge",
@@ -78,7 +78,7 @@ def create_app() -> FastAPI:
             },
             {
                 "name": "themes",
-                "description": "CSS themes available for Markdown → PDF rendering.",
+                "description": "CSS themes available for Markdown to PDF rendering.",
             },
         ],
         docs_url="/docs",

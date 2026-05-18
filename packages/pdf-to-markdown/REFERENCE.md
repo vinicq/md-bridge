@@ -1,6 +1,6 @@
-# PDF/Word → Markdown · Reference Checklist
+# PDF/Word to Markdown reference checklist
 
-Reference material for the `pdf-to-markdown` skill. Used after running `convert.py` to verify conversion quality and decide what to edit manually.
+Reference material for the `pdf-to-markdown` package. Use it after running `convert.py` to verify conversion quality and decide what to edit manually.
 
 ## What Markdown can and cannot represent
 
@@ -27,7 +27,7 @@ Reference material for the `pdf-to-markdown` skill. Used after running `convert.
 | Cross-references | "see Figure 3" | No (resolves to static text) |
 | Comments | Review comments | No (or HTML `<!-- -->`) |
 | Track changes | Insertions/deletions | No native |
-| Styles, themes | Quote style, theme set | Partial (Quote → `>`) |
+| Styles, themes | Quote style, theme set | Partial (Quote becomes `>`) |
 | Metadata | Author, title, date | YAML front matter |
 
 ## Post-conversion checklist
@@ -35,11 +35,11 @@ Reference material for the `pdf-to-markdown` skill. Used after running `convert.
 After running `convert.py <pdf> -o <md>`, open the `.md` and walk through this list. Treat each `[ ]` as "verify or edit".
 
 ```markdown
-# Checklist · PDF/Word → Markdown
+# Checklist for PDF/Word to Markdown
 
 ## 1. Document structure
-- [ ] One `#` H1 (the document title) — fix any cover-page splits like "Foundation Level" + "Syllabus" → "Foundation Level Syllabus" if needed.
-- [ ] Heading hierarchy is logical: `##` → `###`, no jumps `##` → `####`.
+- [ ] One `#` H1 (the document title). Fix any cover-page splits like "Foundation Level" plus "Syllabus" into "Foundation Level Syllabus" if needed.
+- [ ] Heading hierarchy is logical: `##` then `###`, no jumps from `##` to `####`.
 - [ ] Paragraphs separated by blank lines, no random hard breaks mid-sentence.
 - [ ] Stray page numbers and `---` separators removed where not wanted.
 
@@ -67,7 +67,7 @@ After running `convert.py <pdf> -o <md>`, open the `.md` and walk through this l
 - [ ] Pipe count consistent across all rows.
 - [ ] Merged cells revised or split into two tables.
 - [ ] Column alignment markers (`:---`, `:---:`, `---:`) added where it matters.
-- [ ] Tables wrongly extracted as plain text → manually rebuilt.
+- [ ] Tables wrongly extracted as plain text are manually rebuilt.
 
 ## 6. Images
 - [ ] Each relevant image present as `![alt](path)` in reading order.
@@ -79,7 +79,7 @@ After running `convert.py <pdf> -o <md>`, open the `.md` and walk through this l
 - [ ] All hyperlinks as `[text](url)`, not bare URLs (unless that's the project style).
 - [ ] Internal cross-references work or replaced with section references.
 - [ ] Footnotes converted to `[^n]` syntax or organized at the end.
-- [ ] "See page 12"-style references rewritten to "see section X" (Markdown has no pages).
+- [ ] "See page 12" style references rewritten to "see section X" (Markdown has no pages).
 
 ## 8. Code and quotes
 - [ ] Monospaced excerpts as `` `inline` `` or fenced blocks with language tag.
@@ -94,7 +94,7 @@ After running `convert.py <pdf> -o <md>`, open the `.md` and walk through this l
 
 ## 10. Metadata / front matter
 - [ ] YAML front matter at top with `title`, `author`, `date`, `source` (when applicable).
-- [ ] Cover-page metadata (e.g. "Relatório Técnico - Empresa X - 2025") promoted to front matter, not left in the body.
+- [ ] Cover-page metadata (for example "Relatório Técnico - Empresa X - 2025") promoted to front matter, not left in the body.
 - [ ] Converter banners ("Converted by Tool X...") removed.
 
 ## 11. Style consistency
@@ -108,10 +108,10 @@ After running `convert.py <pdf> -o <md>`, open the `.md` and walk through this l
 
 The current converter (`scripts/convert.py`) already covers items 1, 2, 3 (most), 4, 5, 6, 7 (hyperlinks), 9 (header/footer filtering, paragraph merge, dot-leader stripping), 10 (front matter from PDF metadata). Items 8 (code/quote restoration) and the more nuanced parts of 11 require manual review per document.
 
-## What this skill does NOT do
+## What this package does NOT do
 
-- **OCR** for scanned PDFs (run Tesseract with `por`/`eng` first; check `inspect_pdf.py` output — zero fonts = scanned).
-- **Math formula recognition**: PyMuPDF returns formula characters as plain text; reformulate manually if precision matters.
-- **Footnote correlation**: small text at page bottom is rendered inline as `<small>` instead of being collected as `[^n]` footnotes. Manual rework if needed.
-- **Merged-cell tables**: extracted as best-effort flat tables; complex cases need manual restructuring.
+- **OCR** for scanned PDFs. Run Tesseract with `por`/`eng` first; check `inspect_pdf.py` output. Zero fonts means the PDF is scanned.
+- **Math formula recognition**: PyMuPDF returns formula characters as plain text. Reformulate manually if precision matters.
+- **Footnote correlation**: small text at the page bottom is rendered inline as `<small>` instead of being collected as `[^n]` footnotes. Manual rework if needed.
+- **Merged-cell tables**: extracted as best-effort flat tables. Complex cases need manual restructuring.
 - **Multi-column layouts**: blocks come in PyMuPDF's reading order, which can interleave for academic two-column papers.

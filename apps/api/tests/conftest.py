@@ -22,9 +22,10 @@ def fixtures_dir() -> Path:
 
 @pytest.fixture
 def small_pdf(fixtures_dir: Path) -> Path:
-    """ddp-factsheet-en.pdf is the smallest in the fixture set."""
+    """ddp-factsheet-en.pdf is the smallest fixture in the design-digital set."""
     p = fixtures_dir / "ddp-factsheet-en.pdf"
-    assert p.exists(), f"missing fixture: {p}"
+    if not p.exists():
+        pytest.skip(f"missing fixture: {p}")
     return p
 
 
@@ -39,3 +40,13 @@ def tagged_pdf() -> Path:
         if p.exists():
             return p
     pytest.skip(f"no tagged-syllabus fixture available, tried: {candidates}")
+
+
+@pytest.fixture
+def istqb_pdf() -> Path:
+    """The canonical real-world fixture: an ISTQB syllabus committed to the repo
+    so the suite is reproducible in CI and on fresh clones."""
+    here = Path(__file__).resolve().parent
+    p = here / "fixtures" / "istqb-ctal-ta-syllabus-en.pdf"
+    assert p.exists(), f"committed fixture missing: {p}"
+    return p
