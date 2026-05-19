@@ -356,6 +356,50 @@ instead of opening a public issue.
 
 MIT, see [`LICENSE`](LICENSE).
 
+## Contributors
+
+Thanks goes to these people for code, translations, docs, design, and
+review work on md-bridge ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%">
+        <a href="https://github.com/vinicq">
+          <img src="https://avatars.githubusercontent.com/u/78210890?v=4?s=80" width="80px;" alt="Vinicius Queiroz"/>
+          <br /><sub><b>Vinicius Queiroz</b></sub>
+        </a><br />
+        <a href="#code" title="Code">💻</a>
+        <a href="#doc" title="Documentation">📖</a>
+        <a href="#design" title="Design">🎨</a>
+        <a href="#infra" title="Infrastructure">🚇</a>
+        <a href="#maintenance" title="Maintenance">🚧</a>
+        <a href="#review" title="Reviewed Pull Requests">👀</a>
+        <a href="#test" title="Tests">⚠️</a>
+      </td>
+      <td align="center" valign="top" width="14.28%">
+        <a href="https://github.com/zhouzhou626">
+          <img src="https://avatars.githubusercontent.com/zhouzhou626?v=4?s=80" width="80px;" alt="zhouzhou626"/>
+          <br /><sub><b>zhouzhou626</b></sub>
+        </a><br />
+        <a href="#code" title="Code">💻</a>
+        <a href="#translation" title="Translation">🌍</a>
+        <a href="#test" title="Tests">⚠️</a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the
+[all-contributors](https://github.com/all-contributors/all-contributors)
+specification. Contributions of every kind welcome.
+
 ---
 
 ## If md-bridge helped you

@@ -1,0 +1,44 @@
+{
+  "projectName": "md-bridge",
+  "projectOwner": "vinicq",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 80,
+  "commit": false,
+  "commitConvention": "angular",
+  "contributorsPerLine": 6,
+  "contributorsSortAlphabetically": false,
+  "linkToUsage": false,
+  "contributorsHeading": "Contributors",
+  "contributors": [
+    {
+      "login": "vinicq",
+      "name": "Vinicius Queiroz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/78210890?v=4",
+      "profile": "https://github.com/vinicq",
+      "contributions": [
+        "code",
+        "doc",
+        "design",
+        "infra",
+        "maintenance",
+        "review",
+        "test"
+      ]
+    },
+    {
+      "login": "zhouzhou626",
+      "name": "zhouzhou626",
+      "avatar_url": "https://avatars.githubusercontent.com/u/zhouzhou626?v=4",
+      "profile": "https://github.com/zhouzhou626",
+      "contributions": [
+        "code",
+        "translation",
+        "test"
+      ]
+    }
+  ]
+}

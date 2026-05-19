@@ -15,7 +15,17 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **all-contributors** specification adopted. `.all-contributorsrc`
+  at the repo root tracks every contributor and their kind of
+  contribution (code, doc, translation, design, review, test, infra,
+  maintenance). README gains a `## Contributors` section between
+  `## License` and `## If md-bridge helped you` that renders the
+  current list (Vinicius Queiroz + @zhouzhou626 for the Spanish
+  locale). `CONTRIBUTING.md` documents how to be credited: no bot to
+  install, no extra PR; the maintainer regenerates the README block
+  during release prep.
 
 ## [0.2.2] — 2026-05-19
 
