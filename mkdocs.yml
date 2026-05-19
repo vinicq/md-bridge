@@ -46,6 +46,8 @@ theme:
 nav:
   - Home: index.md
   - Getting started: getting-started.md
+  - Deploy:
+      - Oracle Cloud Always Free: deployment/oracle-cloud.md
   - API reference: API.md
   - Contributing: contributing.md
   - Security: security.md

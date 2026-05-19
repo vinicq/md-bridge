@@ -1,0 +1,25 @@
+name: Release drafter
+
+# Keeps a draft GitHub Release in sync with merged PRs on `main`. Each merge
+# triggers an update; the draft accumulates entries until a human bumps the
+# version and clicks Publish. Config lives in `.github/release-drafter.yml`.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  workflow_dispatch:
+
+permissions:
+  contents: write       # to write the draft release
+  pull-requests: write  # to read PR labels
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update release draft
+        uses: release-drafter/release-drafter@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

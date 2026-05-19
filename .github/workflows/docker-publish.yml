@@ -15,6 +15,12 @@ on:
     branches: [main]
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why are you triggering this manual rebuild?"
+        required: false
+        default: "manual rebuild"
 
 permissions:
   contents: read

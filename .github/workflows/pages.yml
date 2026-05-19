@@ -53,11 +53,16 @@ jobs:
         # MkDocs reads from docs/ only, so we mirror the canonical sources
         # (CONTRIBUTING, SECURITY, CHANGELOG, CODE_OF_CONDUCT) into docs/ for
         # the build. The originals at the repo root stay authoritative.
+        # The Oracle Cloud deploy doc lives outside docs/ for the same reason
+        # (it ships with companion scripts under deployment/) and is mirrored
+        # here so the nav can point at it.
         run: |
-          cp CONTRIBUTING.md   docs/contributing.md
-          cp SECURITY.md       docs/security.md
-          cp CHANGELOG.md      docs/changelog.md
+          cp CONTRIBUTING.md    docs/contributing.md
+          cp SECURITY.md        docs/security.md
+          cp CHANGELOG.md       docs/changelog.md
           cp CODE_OF_CONDUCT.md docs/code-of-conduct.md
+          mkdir -p docs/deployment
+          cp deployment/oracle-cloud/README.md docs/deployment/oracle-cloud.md
 
       - name: Build MkDocs site
         # `--strict` would fail the build on every cross-link to files that
