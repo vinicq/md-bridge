@@ -15,6 +15,22 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Changed
+
+- About page copy rewritten across `en`, `pt`, and `es` in an
+  OSS-professional register. The previous text explained PDF and
+  Markdown to a beginner audience; the new copy leads with the
+  project's positioning ("open source, self-hosted, deterministic,
+  no model inference, no telemetry") and names the heuristic stack
+  (PyMuPDF + headless Chromium) directly. The "Built with" section
+  is replaced by "Open source" with explicit MIT-licence and
+  CONTRIBUTING.md pointers. (#21)
+- Theme picker for Markdown → PDF (#14) reorganised as an umbrella
+  issue with three sister sub-issues: design (#22, three CSS
+  templates), backend (#23, registry + `/api/themes`), frontend
+  (#24, picker dropdown). The pattern is the project's reference for
+  multi-discipline features going forward.
+
 ### Fixed
 
 - `docker-publish.yml` smoke test for the Web image was running
