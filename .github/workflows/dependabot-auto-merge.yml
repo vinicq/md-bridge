@@ -1,0 +1,38 @@
+name: Dependabot auto-merge
+
+# Dependabot opens ~5-15 PRs per week across the ecosystems configured in
+# `.github/dependabot.yml`. Patch bumps and transitive (indirect) updates are
+# almost always safe when CI passes. This workflow auto-enables merge on
+# those low-risk PRs so the maintainer only spends review time on minor and
+# major version bumps where breaking changes are plausible.
+#
+# Merge still waits for every required status check to pass (branch
+# protection on `main` enforces Backend, Web, E2E, and the two CodeQL jobs).
+# If a "safe" patch bump somehow breaks CI, the auto-merge is held back and
+# becomes a manual review like any other PR.
+
+on: pull_request_target
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Auto-merge patch and indirect bumps
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+
+      - name: Enable auto-merge for safe bumps
+        if: |
+          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          steps.meta.outputs.dependency-type == 'indirect'
+        run: gh pr merge --auto --squash --delete-branch "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

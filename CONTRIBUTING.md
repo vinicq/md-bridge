@@ -263,6 +263,36 @@ need:
 Once that is wired up, the root-level `npm run dev` starts the API on
 `localhost:8000` and the Vite dev server on `localhost:5173`.
 
+### How the `main` branch is protected
+
+The `main` branch is gated on the GitHub side. Pull requests cannot be
+merged until every required status check is green:
+
+- Backend (pytest)
+- Web (vitest + build)
+- End-to-end (Playwright)
+- Analyze (python)              -- CodeQL
+- Analyze (javascript-typescript) -- CodeQL
+
+Direct force-pushes and branch deletions are blocked, and merges produce
+a linear history (no merge commits). Reviewer requirements are not
+enforced (this is a solo-maintainer project), but the checks themselves
+are non-negotiable.
+
+### Dependabot auto-merge
+
+Dependabot opens weekly PRs across the ecosystems configured in
+`.github/dependabot.yml`. The `.github/workflows/dependabot-auto-merge.yml`
+workflow auto-enables merge on two safe categories:
+
+- Patch bumps (`X.Y.Z → X.Y.Z+1`).
+- Transitive (indirect) dependency updates that come from a lockfile.
+
+In both cases the same required status checks still have to pass before
+the merge actually lands. Minor and major version bumps stay in the
+manual review queue; their changelogs are worth two minutes of attention
+before pulling.
+
 ### Optional: pre-commit hooks
 
 The repo ships a `.pre-commit-config.yaml` that wires `ruff` and a handful

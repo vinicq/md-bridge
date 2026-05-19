@@ -50,6 +50,24 @@ the report anyway. Better safe than sorry.
 - Credit in the release notes if you want it. Anonymous reports are also
   fine.
 
+## What the repository already does for you
+
+The following GitHub-native defenses are enabled on this repository and
+run continuously. You do not need to opt in to benefit from them:
+
+- **Secret scanning** and **push protection** block accidental commits
+  of credentials (API tokens, private keys, cloud secrets) at push time.
+  If you try to push a commit that contains a recognized secret, the
+  push is rejected with a clear message.
+- **CodeQL** runs static security analysis on every push and pull
+  request, plus a weekly scheduled scan. Findings appear under the
+  Security tab.
+- **Dependabot** opens weekly version-bump pull requests for pip, npm,
+  GitHub Actions, and Docker base images. Security advisories trigger
+  out-of-cycle PRs that jump the queue.
+- **Private vulnerability reporting** is enabled (see the reporting
+  channel above).
+
 ## What is not a security issue
 
 The following are bugs, not vulnerabilities. Please file them as regular
