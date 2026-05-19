@@ -26,8 +26,10 @@ describe('LanguageSwitcher', () => {
     )
     const en = screen.getByRole('button', { name: /english/i })
     const pt = screen.getByRole('button', { name: /portugu/i })
+    const es = screen.getByRole('button', { name: /español/i })
     expect(en).toHaveAttribute('aria-pressed', 'true')
     expect(pt).toHaveAttribute('aria-pressed', 'false')
+    expect(es).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('flips the active locale on click and updates dependent text', async () => {
@@ -38,8 +40,8 @@ describe('LanguageSwitcher', () => {
       </I18nProvider>,
     )
     expect(screen.getByTestId('probe')).toHaveTextContent('About')
-    await userEvent.click(screen.getByRole('button', { name: /portugu/i }))
-    expect(screen.getByTestId('probe')).toHaveTextContent('Sobre')
+    await userEvent.click(screen.getByRole('button', { name: /español/i }))
+    expect(screen.getByTestId('probe')).toHaveTextContent('Acerca de')
   })
 
   it('persists the chosen locale to localStorage', async () => {
@@ -48,7 +50,7 @@ describe('LanguageSwitcher', () => {
         <LanguageSwitcher />
       </I18nProvider>,
     )
-    await userEvent.click(screen.getByRole('button', { name: /portugu/i }))
-    expect(window.localStorage.getItem('md-bridge:locale')).toBe('pt')
+    await userEvent.click(screen.getByRole('button', { name: /español/i }))
+    expect(window.localStorage.getItem('md-bridge:locale')).toBe('es')
   })
 })

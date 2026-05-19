@@ -29,7 +29,7 @@ fine-tuning, no API key, no network call to a third party.
   sequentially, download per file.
 - **Diagnostics endpoint** so the UI can warn about tagged PDFs, OCR
   needs, or missing fonts before kicking off a conversion.
-- **Bilingual UI** (English + Portuguese), choice persisted in
+- **Multilingual UI** (English + Portuguese + Spanish), choice persisted in
   `localStorage`.
 
 ## Quick demo

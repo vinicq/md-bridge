@@ -1,8 +1,9 @@
-export type Locale = 'en' | 'pt'
+export type Locale = 'en' | 'pt' | 'es'
 
 export const LOCALES: { code: Locale; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'pt', label: 'Português' },
+  { code: 'es', label: 'Español' },
 ]
 
 interface Dictionary {
@@ -330,6 +331,124 @@ const pt: Dictionary = {
   },
 }
 
-export const DICTIONARIES: Record<Locale, Dictionary> = { en, pt }
+const es: Dictionary = {
+  nav: {
+    pdfToMd: 'PDF · MD',
+    mdToPdf: 'MD · PDF',
+    about: 'Acerca de',
+  },
+  home: {
+    title: 'Convierte PDF y Markdown localmente.',
+    subtitle:
+      'Heurísticas deterministas entre PDF y Markdown. La misma entrada produce la misma salida en cada ejecución. Sin nube ni suscripciones.',
+    cards: {
+      pdfToMd: {
+        title: 'PDF → Markdown',
+        body: 'Extrae estructura: encabezados por tamaño de fuente, listas, tablas y front matter. Sin OCR en v1.',
+        cta: 'Convertir un PDF',
+      },
+      mdToPdf: {
+        title: 'Markdown → PDF',
+        body: 'Renderiza con Chromium headless y un tema CSS. Salida consistente, sin GTK ni wkhtmltopdf.',
+        cta: 'Generar un PDF',
+      },
+    },
+  },
+  pdfToMd: {
+    title: 'PDF a Markdown',
+    subtitle: 'Sube un PDF y extrae su contenido como Markdown estructurado.',
+    convert: 'Convertir',
+    converting: 'Convirtiendo',
+    ready: 'Listo',
+    download: 'Descargar .md',
+    previewEmpty: 'El Markdown aparecerá aquí después de la conversión.',
+    success: 'Markdown generado.',
+    warnings: 'Advertencias',
+  },
+  mdToPdf: {
+    title: 'Markdown a PDF',
+    subtitle: 'Sube un archivo .md o pega texto y conviértelo a PDF con un tema CSS.',
+    paste: 'O pega markdown aquí...',
+    pasteLabel: 'Markdown pegado',
+    generate: 'Convertir',
+    generating: 'Convirtiendo',
+    download: 'Descargar .pdf',
+    previewEmpty: 'La vista previa aparecerá aquí después de la conversión.',
+    pastedFilename: 'pegado.md',
+    success: 'PDF listo.',
+  },
+  about: {
+    title: 'Acerca de md-bridge',
+    intro:
+      'md-bridge convierte archivos entre dos formatos: PDF (el estándar para imprimir y compartir documentos terminados) y Markdown (un formato de texto ligero usado por desarrolladores, escritores y herramientas como GitHub, Obsidian y Notion). Todo se ejecuta en tu máquina, así que los archivos nunca salen de tu computadora.',
+    how: {
+      title: 'Cómo funciona',
+      p1:
+        'De PDF a Markdown: la app lee el tamaño de fuente y la distribución del PDF para identificar encabezados, párrafos, listas y tablas. Luego escribe un archivo Markdown limpio con esa estructura preservada.',
+      p2:
+        'De Markdown a PDF: la app convierte el texto en una página web con estilos e imprime esa página como PDF usando el mismo motor que usan los navegadores.',
+    },
+    limits: {
+      title: 'Límites conocidos',
+      items: [
+        'Los PDF escaneados (imágenes de papel, no texto real) todavía no se pueden leer. Ejecuta antes una herramienta de OCR como Tesseract.',
+        'Las tablas con celdas combinadas entre filas o columnas pueden salir aplanadas.',
+        'Los encabezados y pies de página que se repiten en todas las páginas se eliminan automáticamente.',
+      ],
+    },
+    more: {
+      title: 'Construido con',
+      body:
+        'Python y FastAPI en el servidor (la parte que hace la conversión real), React en la página que estás viendo, y un navegador Chromium headless para renderizar Markdown de vuelta a PDF. Todo es open source y viene incluido en el proyecto.',
+    },
+  },
+  dropzone: {
+    dropFile: (label) => `Suelta un ${label}`,
+    dropFiles: (label) => `Suelta archivos ${label} o una carpeta`,
+    orClick: 'o haz clic para seleccionar',
+    orClickMany: 'o haz clic para elegir archivos',
+    sizeHint: (size) => `${size} · haz clic para cambiar`,
+    invalidType: (label) => `Tipo inválido. Se esperaba ${label}.`,
+    someInvalid: (count, label) =>
+      `${count} archivo${count === 1 ? '' : 's'} ignorado${count === 1 ? '' : 's'}: no es ${label}.`,
+    ariaLabel: (label) => `Suelta un archivo ${label} o haz clic para elegirlo`,
+  },
+  batch: {
+    heading: (count) => `${count} archivo${count === 1 ? '' : 's'} en cola`,
+    statusQueued: 'En cola',
+    statusConverting: 'Convirtiendo',
+    statusDone: 'Listo',
+    statusError: 'Error',
+    progress: (done, total) => `${done} de ${total} completado${total === 1 ? '' : 's'}`,
+    convertAll: 'Convertir todo',
+    downloadAll: 'Descargar todo (.zip)',
+    clear: 'Limpiar lista',
+    pdfBundleName: 'pdfs.zip',
+    mdBundleName: 'markdown.zip',
+  },
+  diag: {
+    title: 'Diagnóstico del PDF',
+    pages: 'Páginas',
+    body: 'Cuerpo',
+    headings: 'Encabezados detectados',
+    tagged: 'PDF/UA etiquetado',
+    yes: 'sí',
+    no: 'no',
+    loading: 'Analizando PDF...',
+    empty: 'Sube un PDF para ver el diagnóstico.',
+    fonts: (count) => `Fuentes (${count})`,
+    chars: 'caracteres',
+    needsOcr:
+      'Hay poco texto extraíble. Probablemente el PDF esté escaneado; ejecuta OCR antes de convertir.',
+  },
+  errors: {
+    unknown: 'Fallo desconocido',
+  },
+  languageSwitcher: {
+    label: 'Idioma',
+  },
+}
+
+export const DICTIONARIES: Record<Locale, Dictionary> = { en, pt, es }
 
 export type { Dictionary }

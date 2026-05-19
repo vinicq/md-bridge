@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('Language toggle switches the whole UI between EN and PT', async ({ page }) => {
+test('Language toggle switches the whole UI across available locales', async ({ page }) => {
   // Start with no stored locale so the provider falls back to its default.
   await page.goto('/')
   // Force EN to make assertions deterministic regardless of navigator language.
@@ -21,5 +21,15 @@ test('Language toggle switches the whole UI between EN and PT', async ({ page })
   await page.reload()
   await expect(page.getByRole('heading', { level: 1 })).toContainText(
     /converta pdf e markdown local/i,
+  )
+
+  // ES is available from the same switcher and is persisted too.
+  await page.getByRole('button', { name: /español/i }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(
+    /convierte pdf y markdown localmente/i,
+  )
+  await page.reload()
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(
+    /convierte pdf y markdown localmente/i,
   )
 })

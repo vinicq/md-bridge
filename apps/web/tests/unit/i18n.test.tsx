@@ -21,10 +21,10 @@ describe('I18nProvider', () => {
 
   it('honors an explicit initialLocale prop over auto-detection', () => {
     const { result } = renderHook(() => useTranslation(), {
-      wrapper: ({ children }) => <I18nProvider initialLocale="pt">{children}</I18nProvider>,
+      wrapper: ({ children }) => <I18nProvider initialLocale="es">{children}</I18nProvider>,
     })
-    expect(result.current.locale).toBe('pt')
-    expect(result.current.t.nav.about).toBe('Sobre')
+    expect(result.current.locale).toBe('es')
+    expect(result.current.t.nav.about).toBe('Acerca de')
   })
 
   it('persists the locale change to localStorage', async () => {
@@ -51,7 +51,7 @@ describe('I18nProvider', () => {
       wrapper: ({ children }) => <I18nProvider initialLocale="en">{children}</I18nProvider>,
     })
     const codes = result.current.locales.map((l) => l.code)
-    expect(codes).toEqual(['en', 'pt'])
+    expect(codes).toEqual(['en', 'pt', 'es'])
   })
 
   it('throws when useTranslation is used outside the provider', () => {

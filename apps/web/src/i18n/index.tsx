@@ -14,13 +14,19 @@ import {
 import { DICTIONARIES, LOCALES, type Dictionary, type Locale } from './dictionaries'
 
 const STORAGE_KEY = 'md-bridge:locale'
+const SUPPORTED_LOCALES = LOCALES.map(({ code }) => code)
+
+function isSupportedLocale(value: string | null): value is Locale {
+  return SUPPORTED_LOCALES.includes(value as Locale)
+}
 
 function detectInitialLocale(): Locale {
   if (typeof window === 'undefined') return 'en'
-  const stored = window.localStorage.getItem(STORAGE_KEY) as Locale | null
-  if (stored && (stored === 'en' || stored === 'pt')) return stored
+  const stored = window.localStorage.getItem(STORAGE_KEY)
+  if (isSupportedLocale(stored)) return stored
   const nav = window.navigator?.language?.toLowerCase() ?? ''
-  if (nav.startsWith('pt')) return 'pt'
+  const browserLocale = nav.split(/[-_]/)[0]
+  if (isSupportedLocale(browserLocale)) return browserLocale
   return 'en'
 }
 
@@ -46,7 +52,7 @@ export function I18nProvider({
     if (typeof window === 'undefined') return
     window.localStorage.setItem(STORAGE_KEY, locale)
     if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('lang', locale === 'pt' ? 'pt-BR' : 'en')
+      document.documentElement.setAttribute('lang', locale === 'pt' ? 'pt-BR' : locale)
     }
   }, [locale])
 

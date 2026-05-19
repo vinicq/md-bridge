@@ -65,7 +65,7 @@ together, and a small React app drives the whole thing from the browser.
   OCR hint) so the UI can warn before conversion.
 - **No persistence**, no third-party calls. Every request runs in a
   temporary directory that is removed before the response goes out.
-- **Bilingual UI** (English by default, Portuguese optional) with a header
+- **Multilingual UI** (English by default, Portuguese and Spanish optional) with a header
   toggle that persists the choice in `localStorage`.
 - **Interactive API docs** at `/docs` (Swagger UI) and `/redoc`, plus a
   walkthrough in [`docs/API.md`](docs/API.md).
@@ -95,7 +95,7 @@ together, and a small React app drives the whole thing from the browser.
 | Frontend     | Vite, React, TypeScript, React Router 6    |
 | Styling      | Plain CSS with design tokens, no framework |
 | Tests        | pytest, Vitest, React Testing Library, Playwright |
-| i18n         | Lightweight context provider, EN plus PT   |
+| i18n         | Lightweight context provider, EN plus PT/ES |
 
 ## Quickstart
 
@@ -304,8 +304,8 @@ curl -X POST http://localhost:8000/api/md-to-pdf \
 
 ## Internationalization
 
-The UI ships with English (default) and Portuguese. The header carries a
-two-button toggle (`EN` / `PT`); the choice is persisted in `localStorage`
+The UI ships with English (default), Portuguese, and Spanish. The header carries a
+locale toggle (`EN` / `PT` / `ES`); the choice is persisted in `localStorage`
 under `md-bridge:locale`.
 
 To add a new locale:
