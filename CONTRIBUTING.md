@@ -177,6 +177,40 @@ page.
 - **No issue before a small PR.** Open an issue first only when the
   change is large or risky enough to need design discussion.
 
+## Claiming an issue before you code
+
+If the change you want to make matches an existing open issue, please
+**claim the issue before you start coding**. This stops two
+contributors from racing on the same work without realising.
+
+The process is short:
+
+1. Open the issue and skim the comments. Confirm the scope is still
+   what you expect; the maintainer may have narrowed or widened it
+   since the original write-up.
+2. Leave a comment saying you would like to take it. One sentence is
+   enough: *"I'd like to work on this — planning to start tomorrow."*
+3. Wait for the maintainer to assign you on GitHub (`assignee` field
+   on the right sidebar). The assignment typically happens within a
+   business day.
+4. Once assigned, the issue is yours for **seven days**. Open a draft
+   PR within that window, even if it is empty; the draft PR signals
+   progress and lets the maintainer pre-review your direction.
+5. If you cannot finish within seven days, leave a comment to release
+   the issue so someone else can pick it up. The maintainer will
+   reassign on request.
+
+The assignee always has first refusal. If you open a PR against an
+issue someone else is assigned to, the maintainer will close yours as
+a duplicate and direct you to the original assignee's PR.
+
+### When you do not need to claim
+
+For tiny fixes — typos, broken links, one-line bug fixes, dependency
+bumps the maintainer has not yet seen — you do not need to claim a
+matching issue first. Just open the PR with `Fixes #N` (if the issue
+exists) and you are done.
+
 ## Submitting a pull request
 
 A pull request is a proposal to merge your branch into `main`. The basic

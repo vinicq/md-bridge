@@ -15,6 +15,15 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Added
+
+- `CONTRIBUTING.md` now documents the **issue-claiming process**:
+  contributors comment to claim, maintainer assigns via the native
+  GitHub `assignee` field, seven-day window before the issue returns
+  to the pool. Tiny fixes (typos, broken links, one-line bugs) skip
+  the claim step. Pattern is non-bot, non-label, mechanism-native to
+  GitHub.
+
 ### Changed
 
 - Project descriptions across `package.json`, `apps/api/pyproject.toml`,
