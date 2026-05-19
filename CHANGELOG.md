@@ -15,6 +15,10 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.2.1] — 2026-05-19
+
 ### Fixed
 
 - `docker-publish.yml` now builds **multi-platform** images
@@ -151,7 +155,8 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/vinicq/md-bridge/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/vinicq/md-bridge/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/vinicq/md-bridge/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/vinicq/md-bridge/releases/tag/v0.1.0
