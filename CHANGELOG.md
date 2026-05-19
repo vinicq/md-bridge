@@ -17,6 +17,14 @@ If a section is empty in a release, the section is omitted entirely.
 
 ### Added
 
+- **Release-drafter** workflow that keeps a draft GitHub Release in sync
+  with merged PRs on `main`. Categories are driven by PR labels
+  (`enhancement`, `bug`, `security`, `documentation`, `chore`, ...) and
+  the next semver bump is resolved automatically (major / minor /
+  patch). Config in `.github/release-drafter.yml`.
+- `workflow_dispatch` trigger on `docker-publish.yml` so a manual
+  re-publish from the Actions UI is now possible without an unrelated
+  commit.
 - **Documentation site** at <https://vinicq.github.io/md-bridge/>. MkDocs
   Material build deployed to GitHub Pages on every doc change. `mkdocs.yml`
   plus `docs/index.md` and `docs/getting-started.md` provide a curated

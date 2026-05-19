@@ -1,0 +1,75 @@
+# Release-drafter keeps a draft GitHub Release in sync with merged PRs on
+# `main`. Each merge appends a line to the draft under the category that
+# matches one of the PR's labels. When you are ready to ship, you only need
+# to bump the version on the draft and click Publish.
+#
+# The workflow that consumes this file lives in
+# .github/workflows/release-drafter.yml.
+
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+
+template: |
+  ## What's changed since $PREVIOUS_TAG
+
+  $CHANGES
+
+  **Full changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+categories:
+  - title: ":rocket: Features"
+    labels:
+      - enhancement
+      - feature
+  - title: ":bug: Bug fixes"
+    labels:
+      - bug
+      - fix
+  - title: ":lock: Security"
+    labels:
+      - security
+  - title: ":book: Documentation"
+    labels:
+      - documentation
+      - docs
+  - title: ":hammer: Maintenance"
+    labels:
+      - chore
+      - dependencies
+      - ci
+      - backend
+      - frontend
+      - tooling
+      - docker
+
+change-template: "- $TITLE (#$NUMBER) by @$AUTHOR"
+change-title-escapes: '\<*_&'
+
+# Bump rules: the highest-precedence label on the merged PRs since the last
+# tag determines whether the next release is major / minor / patch.
+version-resolver:
+  major:
+    labels:
+      - "breaking-change"
+      - "major"
+  minor:
+    labels:
+      - "enhancement"
+      - "feature"
+      - "minor"
+  patch:
+    labels:
+      - "bug"
+      - "fix"
+      - "security"
+      - "documentation"
+      - "docs"
+      - "chore"
+      - "dependencies"
+      - "ci"
+      - "patch"
+  default: patch
+
+exclude-labels:
+  - "skip-changelog"
+  - "no-release"
