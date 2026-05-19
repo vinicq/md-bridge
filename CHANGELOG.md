@@ -15,35 +15,51 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.2.0] — 2026-05-19
+
+First minor release. Ships the new trilingual UI plus a wider set of
+visibility, distribution, and contributor-onboarding work.
+
 ### Added
 
+- **Spanish (`es`) locale** in the web UI. The header toggle now lists
+  EN / PT / ES. Locale detection and the `<html lang>` attribute were
+  generalised so future locales drop in without further code changes.
+  Translations are native-quality; tests and the Playwright spec
+  exercise all three locales. (#9 by @zhouzhou626 — first external
+  contributor.)
 - **Oracle Cloud Always Free deployment recipe** under
   `deployment/oracle-cloud/`: step-by-step `README.md`, `bootstrap.sh`
   that installs Docker + Caddy + the stack on a fresh ARM Ampere A1
   VM, and a reference `Caddyfile.example`. Cost: zero. The docs site
   picks up the page under a new "Deploy" nav section.
-- **Release-drafter** workflow that keeps a draft GitHub Release in sync
-  with merged PRs on `main`. Categories are driven by PR labels
-  (`enhancement`, `bug`, `security`, `documentation`, `chore`, ...) and
-  the next semver bump is resolved automatically (major / minor /
+- **Release-drafter** workflow that keeps a draft GitHub Release in
+  sync with merged PRs on `main`. Categories are driven by PR labels
+  (`enhancement`, `bug`, `security`, `documentation`, `chore`, ...)
+  and the next semver bump is resolved automatically (major / minor /
   patch). Config in `.github/release-drafter.yml`.
 - `workflow_dispatch` trigger on `docker-publish.yml` so a manual
   re-publish from the Actions UI is now possible without an unrelated
   commit.
-- **Documentation site** at <https://vinicq.github.io/md-bridge/>. MkDocs
-  Material build deployed to GitHub Pages on every doc change. `mkdocs.yml`
-  plus `docs/index.md` and `docs/getting-started.md` provide a curated
-  landing experience separate from the GitHub README.
+- **Documentation site** at <https://vinicq.github.io/md-bridge/>.
+  MkDocs Material build deployed to GitHub Pages on every doc change.
+  `mkdocs.yml` plus `docs/index.md` and `docs/getting-started.md`
+  provide a curated landing experience separate from the GitHub README.
 - **Docker images on GHCR**: a release-triggered workflow publishes
   `ghcr.io/vinicq/md-bridge-api` and `ghcr.io/vinicq/md-bridge-web` so
   users can `docker pull` instead of building locally. Tags follow the
-  semver scheme.
-- **OpenSSF Scorecard** workflow that runs weekly + on push, surfaces the
-  result in the Security tab, and exposes a public score at
-  scorecard.dev. README gains a Scorecard badge alongside CI and CodeQL.
-- **Brand assets** under `docs/brand/` (logo, wordmark, social preview).
-  Programmatic Pillow geometry, deterministic, no AI generation.
-- **Demo GIF** at `docs/screenshots/demo.gif`, used as the README hero.
+  semver scheme; both images are public.
+- **OpenSSF Scorecard** workflow that runs weekly + on push, surfaces
+  the result in the Security tab, and exposes a public score at
+  scorecard.dev. README gains a Scorecard badge alongside CI and
+  CodeQL.
+- **Brand assets** under `docs/brand/` (logo, wordmark, social
+  preview). Programmatic Pillow geometry, deterministic, no AI
+  generation.
+- **Demo GIF** at `docs/screenshots/demo.gif`, used as the README
+  hero.
 - **Star history chart** and a "If md-bridge helped you" CTA at the
   bottom of the README.
 
@@ -127,6 +143,7 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/vinicq/md-bridge/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/vinicq/md-bridge/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/vinicq/md-bridge/releases/tag/v0.1.0
