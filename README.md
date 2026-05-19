@@ -1,20 +1,38 @@
-# MD BRIDGE
+<p align="center">
+  <img src="docs/brand/wordmark.png" alt="md-bridge" width="600">
+</p>
 
-> Convert between PDF and Markdown locally, deterministically, with a small
-> HTTP API and a React UI on top.
+<p align="center">
+  <strong>Self-hosted PDF ↔ Markdown converter.</strong><br>
+  Deterministic, heuristic, no external calls.
+</p>
+
+<p align="center">
+  <a href="https://github.com/vinicq/md-bridge/actions/workflows/ci.yml"><img src="https://github.com/vinicq/md-bridge/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/vinicq/md-bridge/actions/workflows/codeql.yml"><img src="https://github.com/vinicq/md-bridge/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/vinicq/md-bridge"><img src="https://api.scorecard.dev/projects/github.com/vinicq/md-bridge/badge" alt="OpenSSF Scorecard"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+"></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-22%2B-43853d.svg" alt="Node 22+"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"></a>
+  <a href="#testing"><img src="https://img.shields.io/badge/tests-124%20total-brightgreen.svg" alt="Tests"></a>
+</p>
+
+<p align="center">
+  📖 <a href="https://vinicq.github.io/md-bridge/">Documentation site</a>
+  &nbsp;·&nbsp;
+  🐳 <a href="https://github.com/vinicq/md-bridge/pkgs/container/md-bridge-api">Docker images on GHCR</a>
+  &nbsp;·&nbsp;
+  📝 <a href="CHANGELOG.md">Changelog</a>
+</p>
+
+---
+
+![Demo of the conversion UI](docs/screenshots/demo.gif)
 
 `md-bridge` is a self-hosted document converter built on hand-written
 heuristics: same input, same output, every run. PyMuPDF reads PDFs, headless
 Chromium renders Markdown back into print-ready PDFs, FastAPI ties it all
 together, and a small React app drives the whole thing from the browser.
-
-[![CI](https://github.com/vinicq/md-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/vinicq/md-bridge/actions/workflows/ci.yml)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
-[![Node 20+](https://img.shields.io/badge/node-20%2B-43853d.svg)](https://nodejs.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-124%20total-brightgreen.svg)](#testing)
-
-![Home page screenshot](docs/screenshots/home-en.png)
 
 ---
 
@@ -125,6 +143,15 @@ One command brings the API and the web UI up together:
 ```bash
 docker compose up
 ```
+
+To pull pre-built images from GHCR instead of building locally:
+
+```bash
+docker pull ghcr.io/vinicq/md-bridge-api:latest
+docker pull ghcr.io/vinicq/md-bridge-web:latest
+```
+
+Each release also gets pinned tags (`0.1.1`, `0.1`, etc.).
 
 The API listens on `http://localhost:8000` and the web UI on
 `http://localhost:5173`. The web container waits for the API healthcheck
@@ -315,3 +342,21 @@ instead of opening a public issue.
 ## License
 
 MIT, see [`LICENSE`](LICENSE).
+
+---
+
+## If md-bridge helped you
+
+A star ⭐ on GitHub is the single most useful thing you can do; it makes the
+project discoverable for the next person looking for a self-hosted PDF
+converter.
+
+### Star history
+
+<a href="https://www.star-history.com/#vinicq/md-bridge&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=vinicq/md-bridge&type=Date&theme=dark">
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=vinicq/md-bridge&type=Date">
+    <img alt="Star history chart for vinicq/md-bridge" src="https://api.star-history.com/svg?repos=vinicq/md-bridge&type=Date">
+  </picture>
+</a>

@@ -15,7 +15,24 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Documentation site** at <https://vinicq.github.io/md-bridge/>. MkDocs
+  Material build deployed to GitHub Pages on every doc change. `mkdocs.yml`
+  plus `docs/index.md` and `docs/getting-started.md` provide a curated
+  landing experience separate from the GitHub README.
+- **Docker images on GHCR**: a release-triggered workflow publishes
+  `ghcr.io/vinicq/md-bridge-api` and `ghcr.io/vinicq/md-bridge-web` so
+  users can `docker pull` instead of building locally. Tags follow the
+  semver scheme.
+- **OpenSSF Scorecard** workflow that runs weekly + on push, surfaces the
+  result in the Security tab, and exposes a public score at
+  scorecard.dev. README gains a Scorecard badge alongside CI and CodeQL.
+- **Brand assets** under `docs/brand/` (logo, wordmark, social preview).
+  Programmatic Pillow geometry, deterministic, no AI generation.
+- **Demo GIF** at `docs/screenshots/demo.gif`, used as the README hero.
+- **Star history chart** and a "If md-bridge helped you" CTA at the
+  bottom of the README.
 
 ## [0.1.1] — 2026-05-19
 

@@ -1,0 +1,81 @@
+site_name: md-bridge
+site_description: Self-hosted PDF and Markdown converter. Deterministic, heuristic, no external calls.
+site_author: Vinicius Queiroz
+site_url: https://vinicq.github.io/md-bridge/
+
+repo_name: vinicq/md-bridge
+repo_url: https://github.com/vinicq/md-bridge
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: brand/logo.png
+  favicon: brand/logo.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: green
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: green
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - API reference: API.md
+  - Contributing: contributing.md
+  - Security: security.md
+  - Changelog: changelog.md
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+      permalink_title: Anchor link
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/vinicq/md-bridge
+      name: md-bridge on GitHub
+
+copyright: Copyright &copy; 2026 Vinicius Queiroz · MIT License
