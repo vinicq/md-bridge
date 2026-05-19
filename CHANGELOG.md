@@ -43,6 +43,8 @@ converter with a FastAPI backend and a React frontend.
   syllabus fixture. No silent CI skips.
 - **CI workflow** for backend pytest, web build + lint + vitest, and
   Playwright end-to-end.
+- **CodeQL** static security analysis on every push and pull request,
+  with a weekly scheduled scan, covering both Python and TypeScript.
 - **Backend linting** via `ruff` with the `E F W I UP B` rule set,
   enforced in CI.
 - **Frontend linting** via ESLint, enforced in CI.
