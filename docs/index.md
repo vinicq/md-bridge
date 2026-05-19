@@ -8,7 +8,8 @@ hide:
 </p>
 
 <p align="center">
-  <strong>Self-hosted PDF ↔ Markdown converter.</strong><br>
+  <strong>Self-hosted document converter.</strong><br>
+  PDF ↔ Markdown today, more format pairs as contributions land.<br>
   Deterministic, heuristic, no external calls.
 </p>
 
@@ -16,10 +17,12 @@ hide:
 
 ## What it does
 
-md-bridge is a small HTTP service plus a React UI that converts PDFs into
-Markdown and Markdown into PDFs. The conversion is **deterministic**: the
-same input file produces the same output file every run. No model, no
-fine-tuning, no API key, no network call to a third party.
+md-bridge is a small HTTP service plus a React UI for converting between
+document formats. It ships PDF ↔ Markdown on day one; the architecture
+welcomes new format pairs (DOCX, EPUB, RTF, and others) as contributions
+land. The conversion is **deterministic**: the same input file produces
+the same output file every run. No model, no fine-tuning, no API key,
+no network call to a third party.
 
 - **PDF → Markdown** with heading detection, list recovery, table
   extraction, and YAML front matter.

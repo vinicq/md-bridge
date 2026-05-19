@@ -34,6 +34,10 @@ heuristics: same input, same output, every run. PyMuPDF reads PDFs, headless
 Chromium renders Markdown back into print-ready PDFs, FastAPI ties it all
 together, and a small React app drives the whole thing from the browser.
 
+The first release ships PDF ↔ Markdown. The architecture is built to
+welcome new format pairs as contributions land: DOCX, EPUB, RTF, and
+others are natural fits behind the same heuristic-pipeline pattern.
+
 ---
 
 ## Table of contents

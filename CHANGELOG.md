@@ -17,6 +17,12 @@ If a section is empty in a release, the section is omitted entirely.
 
 ### Changed
 
+- Project descriptions across `package.json`, `apps/api/pyproject.toml`,
+  `README.md`, and `docs/index.md` now state the extensibility intent
+  explicitly: md-bridge is a document converter that ships PDF ↔
+  Markdown today and welcomes new format pairs (DOCX, EPUB, RTF, ...)
+  as contributions land. The GitHub repo description and topics were
+  updated to match.
 - About page copy rewritten across `en`, `pt`, and `es` in an
   OSS-professional register. The previous text explained PDF and
   Markdown to a beginner audience; the new copy leads with the

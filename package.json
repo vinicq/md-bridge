@@ -2,7 +2,7 @@
   "name": "md-bridge",
   "version": "0.1.0",
   "private": true,
-  "description": "PDF and Markdown conversions exposed as a local web app. Heuristic, deterministic.",
+  "description": "Self-hosted document converter built on hand-written heuristics. Ships PDF and Markdown conversion today; the architecture welcomes new format pairs as contributions land. Deterministic by design.",
   "scripts": {
     "dev": "concurrently -n api,web -c blue,magenta \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "apps/api/.venv/Scripts/python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir apps/api",

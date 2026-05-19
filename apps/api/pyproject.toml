@@ -1,7 +1,7 @@
 [project]
 name = "md-bridge-api"
 version = "0.1.0"
-description = "FastAPI backend wrapping the pdf-to-markdown and markdown-to-pdf skills"
+description = "FastAPI backend for md-bridge, a self-hosted document converter. Wraps the pdf-to-markdown and markdown-to-pdf packages and exposes them as deterministic HTTP endpoints. The architecture welcomes new format pairs as contributions land."
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
