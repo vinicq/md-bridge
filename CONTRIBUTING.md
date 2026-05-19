@@ -555,6 +555,23 @@ pull request you agree that your contribution will be licensed under the
 same terms. If you are contributing on behalf of a company, please make
 sure you have permission to do so.
 
+### Getting credit in the Contributors list
+
+The project follows the
+[all-contributors specification](https://github.com/all-contributors/all-contributors).
+Every kind of contribution counts: code, documentation, translation,
+design, ideas, review, tests, infrastructure, even bug reports. The
+list lives in the [`Contributors` section of the README](README.md#contributors)
+and is rendered from `.all-contributorsrc`.
+
+After your PR merges, the maintainer will add you to the list with the
+emoji that fits your contribution type (see the
+[emoji key](https://allcontributors.org/docs/en/emoji-key)). If you
+want to claim a specific type up front, mention it in the PR
+description. There is no need to install a bot or open a second PR for
+this; the maintainer regenerates the README block as part of release
+maintenance.
+
 ## Code of conduct
 
 This project follows the [Contributor Covenant 2.1](CODE_OF_CONDUCT.md).
