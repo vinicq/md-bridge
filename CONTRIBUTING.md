@@ -297,6 +297,32 @@ need:
 Once that is wired up, the root-level `npm run dev` starts the API on
 `localhost:8000` and the Vite dev server on `localhost:5173`.
 
+### Install the pre-commit hooks (strongly recommended)
+
+Before your first commit, install the local hooks. They run `ruff` and a
+handful of hygiene checks (trailing whitespace, end-of-file newline,
+YAML/TOML syntax, merge conflict markers, large files) against every
+staged file, catching the boring mistakes in milliseconds instead of in
+the CI run minutes later:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+From that point on, every `git commit` runs the hooks. The hook list
+lives in `.pre-commit-config.yaml`. CI runs the same checks, so skipping
+the hooks does not let bad code reach `main`, but it does mean you pay
+the round-trip every time.
+
+**What the hooks do not check (and do not need to):** whether your
+branch is behind `main`. That is a server-side concern. Branch protection
+on `main` enforces *"require branches to be up to date before merging"*,
+so the GitHub UI shows an **Update branch** button on every PR opened
+against a stale base. You only need to click it (or run
+`gh api -X PUT repos/<owner>/<repo>/pulls/<n>/update-branch`) before the
+merge; the pre-commit hooks deliberately stay out of network operations.
+
 ### How the `main` branch is protected
 
 The `main` branch is gated on the GitHub side. Pull requests cannot be
@@ -327,21 +353,12 @@ the merge actually lands. Minor and major version bumps stay in the
 manual review queue; their changelogs are worth two minutes of attention
 before pulling.
 
-### Optional: pre-commit hooks
+### Pre-commit hooks
 
-The repo ships a `.pre-commit-config.yaml` that wires `ruff` and a handful
-of hygiene checks (trailing whitespace, end-of-file newline, YAML/TOML
-syntax, merge conflict markers, large files). Installing the hooks is
-optional but catches the boring mistakes before review:
-
-```bash
-pip install pre-commit
-pre-commit install
-```
-
-From that point on, every `git commit` runs the hooks against the staged
-files. CI runs the same checks, so skipping pre-commit only delays the
-feedback; it does not let bad code reach `main`.
+See [Install the pre-commit hooks](#install-the-pre-commit-hooks-strongly-recommended)
+under Local setup. The hooks run on every `git commit`; if you skipped
+the install during setup, you can add them at any time without changing
+your existing branch.
 
 ## Tests
 

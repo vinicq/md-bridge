@@ -15,6 +15,19 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Changed
+
+- Pre-commit hooks are now documented under **Local setup** in
+  `CONTRIBUTING.md` (not under a separate "Optional" section near the
+  bottom) so new contributors see them at the same moment they install
+  Python and Node. The "Strongly recommended" framing replaces
+  "Optional". A new paragraph explains why the hooks deliberately do
+  not check whether the branch is behind `main`: that concern is
+  server-side, enforced by branch protection's
+  *"require branches to be up to date before merging"* setting.
+- PR template checklist gains two items: one to confirm pre-commit
+  ran locally, one to confirm the branch is up to date with `main`.
+
 ### Added
 
 - `CONTRIBUTING.md` now documents the **issue-claiming process**:

@@ -41,6 +41,9 @@ The CI check `Semantic PR title` rejects non-compliant titles.
 
 ## Checklist
 
+- [ ] Pre-commit hooks ran locally (`pre-commit run --all-files`).
+- [ ] Branch is up to date with `main` (or the **Update branch** button
+      on this PR has been clicked once required checks are queued).
 - [ ] Tests cover the new behaviour (or the PR description explains why
       no test was needed).
 - [ ] No new tests silently skip on CI.
