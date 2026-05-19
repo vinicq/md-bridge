@@ -15,7 +15,15 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- `docker-publish.yml` now builds **multi-platform** images
+  (`linux/amd64` + `linux/arm64`). The Oracle Cloud Always Free
+  deployment recipe targets ARM Ampere A1 VMs but the previous
+  amd64-only publishes failed `docker pull` on ARM hosts with a
+  manifest-mismatch error. Apple Silicon developers were affected by
+  the same issue. A post-publish smoke job verifies both arches by
+  pulling the image and running a minimal probe. (#12)
 
 ## [0.2.0] — 2026-05-19
 

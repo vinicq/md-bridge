@@ -45,6 +45,14 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Set up QEMU for cross-arch builds
+        # Needed so the amd64 runner can build the linux/arm64 image via
+        # emulation. The Oracle Cloud Always Free deploy recipe + Apple
+        # Silicon devs both need the arm64 manifest.
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -67,7 +75,7 @@ jobs:
             type=raw,value=latest,enable=${{ github.event_name == 'release' }}
             type=sha,prefix=sha-
 
-      - name: Build and push
+      - name: Build and push (amd64 + arm64)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -76,6 +84,50 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha,scope=${{ matrix.image.name }}
           cache-to: type=gha,scope=${{ matrix.image.name }},mode=max
+
+  smoke:
+    name: Smoke test ${{ matrix.image.name }} on ${{ matrix.platform }}
+    needs: publish
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: api
+          - name: web
+        platform:
+          - linux/amd64
+          - linux/arm64
+    steps:
+      - name: Set up QEMU
+        if: matrix.platform == 'linux/arm64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Resolve image reference
+        id: ref
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "tag=ghcr.io/${{ github.repository_owner }}/md-bridge-${{ matrix.image.name }}:latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=ghcr.io/${{ github.repository_owner }}/md-bridge-${{ matrix.image.name }}:main" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pull image for ${{ matrix.platform }}
+        run: docker pull --platform ${{ matrix.platform }} ${{ steps.ref.outputs.tag }}
+
+      - name: Probe API container
+        if: matrix.image.name == 'api'
+        run: |
+          docker run --rm --platform ${{ matrix.platform }} ${{ steps.ref.outputs.tag }} \
+            python -c "from app.main import create_app; create_app(); print('api ok on ${{ matrix.platform }}')"
+
+      - name: Probe Web container
+        if: matrix.image.name == 'web'
+        run: |
+          docker run --rm --platform ${{ matrix.platform }} --entrypoint nginx \
+            ${{ steps.ref.outputs.tag }} -t
