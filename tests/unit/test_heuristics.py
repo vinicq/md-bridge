@@ -8,7 +8,7 @@ These exercise pure-Python helpers without touching real PDFs:
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 
@@ -103,12 +103,13 @@ def test_normalize_headings_from_toc_empty_returns_input(mod):
     assert mod.normalize_headings_from_toc(md, []) == md
 
 
-def test_build_profile_on_real_pdf(mod, fixtures_dir):
+def test_build_profile_on_real_pdf(mod):
+    """Profile building against the committed ISTQB syllabus so every clone can
+    exercise the real-PDF code path without dev-local fixtures."""
     import fitz
 
-    pdf = fixtures_dir / "ddp-factsheet-en.pdf"
-    if not pdf.exists():
-        pytest.skip("fixture not present")
+    pdf = Path(__file__).resolve().parents[2] / "apps" / "api" / "tests" / "fixtures" / "istqb-ctal-ta-syllabus-en.pdf"
+    assert pdf.exists(), f"committed fixture missing: {pdf}"
     doc = fitz.open(pdf)
     profile = mod.build_profile(doc)
     doc.close()

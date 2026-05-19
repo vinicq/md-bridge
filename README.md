@@ -12,7 +12,7 @@ together, and a small React app drives the whole thing from the browser.
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![Node 20+](https://img.shields.io/badge/node-20%2B-43853d.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-130%20total-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-124%20total-brightgreen.svg)](#testing)
 
 ![Home page screenshot](docs/screenshots/home-en.png)
 
@@ -166,26 +166,28 @@ apps/api/.venv/Scripts/python.exe -m uvicorn app.main:app --port 8000 --app-dir 
 
 ## Testing
 
-The test suite follows a classic pyramid with 130 tests in total. No mocks
-of the API, fetch, or browser primitives: integration runs against the real
-FastAPI TestClient and E2E drives a real Chromium against a real backend.
+The test suite follows a classic pyramid with 124 tests in total, every one
+of which runs on CI against the committed ISTQB CTAL-TA syllabus fixture. No
+mocks of the API, fetch, or browser primitives: integration runs against the
+real FastAPI TestClient and E2E drives a real Chromium against a real
+backend.
 
 | Tier        | Count | What it covers                                                   |
 | ----------- | ----- | ---------------------------------------------------------------- |
-| Unit        | 86    | 46 backend (schemas, helpers, errors, heuristics) + 40 frontend (components, hooks, i18n) |
-| Integration | 38    | 15 backend with FastAPI TestClient + 8 regression goldens + 15 frontend page tests (Home, About, Navigation, batch panel) |
+| Unit        | 92    | 46 backend (schemas, helpers, errors, heuristics) + 46 frontend (components, hooks, i18n) |
+| Integration | 26    | 14 backend with FastAPI TestClient + 3 regression goldens + 9 frontend page tests (Home, About, Navigation, batch panel) |
 | E2E         | 6     | Playwright real-browser specs: ISTQB conversion, md-to-pdf, language toggle, batch with two files |
 
 Run them with:
 
 ```bash
-npm run test:unit                   # 46 backend + 40 frontend = 86 unit tests
+npm run test:unit                   # 46 backend + 46 frontend = 92 unit tests
 npm run test:unit:api               # backend unit (pytest, apps/api/tests/unit)
 npm run test:unit:web               # frontend unit (Vitest)
 
-npm run test:integration            # backend + regression goldens + frontend pages = 38
+npm run test:integration            # backend + regression goldens + frontend pages = 26
 npm run test:integration:api        # FastAPI TestClient (apps/api/tests/integration)
-npm run test:integration:regression # 8 golden-file regressions (tests/regression)
+npm run test:integration:regression # 3 golden-file regressions (tests/regression)
 npm run test:integration:web        # frontend page tests (Home, About, Navigation, batch)
 
 npm run test:e2e                    # 6 Playwright real-browser specs
@@ -193,10 +195,11 @@ npm run test:e2e                    # 6 Playwright real-browser specs
 npm run test:all                    # everything in sequence
 ```
 
-The integration tier includes a real-world fixture: the ISTQB CTAL-TA EN
+The integration tier uses a real-world fixture: the ISTQB CTAL-TA EN
 syllabus (`apps/api/tests/fixtures/istqb-ctal-ta-syllabus-en.pdf`). It
 exercises the heuristic converter against a long, table-heavy, outline-rich
-PDF that is representative of the documents users care about.
+PDF that is representative of the documents users care about. Every test
+runs against this fixture, so there are no silent skips on CI.
 
 Regression snapshots live under `tests/golden/`. After a deliberate change
 to the heuristics, regenerate them with:

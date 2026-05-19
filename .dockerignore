@@ -41,7 +41,6 @@ output
 
 # Docs and planning that don't need to live inside the image
 ARCHITECTURE.md
-IMPLEMENT.md
 
 # Tests at repo root (only relevant to dev, not the runtime image)
 tests

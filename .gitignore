@@ -37,8 +37,8 @@ CODEX.md
 # Internal planning / design docs (not part of the public repo)
 ARCHITECTURE.md
 
-# Local fixtures dump (developer machine, not versioned). The committed test
-# fixtures live under apps/api/tests/fixtures/ and are not affected.
-sample-pdfs/*
-!sample-pdfs/.gitkeep
+# Local PDF dump for developers experimenting with the converter. The committed
+# test fixtures live under apps/api/tests/fixtures/; this folder is a personal
+# scratch space and is never required to run the test suite.
+sample-pdfs/
 output/

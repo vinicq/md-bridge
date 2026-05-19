@@ -30,20 +30,10 @@ def update_golden(request) -> bool:
 
 
 @pytest.fixture(scope="session")
-def fixtures_dir() -> Path:
-    return ROOT / "sample-pdfs" / "Design Digital"
-
-
-@pytest.fixture(scope="session")
 def golden_dir() -> Path:
     out = ROOT / "tests" / "golden"
     out.mkdir(parents=True, exist_ok=True)
     return out
-
-
-@pytest.fixture(scope="session")
-def design_digital_pdfs(fixtures_dir: Path) -> list[Path]:
-    return sorted(fixtures_dir.glob("*.pdf"))
 
 
 @pytest.fixture(scope="session")

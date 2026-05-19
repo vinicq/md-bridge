@@ -15,12 +15,6 @@ import pytest
 
 TOLERANCE = 0.02
 
-ISTQB_CANDIDATES = [
-    Path("sample-pdfs/QA/Advanced/ISTQB-CTAL-AT-Syllabus-v2.0_EN_.pdf"),
-    Path("sample-pdfs/QA/Advanced/ISTQB-CTAL-TA-Syllabus-v4.0-EN-4.pdf"),
-    Path("sample-pdfs/QA/Specialist/ISTQB_CT-AI_Syllabus_v1.0.pdf"),
-]
-
 
 def _convert(pdf_to_md_mod, pdf: Path) -> str:
     with tempfile.TemporaryDirectory(prefix="regress-istqb-") as raw:
