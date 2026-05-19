@@ -153,6 +153,15 @@ docker pull ghcr.io/vinicq/md-bridge-web:latest
 
 Each release also gets pinned tags (`0.1.1`, `0.1`, etc.).
 
+### Deploying to a free cloud VM
+
+`deployment/oracle-cloud/` ships a complete recipe for running md-bridge
+on the **Oracle Cloud Always Free** tier (4 OCPU ARM + 24 GB RAM, US$0
+forever). One bootstrap script installs Docker, Caddy, and the stack;
+HTTPS is automatic via Let's Encrypt. See the
+[walkthrough](deployment/oracle-cloud/README.md) or the
+[docs site](https://vinicq.github.io/md-bridge/deployment/oracle-cloud/).
+
 The API listens on `http://localhost:8000` and the web UI on
 `http://localhost:5173`. The web container waits for the API healthcheck
 before starting, so the first call from the browser already has a live
