@@ -23,6 +23,13 @@ If a section is empty in a release, the section is omitted entirely.
   to the pool. Tiny fixes (typos, broken links, one-line bugs) skip
   the claim step. Pattern is non-bot, non-label, mechanism-native to
   GitHub.
+- Issue templates (`bug_report.md`, `feature_request.md`) now require a
+  **test plan with explicit file paths and tiers**. The pattern is the
+  same one used in the recently-edited issues #5, #7, #32, and #40:
+  every implementation states *where* the test lives, not just *that*
+  there is a test. Feature template also gains Architect and Design
+  notes sections so the tri-disciplinary review pattern shows up
+  before the issue is filed.
 
 ### Changed
 

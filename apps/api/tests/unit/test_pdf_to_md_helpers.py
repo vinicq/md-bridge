@@ -62,9 +62,16 @@ def test_compute_stats_empty_input():
     assert stats.headings == 0 and stats.bullets == 0 and stats.tables == 0
 
 
-def test_build_warnings_triggers_ocr_hint_on_sparse_text():
+def test_build_warnings_emits_needs_ocr_code_on_sparse_text():
+    """Sparse text → `needs_ocr` code (not the English message).
+
+    Regression for #40: the warning used to be a hardcoded English
+    string, so the UI rendered English to PT and ES users. The
+    backend now emits a stable code; the frontend dictionary owns
+    the localised text.
+    """
     warnings = _build_warnings(md_body="too short", options=PdfToMdOptions(), pages=10)
-    assert any("scanned" in w.lower() or "ocr" in w.lower() for w in warnings)
+    assert warnings == ["needs_ocr"]
 
 
 def test_build_warnings_silent_on_normal_text():
@@ -73,8 +80,9 @@ def test_build_warnings_silent_on_normal_text():
     assert warnings == []
 
 
-def test_build_warnings_flags_image_extraction():
+def test_build_warnings_emits_images_not_persisted_code():
+    """Image extraction enabled → `images_not_persisted` code, regardless of locale."""
     body = "Lorem ipsum " * 100
     opts = PdfToMdOptions(with_images=True)
     warnings = _build_warnings(md_body=body, options=opts, pages=2)
-    assert any("image" in w.lower() for w in warnings)
+    assert warnings == ["images_not_persisted"]

@@ -54,6 +54,25 @@ describe('I18nProvider', () => {
     expect(codes).toEqual(['en', 'pt', 'es'])
   })
 
+  it.each(['en', 'pt', 'es'] as const)(
+    'translates pdf-to-md warning codes for %s (regression for #40)',
+    (locale) => {
+      const { result } = renderHook(() => useTranslation(), {
+        wrapper: ({ children }) => (
+          <I18nProvider initialLocale={locale}>{children}</I18nProvider>
+        ),
+      })
+      const warnings = result.current.t.pdfToMd.warnings
+      expect(warnings.needs_ocr).toBeTruthy()
+      expect(warnings.images_not_persisted).toBeTruthy()
+      // The English literal must not leak into PT or ES.
+      if (locale !== 'en') {
+        expect(warnings.needs_ocr).not.toMatch(/Very little text was extracted/i)
+        expect(warnings.images_not_persisted).not.toMatch(/Image extraction is enabled/i)
+      }
+    },
+  )
+
   it('throws when useTranslation is used outside the provider', () => {
     function Bad() {
       useTranslation()
