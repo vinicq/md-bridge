@@ -15,87 +15,82 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.2.2] — 2026-05-19
+
+Patch release. Headline change is the trilingual warning fix; the rest is
+governance, infrastructure, and documentation polish accumulated since
+`v0.2.1`.
+
 ### Fixed
 
-- `apps/api/app/main.py` Swagger metadata pointed `contact.url` and the
-  `API_DESCRIPTION` markdown link at the placeholder
+- **`/api/pdf-to-md` warnings now follow the active UI locale.** The
+  backend used to emit hardcoded English strings ("Very little text was
+  extracted…"); PT and ES users saw English while the rest of the UI
+  was in their locale. Backend emits stable codes (`needs_ocr`,
+  `images_not_persisted`); the frontend dictionary translates per
+  locale. The lookup falls back to the raw string for unknown codes so
+  future warnings stay forward-compatible. (#40, PR #42)
+- `apps/api/app/main.py` Swagger metadata pointed `contact.url` and
+  the `API_DESCRIPTION` markdown link at the placeholder
   `https://github.com/your-org/md-bridge`. The Swagger UI at `/docs`
-  surfaced both. Replaced with the real repository URL
-  (`https://github.com/vinicq/md-bridge`).
-
-### Changed
-
-- Pre-commit hooks are now documented under **Local setup** in
-  `CONTRIBUTING.md` (not under a separate "Optional" section near the
-  bottom) so new contributors see them at the same moment they install
-  Python and Node. The "Strongly recommended" framing replaces
-  "Optional". A new paragraph explains why the hooks deliberately do
-  not check whether the branch is behind `main`: that concern is
-  server-side, enforced by branch protection's
-  *"require branches to be up to date before merging"* setting.
-- PR template checklist gains two items: one to confirm pre-commit
-  ran locally, one to confirm the branch is up to date with `main`.
-
-### Added
-
-- `CONTRIBUTING.md` now documents the **issue-claiming process**:
-  contributors comment to claim, maintainer assigns via the native
-  GitHub `assignee` field, seven-day window before the issue returns
-  to the pool. Tiny fixes (typos, broken links, one-line bugs) skip
-  the claim step. Pattern is non-bot, non-label, mechanism-native to
-  GitHub.
-- Issue templates (`bug_report.md`, `feature_request.md`) now require a
-  **test plan with explicit file paths and tiers**. The pattern is the
-  same one used in the recently-edited issues #5, #7, #32, and #40:
-  every implementation states *where* the test lives, not just *that*
-  there is a test. Feature template also gains Architect and Design
-  notes sections so the tri-disciplinary review pattern shows up
-  before the issue is filed.
-
-### Changed
-
-- Project descriptions across `package.json`, `apps/api/pyproject.toml`,
-  `README.md`, and `docs/index.md` now state the extensibility intent
-  explicitly: md-bridge is a document converter that ships PDF ↔
-  Markdown today and welcomes new format pairs (DOCX, EPUB, RTF, ...)
-  as contributions land. The GitHub repo description and topics were
-  updated to match.
-- About page copy rewritten across `en`, `pt`, and `es` in an
-  OSS-professional register. The previous text explained PDF and
-  Markdown to a beginner audience; the new copy leads with the
-  project's positioning ("open source, self-hosted, deterministic,
-  no model inference, no telemetry") and names the heuristic stack
-  (PyMuPDF + headless Chromium) directly. The "Built with" section
-  is replaced by "Open source" with explicit MIT-licence and
-  CONTRIBUTING.md pointers. (#21)
-- Theme picker for Markdown → PDF (#14) reorganised as an umbrella
-  issue with three sister sub-issues: design (#22, three CSS
-  templates), backend (#23, registry + `/api/themes`), frontend
-  (#24, picker dropdown). The pattern is the project's reference for
-  multi-discipline features going forward.
-
-### Fixed
-
+  surfaced both. Replaced with the real repository URL. (PR #46)
 - `docker-publish.yml` smoke test for the Web image was running
   `nginx -t` against the bundled config, which contains
   `proxy_pass http://api:8000`. In an isolated container the `api`
-  hostname does not resolve, so the parse failed with
-  `host not found in upstream "api"` and the workflow reported a
-  red CI even though the publish itself succeeded. The smoke now
-  asserts that the Vite build stage produced `index.html` and copied
-  it to the nginx web root, which is the integrity check we actually
-  care about. nginx config validity is covered end-to-end by the
-  main CI job that boots the compose stack. (introduced in #17)
+  hostname does not resolve, so the parse failed and the workflow
+  reported a red CI even though the publish itself succeeded. The
+  smoke now asserts that the Vite build stage produced `index.html`
+  and copied it to the nginx web root. (PR #20)
 
 ### Added
 
-- **Conventional Commits 1.0.0** is now the project's commit and PR-title
-  convention. New CI workflow `semantic-pr.yml` rejects PR titles that do
-  not match `<type>(<scope>)<!>: <description>`. CONTRIBUTING.md gains
-  a full reference section with the recognised types, bump rules, and
-  worked examples. The `release-drafter.yml` config gains an
-  `autolabeler` block that maps PR titles to labels so the version
-  resolver works even when humans forget to label. (#11 follow-up)
+- **Conventional Commits 1.0.0** is now the project's commit and
+  PR-title convention. New CI workflow `semantic-pr.yml` rejects PR
+  titles that do not match `<type>(<scope>)<!>: <description>`.
+  `CONTRIBUTING.md` gains a full reference section with the recognised
+  types, bump rules, and worked examples. The `release-drafter.yml`
+  config gains an `autolabeler` block. (PR #19)
+- `CONTRIBUTING.md` now documents the **issue-claiming process**:
+  contributors comment to claim, maintainer assigns via the native
+  GitHub `assignee` field, seven-day window before the issue returns
+  to the pool. (PR #41)
+- Issue templates (`bug_report.md`, `feature_request.md`) now require
+  a **test plan with explicit file paths and tiers**. Feature template
+  also gains Architect and Design notes sections so the
+  tri-disciplinary review pattern shows up before the issue is filed.
+  (PR #43)
+- `docs/screenshots/warning-i18n.png` visual proof for #40 (deterministic
+  Pillow render, no AI image generation). (PR #45)
+
+### Changed
+
+- Pre-commit hooks moved from a separate "Optional" section near
+  Tests to **Local setup** in `CONTRIBUTING.md` so new contributors see
+  them at the same moment they install Python and Node. The "Strongly
+  recommended" framing replaces "Optional". A new paragraph explains
+  that the hooks deliberately do not check branch staleness; branch
+  protection on `main` ("require branches to be up to date before
+  merging") handles that server-side. PR template checklist gains the
+  two matching items. (PR #44)
+- Project descriptions across `package.json`,
+  `apps/api/pyproject.toml`, `README.md`, and `docs/index.md` now state
+  the extensibility intent explicitly: md-bridge is a document
+  converter that ships PDF ↔ Markdown today and welcomes new format
+  pairs as contributions land. The GitHub repo description and topics
+  were updated to match. (PR #39)
+- About page copy rewritten across `en`, `pt`, and `es` in an
+  OSS-professional register. New copy leads with positioning
+  ("open source, self-hosted, deterministic, no model inference, no
+  telemetry") and names the heuristic stack (PyMuPDF + headless
+  Chromium) directly. "Built with" becomes "Open source" with explicit
+  MIT-licence and `CONTRIBUTING.md` pointers. (PR #21)
+- Theme picker for Markdown → PDF (#14) reorganised as an **umbrella
+  issue** with three sister sub-issues: design (#22, CSS templates),
+  backend (#23, registry + `/api/themes`), frontend (#24, picker
+  dropdown). The pattern is now the project's reference for
+  multi-discipline features.
 
 ## [0.2.1] — 2026-05-19
 
@@ -235,7 +230,8 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/vinicq/md-bridge/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/vinicq/md-bridge/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/vinicq/md-bridge/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/vinicq/md-bridge/compare/v0.1.0...v0.1.1
