@@ -46,6 +46,8 @@ The CI check `Semantic PR title` rejects non-compliant titles.
       on this PR has been clicked once required checks are queued).
 - [ ] Tests cover the new behaviour (or the PR description explains why
       no test was needed).
+- [ ] **For bug fixes**: a regression test was added that fails on `main`
+      and passes on this branch.
 - [ ] No new tests silently skip on CI.
 - [ ] No `Co-Authored-By:` AI agent trailers in the commit history.
 - [ ] Commit count is reasonable for review (rule of thumb: at most 3).

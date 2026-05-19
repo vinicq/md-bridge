@@ -234,8 +234,10 @@ the code.
 Every behaviour change ships with tests. There is no separate "I will add
 tests later" path. Concretely:
 
-- **Bug fix:** add a regression test that fails on `main` and passes on your
-  branch. The test proves the bug is gone and stays gone.
+- **Bug fix:** add a regression test in the appropriate tier (unit,
+  integration, or E2E) that **demonstrably fails on `main` without your
+  fix**. Include the failing diff in the PR description so reviewers can
+  verify the test catches the bug.
 - **New feature:** add unit tests for pure logic, and an integration or
   end-to-end test if the feature has a user-visible surface.
 - **Refactor with no behaviour change:** the existing suite must still pass.
@@ -244,6 +246,30 @@ tests later" path. Concretely:
 
 PRs that change runtime behaviour without tests will be asked to add them
 before review.
+
+### Writing a good regression test
+
+A good regression test proves two things: the old bug is observable, and the
+new fix is what makes the test pass. It should live at the lowest tier that
+exercises the bug and should fail against `main` without unrelated setup.
+
+For example, #20 fixed a false-red Docker publish smoke probe introduced in
+#17. The original web-image smoke command ran `nginx -t`, but
+`apps/web/nginx.conf` contains `proxy_pass http://api:8000`. In an isolated
+`docker run`, the `api` hostname is not present, so `nginx -t` fails even
+when the built web image is fine.
+
+A useful regression test for that bug would:
+
+1. Run the same web-image smoke probe the workflow uses.
+2. Fail on `main` with the `host not found in upstream "api"` error while
+   the probe still relies on `nginx -t`.
+3. Pass on the fix branch after the probe checks the build artifact that
+   matters, such as `/usr/share/nginx/html/index.html`.
+
+Include the failing diff or failure output in the PR description. Reviewers
+should be able to see that the test catches the specific bug, not just that
+the final suite is green.
 
 ### PR size and commit history
 
