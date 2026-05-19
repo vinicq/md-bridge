@@ -127,7 +127,15 @@ jobs:
             python -c "from app.main import create_app; create_app(); print('api ok on ${{ matrix.platform }}')"
 
       - name: Probe Web container
+        # `nginx -t` would parse the bundled default.conf which contains
+        # `proxy_pass http://api:8000`; in an isolated container the `api`
+        # hostname does not resolve and the parse fails. Instead, assert
+        # that the Vite build stage produced index.html and copied it to
+        # the nginx web root. That is the integrity check we actually
+        # care about; nginx config validity is covered end-to-end by the
+        # main CI job that boots the compose stack.
         if: matrix.image.name == 'web'
         run: |
-          docker run --rm --platform ${{ matrix.platform }} --entrypoint nginx \
-            ${{ steps.ref.outputs.tag }} -t
+          docker run --rm --platform ${{ matrix.platform }} \
+            --entrypoint sh ${{ steps.ref.outputs.tag }} \
+            -c 'test -f /usr/share/nginx/html/index.html && echo "web image ok on ${{ matrix.platform }}"'

@@ -15,6 +15,19 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Fixed
+
+- `docker-publish.yml` smoke test for the Web image was running
+  `nginx -t` against the bundled config, which contains
+  `proxy_pass http://api:8000`. In an isolated container the `api`
+  hostname does not resolve, so the parse failed with
+  `host not found in upstream "api"` and the workflow reported a
+  red CI even though the publish itself succeeded. The smoke now
+  asserts that the Vite build stage produced `index.html` and copied
+  it to the nginx web root, which is the integrity check we actually
+  care about. nginx config validity is covered end-to-end by the
+  main CI job that boots the compose stack. (introduced in #17)
+
 ### Added
 
 - **Conventional Commits 1.0.0** is now the project's commit and PR-title
