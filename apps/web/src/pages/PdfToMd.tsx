@@ -103,10 +103,17 @@ export function PdfToMd() {
             empty={t.pdfToMd.previewEmpty}
           />
           {selected?.result?.warnings.length ? (
-            <ul className="warnings" aria-label={t.pdfToMd.warnings}>
-              {selected.result.warnings.map((w, i) => (
-                <li key={i}>{w}</li>
-              ))}
+            <ul className="warnings" aria-label={t.pdfToMd.warnings.title}>
+              {selected.result.warnings.map((w, i) => {
+                // Backend emits short codes (`needs_ocr`,
+                // `images_not_persisted`). The dictionary translates the
+                // known codes per locale; unknown codes fall back to the
+                // raw string so the UI is forward-compatible with future
+                // warnings the backend may add.
+                const message =
+                  (t.pdfToMd.warnings as Record<string, string>)[w] ?? w
+                return <li key={i}>{message}</li>
+              })}
             </ul>
           ) : null}
         </div>

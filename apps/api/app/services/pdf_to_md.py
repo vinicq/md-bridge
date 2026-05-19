@@ -67,19 +67,20 @@ def _compute_stats(md_body: str) -> ConvertStats:
 
 
 def _build_warnings(md_body: str, options: PdfToMdOptions, pages: int) -> list[str]:
+    """Emit warning *codes*, not human strings.
+
+    The frontend translates each code via `dictionaries.ts` so the warning
+    text follows the active UI locale. Codes stay stable across locales
+    and across releases; adding a new code means adding three dictionary
+    entries (en, pt, es).
+    """
     warnings: list[str] = []
     plain = re.sub(r"<small>.*?</small>", " ", md_body, flags=re.DOTALL)
     plain_chars = len(re.sub(r"\s+", "", plain))
     if plain_chars < max(80, pages * 40):
-        warnings.append(
-            "Very little text was extracted. The PDF may be scanned; "
-            "run OCR (e.g. Tesseract) before converting."
-        )
+        warnings.append("needs_ocr")
     if options.with_images:
-        warnings.append(
-            "Image extraction is enabled but images are not persisted by the API; "
-            "the markdown references images that are not served back."
-        )
+        warnings.append("images_not_persisted")
     return warnings
 
 
