@@ -333,6 +333,7 @@ merged until every required status check is green:
 - End-to-end (Playwright)
 - Analyze (python)              -- CodeQL
 - Analyze (javascript-typescript) -- CodeQL
+- Validate PR title             -- Conventional Commits regex
 
 Direct force-pushes and branch deletions are blocked, and merges produce
 a linear history (no merge commits). Reviewer requirements are not

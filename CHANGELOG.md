@@ -15,6 +15,17 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Changed
+
+- `Validate PR title` is now a **required** status check on `main`.
+  Previously the Conventional Commits validation ran on every PR but
+  did not block the merge if it failed (caught when PR #49 merged
+  with the malformed scope `feat(web,docs):` despite a red title
+  check). Branch protection now requires every PR title to parse
+  cleanly as `<type>(<scope>)<!>: <description>` before the merge
+  button enables. CONTRIBUTING.md's branch-protection list is updated
+  to include the sixth required check.
+
 ### Added
 
 - `docs/screenshots/home-es.png` Spanish home-page screenshot at the
