@@ -1,0 +1,84 @@
+name: Deploy docs site
+
+# Builds the MkDocs Material site and deploys it to GitHub Pages.
+# The published URL is https://vinicq.github.io/md-bridge/.
+#
+# Rebuilds run on every push to main that touches the documentation, the
+# config, or the workflow itself. Manual `workflow_dispatch` is also wired
+# up so a doc fix can be reshipped without an unrelated commit.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "CONTRIBUTING.md"
+      - "SECURITY.md"
+      - "CODE_OF_CONDUCT.md"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # for git-revision-date plugin (if added later)
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install MkDocs Material
+        run: python -m pip install --quiet 'mkdocs-material>=9.5'
+
+      - name: Stage top-level docs inside the docs tree
+        # MkDocs reads from docs/ only, so we mirror the canonical sources
+        # (CONTRIBUTING, SECURITY, CHANGELOG, CODE_OF_CONDUCT) into docs/ for
+        # the build. The originals at the repo root stay authoritative.
+        run: |
+          cp CONTRIBUTING.md   docs/contributing.md
+          cp SECURITY.md       docs/security.md
+          cp CHANGELOG.md      docs/changelog.md
+          cp CODE_OF_CONDUCT.md docs/code-of-conduct.md
+
+      - name: Build MkDocs site
+        # `--strict` would fail the build on every cross-link to files that
+        # live at the repo root (README, LICENSE, .github/*). Those resolve
+        # on GitHub but not inside the MkDocs site, so warnings stay
+        # non-fatal here. Broken anchors and missing pages still surface.
+        run: mkdocs build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
