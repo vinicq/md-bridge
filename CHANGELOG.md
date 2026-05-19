@@ -17,6 +17,13 @@ If a section is empty in a release, the section is omitted entirely.
 
 ### Changed
 
+- All `docs/screenshots/*.png` refreshed at the current 2880x1800
+  retina resolution from the post-v0.2.2 UI state (after the About
+  rewrite, the extensibility positioning, and the warning i18n fix).
+  The `pdf-to-md`, `pdf-to-md-batch`, `md-to-pdf`, `about`, and
+  `swagger` captures now match the UI a contributor sees today.
+  `demo.gif` was regenerated with eight frames covering the
+  trilingual home pages and the full conversion flow.
 - `Validate PR title` is now a **required** status check on `main`.
   Previously the Conventional Commits validation ran on every PR but
   did not block the merge if it failed (caught when PR #49 merged
