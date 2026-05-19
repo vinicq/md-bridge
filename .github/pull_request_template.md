@@ -7,6 +7,20 @@ Thanks for sending a pull request. A few notes before you submit:
 - Tests at the lowest viable tier are expected for every behaviour change.
 - See CONTRIBUTING.md for the full rules (no-business-mocks, no-AI-coauthor,
   test requirements, code style).
+
+PR title must follow Conventional Commits 1.0.0:
+
+  <type>(<scope>)<!>: <description>
+
+Valid types: feat / fix / docs / style / refactor / perf / test / build /
+ci / chore / revert. Examples:
+
+  feat(web): add Spanish locale
+  fix(api): tolerate string page destinations
+  chore(deps): bump nginx to 1.31-alpine
+  feat(api)!: change /api/md-to-pdf response shape (breaking)
+
+The CI check `Semantic PR title` rejects non-compliant titles.
 -->
 
 ## Summary

@@ -1,0 +1,58 @@
+name: Semantic PR title
+
+# Validates that every pull request title follows the Conventional Commits
+# specification (https://www.conventionalcommits.org/en/v1.0.0/).
+#
+# Because the project's merge strategy is squash-merge, the PR title becomes
+# the commit message on `main`. A consistent commit log is the payoff: tools
+# like git-cliff, release-please, and release-drafter can derive CHANGELOG
+# entries and version bumps from `git log` alone.
+#
+# Valid examples:
+#   feat: add OCR pre-pass for scanned PDFs
+#   fix(api): tolerate string page destinations in PDF link annotation
+#   docs: expand the Oracle Cloud deployment recipe
+#   chore(deps): bump nginx to 1.31-alpine
+#   feat(api)!: change /api/md-to-pdf response shape (breaking)
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  validate:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # The recognised Conventional Commits types. Keep this in sync
+          # with the CONTRIBUTING.md table.
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          # `requireScope: false` because most PRs do not need a scope; a
+          # PR that touches both api and web is allowed to omit it.
+          requireScope: false
+          # Subject (the bit after the colon) must start lowercase.
+          subjectPattern: ^[a-z].+$
+          subjectPatternError: |
+            The subject (the text after the colon) must start lowercase.
+            Examples:
+              - feat: add Spanish locale
+              - fix(api): tolerate string page destinations
+            Yours: "{subject}"

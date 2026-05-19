@@ -15,7 +15,15 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Conventional Commits 1.0.0** is now the project's commit and PR-title
+  convention. New CI workflow `semantic-pr.yml` rejects PR titles that do
+  not match `<type>(<scope>)<!>: <description>`. CONTRIBUTING.md gains
+  a full reference section with the recognised types, bump rules, and
+  worked examples. The `release-drafter.yml` config gains an
+  `autolabeler` block that maps PR titles to labels so the version
+  resolver works even when humans forget to label. (#11 follow-up)
 
 ## [0.2.1] — 2026-05-19
 

@@ -41,6 +41,29 @@ categories:
       - frontend
       - tooling
       - docker
+      - infrastructure
+
+# Autolabeler maps Conventional Commits PR titles to the labels above so
+# version-resolver and the category sections work even when the human
+# forgot to label the PR. The PR-title check
+# (.github/workflows/semantic-pr.yml) already validates the format, so the
+# patterns here are just classifying.
+autolabeler:
+  - label: "enhancement"
+    title:
+      - '/^feat(\(.+\))?!?:/'
+  - label: "bug"
+    title:
+      - '/^fix(\(.+\))?!?:/'
+  - label: "documentation"
+    title:
+      - '/^docs(\(.+\))?!?:/'
+  - label: "chore"
+    title:
+      - '/^(chore|build|ci|style|refactor|test|perf|revert)(\(.+\))?!?:/'
+  - label: "breaking-change"
+    title:
+      - '/^[a-z]+(\(.+\))?!:/'
 
 change-template: "- $TITLE (#$NUMBER) by @$AUTHOR"
 change-title-escapes: '\<*_&'

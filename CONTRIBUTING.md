@@ -390,27 +390,112 @@ Code should read top to bottom. Comments explain the non-obvious "why",
 not the obvious "what". A comment that restates the next line is noise;
 a comment that explains a workaround for a PyMuPDF quirk is useful.
 
-## Commit messages
+## Commit messages — Conventional Commits
 
-We follow the standard Git convention:
+This project follows the
+[Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)
+specification. Because the default merge strategy is **squash on merge**,
+the PR title becomes the commit message on `main`. Both the PR title and
+the commits in your branch must match the format.
 
-- Subject line in the imperative mood ("Add fallback for tagged PDFs",
-  not "Added" or "Adds").
-- 72 characters or fewer for the subject.
-- Body wrapped at 80 columns, separated from the subject by a blank line.
-- Explain the "why" in the body when the change is not self-evident.
-- Reference issues with `Fixes #123` or `Refs #123` on a trailing line.
+The CI workflow `.github/workflows/semantic-pr.yml` validates every PR
+title against the spec; a non-compliant title fails the check and blocks
+the merge.
 
-A good commit message looks like:
+### Format
 
 ```
-Drop pypdf fallback for outline parsing
+<type>(<scope>)<!>: <description>
 
-PyMuPDF's get_toc() now handles every fixture we ship, and the pypdf
-fallback added 200 ms to cold starts. Remove it and the dependency.
+[body]
+
+[footer(s)]
+```
+
+- `<type>` is required and lowercase.
+- `(<scope>)` is optional and lowercase. Use it to point at the affected
+  area: `(api)`, `(web)`, `(docs)`, `(deps)`, `(ci)`.
+- `!` after the type or `(<scope>)` flags a breaking change (also
+  declarable in the footer as `BREAKING CHANGE: ...`).
+- `<description>` starts lowercase, present tense, imperative mood. No
+  trailing period. 72 characters max.
+- Blank line between subject and body. Body wrapped at 80 columns,
+  explains the *why*. Reference issues in a footer: `Fixes #142` or
+  `Refs #99`.
+
+### Recognised types
+
+| Type      | Use it for                                       | Bumps    |
+| --------- | ------------------------------------------------ | -------- |
+| `feat`    | New user-facing feature                          | minor    |
+| `fix`     | Bug fix                                          | patch    |
+| `docs`    | Documentation only (README, CONTRIBUTING, docs/) | none     |
+| `style`   | Whitespace, formatting, no logic change          | none     |
+| `refactor`| Refactor without behaviour change                | none     |
+| `perf`    | Performance improvement                          | patch    |
+| `test`    | Adds or fixes tests only                         | none     |
+| `build`   | Build system, Docker, package configs            | none     |
+| `ci`      | CI configuration, workflows                      | none     |
+| `chore`   | Maintenance that does not fit the above          | none     |
+| `revert`  | Reverts a previous commit                        | depends  |
+
+A trailing `!` (`feat(api)!: change /pdf-to-md response shape`) or a
+`BREAKING CHANGE:` footer **always** bumps major, regardless of type.
+
+### Examples
+
+```
+fix(api): tolerate string page destinations in PDF link annotation
+
+PyMuPDF returns link["page"] as a string when a named destination cannot
+be resolved to a numeric page index. The old `page_dest >= 0` check then
+raised TypeError mid-conversion. Coerce the value safely and skip the
+link when it is not an integer page index.
 
 Fixes #142
 ```
+
+```
+feat(web): add Spanish locale
+
+Adds 'es' to the Locale union, the LOCALES array, and the DICTIONARIES
+map. Generalises locale detection so the html lang attribute and the
+storage fallback handle every declared locale instead of just 'en' and
+'pt'. Tests and the Playwright spec exercise the three locales.
+
+Fixes #6
+```
+
+```
+docs: expand the Oracle Cloud deployment recipe
+```
+
+```
+chore(deps): bump nginx from 1.27-alpine to 1.31-alpine
+```
+
+```
+feat(api)!: change /api/md-to-pdf response shape
+
+The response is now a JSON envelope { pdf, stats } instead of a raw
+binary stream. Clients that downloaded the previous shape will break.
+
+BREAKING CHANGE: /api/md-to-pdf no longer returns application/pdf
+directly. Set Accept: application/pdf to opt back into the legacy
+binary response, or read the base64 pdf field from the new envelope.
+```
+
+### Why this matters
+
+- **`semantic-pr.yml`** rejects PR titles that do not match the spec, so
+  the requirement is enforced, not aspirational.
+- **`release-drafter`** keeps the draft GitHub Release in sync with the
+  PR types it sees, and it auto-resolves the next semver bump from those
+  types.
+- **`git log --oneline`** becomes documentation: `feat:` and `fix:`
+  prefixes let a reader scan the changelog in seconds.
+- **Tools that generate CHANGELOGs from commit history** (git-cliff,
+  conventional-changelog-cli, release-please) work out of the box.
 
 ## License and contributions
 
