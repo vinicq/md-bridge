@@ -15,6 +15,14 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Fixed
+
+- `apps/api/app/main.py` Swagger metadata pointed `contact.url` and the
+  `API_DESCRIPTION` markdown link at the placeholder
+  `https://github.com/your-org/md-bridge`. The Swagger UI at `/docs`
+  surfaced both. Replaced with the real repository URL
+  (`https://github.com/vinicq/md-bridge`).
+
 ### Changed
 
 - Pre-commit hooks are now documented under **Local setup** in

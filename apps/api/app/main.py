@@ -36,7 +36,7 @@ you call any endpoint with a real file. Click **Try it out**, attach a file,
 press **Execute**.
 
 A walkthrough with `curl` examples lives in
-[docs/API.md](https://github.com/your-org/md-bridge/blob/main/docs/API.md).
+[docs/API.md](https://github.com/vinicq/md-bridge/blob/main/docs/API.md).
 
 ## Limits
 
@@ -60,7 +60,7 @@ def create_app() -> FastAPI:
         description=API_DESCRIPTION,
         contact={
             "name": "md-bridge",
-            "url": "https://github.com/your-org/md-bridge",
+            "url": "https://github.com/vinicq/md-bridge",
         },
         license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
         openapi_tags=[
