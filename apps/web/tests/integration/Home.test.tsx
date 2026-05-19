@@ -43,4 +43,17 @@ describe('Home page', () => {
     )
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/converta pdf e markdown local/i)
   })
+
+  it('flips to Spanish strings when the locale changes', () => {
+    render(
+      <I18nProvider initialLocale="es">
+        <MemoryRouter>
+          <Home />
+        </MemoryRouter>
+      </I18nProvider>,
+    )
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /convierte pdf y markdown localmente/i,
+    )
+  })
 })

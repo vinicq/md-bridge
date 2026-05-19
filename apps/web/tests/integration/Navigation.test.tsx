@@ -41,4 +41,13 @@ describe('Navigation + LanguageSwitcher integration', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/converta pdf e markdown local/i)
     expect(screen.getByRole('link', { name: /^sobre$/i })).toBeInTheDocument()
   })
+
+  it('flips the whole UI to Spanish when the language toggle is used', async () => {
+    renderApp('/')
+    await userEvent.click(screen.getByRole('button', { name: /español/i }))
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /convierte pdf y markdown localmente/i,
+    )
+    expect(screen.getByRole('link', { name: /^acerca de$/i })).toBeInTheDocument()
+  })
 })

@@ -304,11 +304,17 @@ curl -X POST http://localhost:8000/api/md-to-pdf \
 
 ## Screenshots
 
+### Home page across locales
+
+| English | Portuguese | Spanish |
+|---|---|---|
+| ![Home EN](docs/screenshots/home-en.png) | ![Home PT](docs/screenshots/home-pt.png) | ![Home ES](docs/screenshots/home-es.png) |
+
+### Conversion flow
+
 | | |
 |---|---|
-| **Home page** (English) | **Home page** (Portuguese) |
-| ![Home EN](docs/screenshots/home-en.png) | ![Home PT](docs/screenshots/home-pt.png) |
-| **PDF to Markdown** (idle) | **Batch mode** — two PDFs queued |
+| **PDF to Markdown** (idle) | **Batch mode**, two PDFs queued |
 | ![PDF to MD](docs/screenshots/pdf-to-md.png) | ![Batch](docs/screenshots/pdf-to-md-batch.png) |
 | **Markdown to PDF** flow | **About page** |
 | ![MD to PDF](docs/screenshots/md-to-pdf.png) | ![About](docs/screenshots/about.png) |

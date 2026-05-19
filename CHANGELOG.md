@@ -17,6 +17,17 @@ If a section is empty in a release, the section is omitted entirely.
 
 ### Added
 
+- `docs/screenshots/home-es.png` Spanish home-page screenshot at the
+  same 2880x1800 retina resolution as the EN and PT companions.
+  README's screenshot section now shows the trilingual UI in a
+  3-column table (EN / PT / ES). `docs/screenshots/demo.gif` was
+  regenerated with the three locales at the start so the README hero
+  shows the trilingual capability before the conversion flow.
+- Spanish locale coverage added to the page-level integration tests:
+  `About.test.tsx` asserts the ES title, `Home.test.tsx` asserts the
+  ES hero headline, and `Navigation.test.tsx` flips the whole UI to
+  ES via the language toggle and asserts both the headline and the
+  About link translate. The Portuguese tests stay in place.
 - **all-contributors** specification adopted. `.all-contributorsrc`
   at the repo root tracks every contributor and their kind of
   contribution (code, doc, translation, design, review, test, infra,

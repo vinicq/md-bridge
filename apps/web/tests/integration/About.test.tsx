@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { About } from '../../src/pages/About'
 import { I18nProvider } from '../../src/i18n'
 
-function renderAbout(locale: 'en' | 'pt' = 'en') {
+function renderAbout(locale: 'en' | 'pt' | 'es' = 'en') {
   return render(
     <I18nProvider initialLocale={locale}>
       <MemoryRouter>
@@ -36,5 +36,10 @@ describe('About page', () => {
   it('honors the PT locale for the title', () => {
     renderAbout('pt')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/sobre o md-bridge/i)
+  })
+
+  it('honors the ES locale for the title', () => {
+    renderAbout('es')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/acerca de md-bridge/i)
   })
 })
