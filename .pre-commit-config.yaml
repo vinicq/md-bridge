@@ -1,0 +1,34 @@
+# Optional but recommended. Run `pre-commit install` once after cloning to
+# enable the hooks on every commit. CI re-runs the same checks, so skipping
+# this only delays feedback - it does not weaken what lands on main.
+#
+# See https://pre-commit.com/ for the framework, and CONTRIBUTING.md for the
+# project's local-dev guidance.
+
+default_install_hook_types: [pre-commit]
+fail_fast: false
+
+repos:
+  # Python lint (matches the CI ruff step).
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.13
+    hooks:
+      - id: ruff
+        name: ruff (apps/api, tests, packages)
+        args: ["--config=apps/api/pyproject.toml"]
+
+  # General hygiene that catches the boring mistakes before they reach review.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^tests/golden/
+      - id: end-of-file-fixer
+        exclude: ^tests/golden/
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=10000"]  # 10 MB ceiling; the ISTQB fixture is ~3.5 MB.
+      - id: mixed-line-ending
+        args: ["--fix=lf"]

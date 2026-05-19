@@ -15,7 +15,12 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- Optional `pre-commit` configuration that runs `ruff` and basic hygiene
+  hooks (trailing whitespace, EOF newline, YAML/TOML syntax, merge
+  conflict markers, large files) before every commit. Documented in
+  `CONTRIBUTING.md`.
 
 ## [0.1.0] — 2026-05-19
 

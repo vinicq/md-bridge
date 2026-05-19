@@ -263,6 +263,22 @@ need:
 Once that is wired up, the root-level `npm run dev` starts the API on
 `localhost:8000` and the Vite dev server on `localhost:5173`.
 
+### Optional: pre-commit hooks
+
+The repo ships a `.pre-commit-config.yaml` that wires `ruff` and a handful
+of hygiene checks (trailing whitespace, end-of-file newline, YAML/TOML
+syntax, merge conflict markers, large files). Installing the hooks is
+optional but catches the boring mistakes before review:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+From that point on, every `git commit` runs the hooks against the staged
+files. CI runs the same checks, so skipping pre-commit only delays the
+feedback; it does not let bad code reach `main`.
+
 ## Tests
 
 md-bridge follows a strict test pyramid: many small tests, fewer slower
