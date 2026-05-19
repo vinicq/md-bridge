@@ -20,7 +20,7 @@ describe('About page', () => {
     expect(screen.getByRole('heading', { level: 1, name: /about md-bridge/i })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: /how it works/i })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: /known limits/i })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 2, name: /built with/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: /open source/i })).toBeInTheDocument()
   })
 
   it('renders each known limit as a list item', () => {

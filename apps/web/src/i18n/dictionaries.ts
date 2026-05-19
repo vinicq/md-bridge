@@ -144,26 +144,26 @@ const en: Dictionary = {
   about: {
     title: 'About md-bridge',
     intro:
-      'md-bridge converts files between two formats: PDF (the standard for printing and sharing finished documents) and Markdown (a lightweight text format used by developers, writers, and tools like GitHub, Obsidian, and Notion). The whole thing runs on your machine, so files never leave your computer.',
+      'md-bridge is an open-source, self-hosted converter between PDF and Markdown. It runs entirely on your machine. No external service, no model inference, no telemetry. The same input file produces the same output file on every run.',
     how: {
       title: 'How it works',
       p1:
-        'From PDF to Markdown: the app reads the font size and layout of the PDF to figure out what is a heading, what is a paragraph, what is a list, and what is a table. It then writes a clean Markdown file with that structure preserved.',
+        'From PDF to Markdown: hand-written PyMuPDF heuristics detect headings by font size and document outline, recover lists from bullet glyphs and numbered patterns, and extract tables via find_tables. The result is a clean Markdown file that preserves the original structure.',
       p2:
-        'From Markdown to PDF: the app converts the text into a styled web page and prints that page to PDF using the same engine browsers use.',
+        'From Markdown to PDF: headless Chromium renders the source through a bundled A4 stylesheet, the same engine browsers use to print any web page to PDF. Output is stable across runs.',
     },
     limits: {
       title: 'Known limits',
       items: [
-        'Scanned PDFs (images of paper, not real text) cannot be read yet. Run an OCR tool such as Tesseract on them first.',
-        'Tables with cells merged across rows or columns may come out flattened.',
-        'Headers and footers that repeat on every page are dropped automatically.',
+        'Scanned PDFs need OCR before submission. The diagnostic endpoint flags the case; md-bridge ships no OCR engine of its own.',
+        'Tables with cells merged across rows or columns may come out flattened in the output.',
+        'Headers and footers that repeat on every page are stripped automatically.',
       ],
     },
     more: {
-      title: 'Built with',
+      title: 'Open source',
       body:
-        'Python and FastAPI on the server side (the part that does the actual conversion), React on the page you are looking at, and a headless Chromium browser to render Markdown back into PDF. Everything is open source and ships with the project.',
+        'md-bridge is released under the MIT license. The code lives at github.com/vinicq/md-bridge and the documentation at vinicq.github.io/md-bridge. Bug reports, feature requests, and pull requests are welcome. See CONTRIBUTING.md for the workflow.',
     },
   },
   dropzone: {
@@ -262,26 +262,26 @@ const pt: Dictionary = {
   about: {
     title: 'Sobre o md-bridge',
     intro:
-      'O md-bridge converte arquivos entre dois formatos: PDF (o padrão para imprimir e compartilhar documentos prontos) e Markdown (um formato de texto leve usado por desenvolvedores, escritores e ferramentas como GitHub, Obsidian e Notion). Tudo roda na sua máquina, então os arquivos nunca saem do seu computador.',
+      'O md-bridge é um conversor open-source e self-hosted entre PDF e Markdown. Roda inteiramente na sua máquina. Sem serviço externo, sem inferência de modelo, sem telemetria. O mesmo arquivo de entrada produz o mesmo arquivo de saída em toda execução.',
     how: {
       title: 'Como funciona',
       p1:
-        'De PDF para Markdown: o app lê o tamanho da fonte e a posição do texto no PDF para descobrir o que é título, parágrafo, lista ou tabela. Depois gera um Markdown limpo com essa estrutura preservada.',
+        'De PDF para Markdown: heurísticas escritas à mão no PyMuPDF detectam títulos pelo tamanho da fonte e pelo outline do documento, recuperam listas a partir de marcadores e padrões numerados, e extraem tabelas com find_tables. O resultado é um Markdown limpo que preserva a estrutura original.',
       p2:
-        'De Markdown para PDF: o app transforma o texto em uma página web estilizada e imprime essa página como PDF usando o mesmo motor dos navegadores.',
+        'De Markdown para PDF: Chromium headless renderiza o conteúdo através de uma folha de estilo A4 embutida, o mesmo motor que os navegadores usam para imprimir qualquer página web em PDF. A saída é estável entre execuções.',
     },
     limits: {
       title: 'Limites conhecidos',
       items: [
-        'PDFs escaneados (imagens de papel, sem texto real) ainda não funcionam. Rode antes uma ferramenta de OCR como o Tesseract.',
-        'Tabelas com células mescladas entre linhas ou colunas podem sair achatadas.',
+        'PDFs escaneados precisam de OCR antes do envio. O endpoint de diagnóstico sinaliza o caso; o md-bridge não inclui motor de OCR próprio.',
+        'Tabelas com células mescladas entre linhas ou colunas podem sair achatadas na saída.',
         'Cabeçalhos e rodapés que se repetem em todas as páginas são removidos automaticamente.',
       ],
     },
     more: {
-      title: 'Feito com',
+      title: 'Open source',
       body:
-        'Python e FastAPI no servidor (a parte que faz a conversão de verdade), React na página que você está vendo, e um navegador Chromium em modo headless para gerar os PDFs. Tudo é open source e vem junto com o projeto.',
+        'O md-bridge é distribuído sob a licença MIT. O código fica em github.com/vinicq/md-bridge e a documentação em vinicq.github.io/md-bridge. Relatos de bugs, pedidos de feature e pull requests são bem-vindos. Veja o CONTRIBUTING.md para o fluxo de trabalho.',
     },
   },
   dropzone: {
@@ -380,26 +380,26 @@ const es: Dictionary = {
   about: {
     title: 'Acerca de md-bridge',
     intro:
-      'md-bridge convierte archivos entre dos formatos: PDF (el estándar para imprimir y compartir documentos terminados) y Markdown (un formato de texto ligero usado por desarrolladores, escritores y herramientas como GitHub, Obsidian y Notion). Todo se ejecuta en tu máquina, así que los archivos nunca salen de tu computadora.',
+      'md-bridge es un conversor open-source y self-hosted entre PDF y Markdown. Se ejecuta íntegramente en tu máquina. Sin servicio externo, sin inferencia de modelo, sin telemetría. La misma entrada produce la misma salida en cada ejecución.',
     how: {
       title: 'Cómo funciona',
       p1:
-        'De PDF a Markdown: la app lee el tamaño de fuente y la distribución del PDF para identificar encabezados, párrafos, listas y tablas. Luego escribe un archivo Markdown limpio con esa estructura preservada.',
+        'De PDF a Markdown: heurísticas escritas a mano sobre PyMuPDF identifican encabezados por tamaño de fuente y por el outline del documento, recuperan listas a partir de viñetas y patrones numerados, y extraen tablas con find_tables. El resultado es un Markdown limpio que preserva la estructura original.',
       p2:
-        'De Markdown a PDF: la app convierte el texto en una página web con estilos e imprime esa página como PDF usando el mismo motor que usan los navegadores.',
+        'De Markdown a PDF: Chromium headless renderiza el contenido con una hoja de estilo A4 incluida, el mismo motor que los navegadores usan para imprimir cualquier página web a PDF. La salida es estable entre ejecuciones.',
     },
     limits: {
       title: 'Límites conocidos',
       items: [
-        'Los PDF escaneados (imágenes de papel, no texto real) todavía no se pueden leer. Ejecuta antes una herramienta de OCR como Tesseract.',
-        'Las tablas con celdas combinadas entre filas o columnas pueden salir aplanadas.',
+        'Los PDF escaneados requieren OCR antes del envío. El endpoint de diagnóstico señala el caso; md-bridge no incluye motor de OCR propio.',
+        'Las tablas con celdas combinadas entre filas o columnas pueden salir aplanadas en la salida.',
         'Los encabezados y pies de página que se repiten en todas las páginas se eliminan automáticamente.',
       ],
     },
     more: {
-      title: 'Construido con',
+      title: 'Open source',
       body:
-        'Python y FastAPI en el servidor (la parte que hace la conversión real), React en la página que estás viendo, y un navegador Chromium headless para renderizar Markdown de vuelta a PDF. Todo es open source y viene incluido en el proyecto.',
+        'md-bridge se distribuye bajo la licencia MIT. El código vive en github.com/vinicq/md-bridge y la documentación en vinicq.github.io/md-bridge. Reportes de bugs, solicitudes de features y pull requests son bienvenidos. Consulta CONTRIBUTING.md para el flujo de trabajo.',
     },
   },
   dropzone: {
