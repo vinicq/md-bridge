@@ -29,7 +29,14 @@ interface Dictionary {
     download: string
     previewEmpty: string
     success: string
-    warnings: string
+    warnings: {
+      // Heading on the warnings list (aria-label of the <ul>).
+      title: string
+      // Translations indexed by the backend's warning codes. Unknown
+      // codes fall back to the raw string at render time.
+      needs_ocr: string
+      images_not_persisted: string
+    }
   }
   mdToPdf: {
     title: string
@@ -127,7 +134,13 @@ const en: Dictionary = {
     download: 'Download .md',
     previewEmpty: 'The Markdown will appear here after conversion.',
     success: 'Markdown generated.',
-    warnings: 'Warnings',
+    warnings: {
+      title: 'Warnings',
+      needs_ocr:
+        'Very little text was extracted. The PDF may be scanned; run OCR (e.g. Tesseract) before converting.',
+      images_not_persisted:
+        'Image extraction is enabled but images are not persisted by the API; the markdown references images that are not served back.',
+    },
   },
   mdToPdf: {
     title: 'Markdown to PDF',
@@ -245,7 +258,13 @@ const pt: Dictionary = {
     download: 'Baixar .md',
     previewEmpty: 'O Markdown aparece aqui depois da conversão.',
     success: 'Markdown gerado.',
-    warnings: 'Avisos',
+    warnings: {
+      title: 'Avisos',
+      needs_ocr:
+        'Pouco texto foi extraído. O PDF pode estar escaneado; rode OCR (por exemplo Tesseract) antes de converter.',
+      images_not_persisted:
+        'A extração de imagens está habilitada, mas as imagens não são persistidas pela API; o markdown referencia imagens que não são servidas de volta.',
+    },
   },
   mdToPdf: {
     title: 'Markdown para PDF',
@@ -363,7 +382,13 @@ const es: Dictionary = {
     download: 'Descargar .md',
     previewEmpty: 'El Markdown aparecerá aquí después de la conversión.',
     success: 'Markdown generado.',
-    warnings: 'Advertencias',
+    warnings: {
+      title: 'Advertencias',
+      needs_ocr:
+        'Se extrajo muy poco texto. El PDF puede estar escaneado; ejecuta OCR (por ejemplo Tesseract) antes de convertir.',
+      images_not_persisted:
+        'La extracción de imágenes está activa, pero las imágenes no se persisten en la API; el markdown referencia imágenes que no se sirven de vuelta.',
+    },
   },
   mdToPdf: {
     title: 'Markdown a PDF',
