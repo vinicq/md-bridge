@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
 from app.schemas.convert import (
     ConvertStats,
     FrontMatter,
@@ -12,6 +10,7 @@ from app.schemas.convert import (
     PdfToMdOptions,
     PdfToMdResponse,
 )
+from pydantic import ValidationError
 
 
 def test_pdf_to_md_options_defaults():

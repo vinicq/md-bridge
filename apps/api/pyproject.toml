@@ -20,6 +20,7 @@ dev = [
     "pytest-asyncio>=0.24",
     "pytest-cov>=6.0",
     "httpx>=0.27",
+    "ruff>=0.15",
 ]
 
 [build-system]
@@ -37,3 +38,26 @@ markers = [
     "unit: pure-function tests (no I/O, no HTTP)",
     "integration: TestClient-driven endpoint tests",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv", "dist", "build"]
+
+[tool.ruff.lint]
+# Conservative starting set. Expand once the codebase passes cleanly:
+#   E   pycodestyle errors
+#   F   pyflakes (unused imports, undefined names)
+#   W   pycodestyle warnings
+#   I   isort (import ordering)
+#   UP  pyupgrade (modernize syntax to target-version)
+#   B   flake8-bugbear (common bug patterns)
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    "E501",  # line too long; handled by the formatter, not enforced
+]
+
+[tool.ruff.lint.per-file-ignores]
+"apps/api/tests/**" = ["B011"]  # asserts in tests are fine
+"tests/**" = ["B011"]
+"apps/api/app/routes/**" = ["B008"]  # FastAPI uses File()/Form() as default args by design

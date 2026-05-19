@@ -6,9 +6,9 @@ Writes through tempfiles, returns the PDF bytes, cleans up everything.
 from __future__ import annotations
 
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 
 from app.config import MD_TO_PDF_TEMPLATES
 from app.errors import ApiError

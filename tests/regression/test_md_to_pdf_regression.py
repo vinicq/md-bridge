@@ -13,7 +13,6 @@ from pathlib import Path
 
 import pytest
 
-
 SAMPLE_MD = """---
 title: "Regression Sample"
 ---

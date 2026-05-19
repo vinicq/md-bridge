@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from app.config import MD_TO_PDF_TEMPLATES
 from app.errors import ApiError
 from app.services.md_to_pdf import _default_css_paths

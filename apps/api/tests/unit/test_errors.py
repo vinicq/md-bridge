@@ -3,15 +3,14 @@ from __future__ import annotations
 
 import asyncio
 
-from fastapi import HTTPException
-from fastapi.exceptions import RequestValidationError
-
 from app.errors import (
     ApiError,
     api_error_handler,
     http_exception_handler,
     validation_exception_handler,
 )
+from fastapi import HTTPException
+from fastapi.exceptions import RequestValidationError
 
 
 def _decode(response) -> dict:

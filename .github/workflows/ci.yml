@@ -24,6 +24,9 @@ jobs:
         working-directory: apps/api
         run: python -m pip install -e ".[dev]"
 
+      - name: Lint backend (ruff)
+        run: python -m ruff check apps/api tests packages --config apps/api/pyproject.toml
+
       - name: Install Chromium for Playwright
         run: python -m playwright install chromium --with-deps
 

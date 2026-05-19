@@ -326,9 +326,17 @@ that the test belongs one tier higher.
   `pathlib.Path` over `os.path` strings.
 - Type hints on public functions. `from __future__ import annotations` is
   fine but not required.
-- The project does not yet ship a formatter or linter configuration on the
-  Python side. Please follow the existing style and keep imports grouped
-  (standard library, third-party, local).
+- [`ruff`](https://docs.astral.sh/ruff/) is the linter. Configuration lives
+  in `apps/api/pyproject.toml` under `[tool.ruff]`. CI runs `ruff check`
+  on every PR. Run it locally before pushing:
+
+  ```bash
+  python -m ruff check apps/api tests packages --config apps/api/pyproject.toml
+  ```
+
+  The rule selection is `E F W I UP B` (pycodestyle errors and warnings,
+  pyflakes, import sorting, pyupgrade, bugbear). `ruff check --fix`
+  resolves most issues automatically.
 
 ### Comments
 

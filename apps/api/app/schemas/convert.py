@@ -5,7 +5,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 SupportedLang = Literal["pt-BR", "en", "es", "de", "fr", "it"]
 
 

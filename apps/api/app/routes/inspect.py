@@ -12,7 +12,6 @@ from app.errors import ApiError
 from app.schemas.convert import InspectPdfResponse
 from app.services.inspect import inspect_pdf_bytes
 
-
 router = APIRouter(tags=["inspect"])
 log = logging.getLogger(__name__)
 

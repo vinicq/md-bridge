@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import re
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 
 from app.schemas.convert import (
     ConvertStats,
@@ -19,7 +19,6 @@ from app.schemas.convert import (
     PdfToMdResponse,
 )
 from app.services.packages_loader import pdf_to_md_module
-
 
 FRONT_MATTER_LINE = re.compile(r'^(\w[\w-]*):\s*(.*)$')
 HEADING_RE = re.compile(r"^(#{1,6})\s+\S", re.MULTILINE)

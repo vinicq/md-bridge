@@ -11,7 +11,6 @@ import shutil
 import tempfile
 from pathlib import Path
 
-
 PREFIXES = (
     "md-bridge-pdf2md-",
     "md-bridge-md2pdf-",

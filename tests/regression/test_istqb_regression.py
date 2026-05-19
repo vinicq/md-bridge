@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pytest
 
-
 TOLERANCE = 0.02
 
 

@@ -15,7 +15,6 @@ from types import ModuleType
 
 from app.config import MD_TO_PDF_SCRIPT, PDF_INSPECT_SCRIPT, PDF_TO_MD_SCRIPT
 
-
 _STDIO_REBIND_RE = re.compile(
     r"^[ \t]*sys\.std(?:out|err)[ \t]*=[ \t]*io\.TextIOWrapper\(sys\.std(?:out|err)\.buffer.*$",
     re.MULTILINE,

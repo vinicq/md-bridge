@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-
 SAMPLE_MD = b"""---
 title: "Test Document"
 ---

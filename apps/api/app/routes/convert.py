@@ -16,7 +16,6 @@ from app.schemas.convert import MdToPdfOptions, PdfToMdOptions, PdfToMdResponse
 from app.services.md_to_pdf import render_md_bytes
 from app.services.pdf_to_md import convert_pdf_bytes
 
-
 router = APIRouter(tags=["convert"])
 log = logging.getLogger(__name__)
 

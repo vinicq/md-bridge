@@ -19,9 +19,8 @@ import io
 import re
 import sys
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 import fitz  # PyMuPDF
 
@@ -403,13 +402,13 @@ def render_table(table) -> str:
         # collapse if identical or one side always empty/duplicate
         identical_or_subset = all(
             (a == b) or (not a) or (not b)
-            for a, b in zip(prev, col)
+            for a, b in zip(prev, col, strict=False)
         )
-        if identical_or_subset and any(a == b and a for a, b in zip(prev, col)):
-            merged_cols[-1] = [a or b for a, b in zip(prev, col)]
+        if identical_or_subset and any(a == b and a for a, b in zip(prev, col, strict=False)):
+            merged_cols[-1] = [a or b for a, b in zip(prev, col, strict=False)]
         else:
             merged_cols.append(col)
-    rows = [list(t) for t in zip(*merged_cols)]
+    rows = [list(t) for t in zip(*merged_cols, strict=False)]
     if not rows:
         return ""
 
@@ -615,7 +614,6 @@ def convert_document(
                 pass
 
     out_pages: list[str] = []
-    image_count = 0
     for page in doc:
         page_md = convert_page(
             page, profile, images_dir=images_dir, pdf_stem=pdf_stem
@@ -748,7 +746,6 @@ def normalize_headings_from_toc(md: str, toc: list) -> str:
         if not m:
             out_lines.append(line)
             continue
-        current_level = len(m.group(1))
         text = m.group(2).strip()
         text_norm = _norm_for_match(text)
         matched = None

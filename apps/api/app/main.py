@@ -17,7 +17,6 @@ from app.errors import (
 )
 from app.routes import convert, health, inspect
 
-
 API_DESCRIPTION = """
 **md-bridge** is a small, opinionated HTTP service that converts between PDF
 and Markdown using hand-written heuristics. No external calls, deterministic
