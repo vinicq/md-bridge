@@ -139,6 +139,13 @@ Click **Create pull request**. Your PR is now visible to the maintainer.
 CI runs automatically on every push to a PR. The expected outcome is
 green checks on backend, web, and end-to-end jobs.
 
+You will also see an automated first-pass review posted under the
+`github-actions[bot]` account, generated from
+[`.github/maintainer-review-prompt.md`](.github/maintainer-review-prompt.md).
+It speaks for the maintainer's standards but is not the maintainer.
+Treat it as a heads-up on style, tests, and obvious blockers, then wait
+for the human review for the final call.
+
 The maintainer will read the PR and either:
 
 - **Approve and merge.** GitHub squashes your commits into one and merges
