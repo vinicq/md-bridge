@@ -1,0 +1,184 @@
+name: Issue claim
+
+# Listens for `/claim` or `/take` comments on open issues and, for the
+# commenter, sets the `status: claimed` label, assigns them (when they
+# are a collaborator; external contributors get a marker comment instead
+# since GitHub does not let non-collaborators be set as assignees), moves
+# the card to the Claimed column on the Projects v2 board, and posts a
+# confirmation comment with the 7-day deadline.
+#
+# Board: https://github.com/users/vinicq/projects/4
+# Project ID: PVT_kwHOBKlnSs4BYOXg
+# Status field: PVTSSF_lAHOBKlnSs4BYOXgzhTVs1Q
+# Status option "Claimed": 801259de
+#
+# PROJECTS_TOKEN: a PAT with `project` scope, stored as a repo secret. The
+# default GITHUB_TOKEN cannot mutate user-level Projects v2. When the
+# secret is missing, the board update is skipped with a warning so the
+# rest of the workflow still completes (label, assignment, comment).
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+# PROJECTS_TOKEN is promoted to workflow-level env so step-level `if`
+# expressions can check whether the secret is set without exposing it.
+env:
+  CLAIM_LABEL: "status: claimed"
+  CLAIM_WINDOW_DAYS: 7
+  PROJECT_ID: PVT_kwHOBKlnSs4BYOXg
+  STATUS_FIELD_ID: PVTSSF_lAHOBKlnSs4BYOXgzhTVs1Q
+  STATUS_CLAIMED_OPTION_ID: 801259de
+  PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+
+concurrency:
+  group: issue-claim-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  claim:
+    name: Claim issue for commenter
+    if: >-
+      github.event.issue.pull_request == null &&
+      github.event.issue.state == 'open' &&
+      github.event.comment.user.type != 'Bot' &&
+      (startsWith(github.event.comment.body, '/claim') ||
+       startsWith(github.event.comment.body, '/take'))
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Reject if issue is already claimed
+        if: contains(github.event.issue.labels.*.name, 'status: claimed')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENTER: ${{ github.event.comment.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          body_file=$(mktemp)
+          printf '@%s this issue is already claimed. See the existing assignee or the prior `<!-- claim-by:... -->` comment above. If the current claim is stale (older than %s days with no draft PR), please open a fresh issue or comment asking the maintainer to release it.\n' \
+            "$COMMENTER" "$CLAIM_WINDOW_DAYS" > "$body_file"
+          gh issue comment "$ISSUE_NUMBER" -R "$REPO" --body-file "$body_file"
+          rm -f "$body_file"
+          echo "Issue already claimed; comment posted, exiting."
+          exit 0
+
+      - name: Try to assign commenter (works for collaborators)
+        id: assign
+        if: ${{ !contains(github.event.issue.labels.*.name, 'status: claimed') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENTER: ${{ github.event.comment.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          if gh issue edit "$ISSUE_NUMBER" -R "$REPO" --add-assignee "$COMMENTER" 2>/dev/null; then
+            echo "assigned=true" >> "$GITHUB_OUTPUT"
+            echo "Assigned @$COMMENTER to issue #$ISSUE_NUMBER."
+          else
+            echo "assigned=false" >> "$GITHUB_OUTPUT"
+            echo "@$COMMENTER is not a collaborator; falling back to marker comment."
+          fi
+
+      - name: Add status:claimed label
+        if: ${{ !contains(github.event.issue.labels.*.name, 'status: claimed') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue edit "$ISSUE_NUMBER" -R "$REPO" --add-label "${CLAIM_LABEL}"
+
+      - name: Update Projects v2 board (skip when PROJECTS_TOKEN missing)
+        if: ${{ !contains(github.event.issue.labels.*.name, 'status: claimed') && env.PROJECTS_TOKEN == '' }}
+        run: |
+          echo "::warning::PROJECTS_TOKEN not set; board column not updated. Label and assignment still applied."
+
+      - name: Move card to Claimed on Projects v2 board
+        if: ${{ !contains(github.event.issue.labels.*.name, 'status: claimed') && env.PROJECTS_TOKEN != '' }}
+        env:
+          CONTENT_NODE_ID: ${{ github.event.issue.node_id }}
+        run: |
+          ITEM_ID=$(gh api graphql \
+            -H "Authorization: bearer ${PROJECTS_TOKEN}" \
+            -f query='
+              query($content: ID!) {
+                node(id: $content) {
+                  ... on Issue {
+                    projectItems(first: 10) { nodes { id project { id } } }
+                  }
+                }
+              }' \
+            -F content="${CONTENT_NODE_ID}" \
+            --jq ".data.node.projectItems.nodes[] | select(.project.id == \"${PROJECT_ID}\") | .id" | head -1)
+
+          if [ -z "${ITEM_ID}" ]; then
+            # Issue not on the board yet — board-sync.yml adds new items on
+            # `opened`, but an older issue claimed today may pre-date that
+            # workflow. Add it now.
+            ITEM_ID=$(gh api graphql \
+              -H "Authorization: bearer ${PROJECTS_TOKEN}" \
+              -f query='
+                mutation($project: ID!, $content: ID!) {
+                  addProjectV2ItemById(input: {projectId: $project, contentId: $content}) {
+                    item { id }
+                  }
+                }' \
+              -F project="${PROJECT_ID}" \
+              -F content="${CONTENT_NODE_ID}" \
+              --jq '.data.addProjectV2ItemById.item.id')
+          fi
+
+          gh api graphql \
+            -H "Authorization: bearer ${PROJECTS_TOKEN}" \
+            -f query='
+              mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $project,
+                  itemId: $item,
+                  fieldId: $field,
+                  value: {singleSelectOptionId: $option}
+                }) { projectV2Item { id } }
+              }' \
+            -F project="${PROJECT_ID}" \
+            -F item="${ITEM_ID}" \
+            -F field="${STATUS_FIELD_ID}" \
+            -F option="${STATUS_CLAIMED_OPTION_ID}"
+
+      - name: Post confirmation comment with deadline
+        if: ${{ !contains(github.event.issue.labels.*.name, 'status: claimed') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENTER: ${{ github.event.comment.user.login }}
+          REPO: ${{ github.repository }}
+          ASSIGNED: ${{ steps.assign.outputs.assigned }}
+        run: |
+          deadline=$(date -u -d "+${CLAIM_WINDOW_DAYS} days" "+%Y-%m-%d")
+          if [ "$ASSIGNED" = "true" ]; then
+            assignment_line="You are set as the assignee on the issue."
+          else
+            assignment_line="GitHub does not let non-collaborators be set as assignees, so this comment anchors the attribution in the issue history."
+          fi
+
+          body_file=$(mktemp)
+          cat > "$body_file" <<EOF
+          @${COMMENTER} this issue is yours until **${deadline}** (UTC).
+
+          ${assignment_line}
+
+          Next steps:
+
+          1. Open a draft PR within the window — even an empty scaffold is fine. The draft signals progress and lets the maintainer pre-review your direction.
+          2. If you cannot finish in time, comment to release the issue and the maintainer will reassign it.
+
+          See [CONTRIBUTOR-WALKTHROUGH.md](https://github.com/${REPO}/blob/main/CONTRIBUTOR-WALKTHROUGH.md) for the full fork → claim → PR flow.
+
+          <!-- claim-by:${COMMENTER} -->
+          EOF
+          gh issue comment "$ISSUE_NUMBER" -R "$REPO" --body-file "$body_file"
+          rm -f "$body_file"
