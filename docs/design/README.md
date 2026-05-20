@@ -1,14 +1,32 @@
 # md-bridge design system
 
+![md-bridge design system, hero](screenshots/hero.png)
+
 This directory holds the visual catalogue for every UI feature that
 ships or is planned for md-bridge.
+
+## Roadmap at a glance
+
+![Eight features, eight issues, one coherent system](screenshots/roadmap.png)
+
+| Section | Feature |
+|---|---|
+| [F1](design-thinking.html#f1) | CSS theme picker for Markdown → PDF |
+| [F2](design-thinking.html#f2) | Theme library (deep picker with code preview) |
+| [F3](design-thinking.html#f3) | Per-conversion options panel |
+| [F4](design-thinking.html#f4) | Format hub (DOCX, EPUB, HTML, RTF) |
+| [F5](design-thinking.html#f5) | Language workshop |
+| [F6](design-thinking.html#f6) | Conversion presets |
+| [F7](design-thinking.html#f7) | Local conversion history |
+| [F8](design-thinking.html#f8) | Preferences page |
 
 ## Files
 
 | File | Purpose |
 |---|---|
 | `design-thinking.html` | The catalogue. Self-contained HTML, opens in any browser. |
-| `index.md` | The landing page rendered on the [docs site](https://vinicq.github.io/md-bridge/design/). |
+| `index.md` | The landing page rendered on the [docs site](https://vinicq.github.io/md-bridge/design/) with the full per-feature gallery. |
+| `screenshots/` | Retina captures of every catalogue section, used by the gallery. |
 | `README.md` | You are here. |
 
 ## Open the catalogue

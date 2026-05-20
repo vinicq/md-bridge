@@ -5,6 +5,8 @@ hide:
 
 # Design system
 
+![md-bridge design system, hero](screenshots/hero.png)
+
 Every UI change in md-bridge tracks back to a mockup in this catalogue.
 The catalogue lives as a single self-contained HTML file
 ([`design-thinking.html`](design-thinking.html)) that reuses the same
@@ -12,6 +14,10 @@ design tokens as the React app (`apps/web/src/styles/tokens.css`), so
 when the tokens move the mockups move with them.
 
 [Open the design catalogue →](design-thinking.html){ .md-button .md-button--primary }
+
+## Roadmap at a glance
+
+![Roadmap: eight features, eight issues, one coherent system](screenshots/roadmap.png)
 
 ## Principles
 
@@ -35,24 +41,52 @@ are the things that make md-bridge useful in the first place:
 
 ## What is in the catalogue
 
-Eight features, each with a full mockup and a paste-ready issue body:
-
-| Section | Feature |
-|---|---|
-| F1 | CSS theme picker for Markdown → PDF |
-| F2 | Theme library — deep picker with code preview |
-| F3 | Per-conversion options panel |
-| F4 | Format hub — DOCX, EPUB, HTML, RTF |
-| F5 | Language workshop — contribute a locale from the UI |
-| F6 | Conversion presets |
-| F7 | Local conversion history |
-| F8 | Preferences page |
-
+Eight features, each with a full mockup and a paste-ready issue body.
 The catalogue header carries a scroll-spy nav, so you can jump straight
 to the feature you care about. Each feature page has two columns: the
 hi-fi mockup on the left, the issue spec on the right. The **Copy
 issue** button on each spec gives you the exact markdown to paste into
 a new GitHub issue.
+
+### F1 · CSS theme picker for Markdown → PDF
+
+[![F1 mockup: CSS theme picker for Markdown to PDF](screenshots/f1.png)](design-thinking.html#f1)
+
+### F2 · Theme library (deep picker with code preview)
+
+[![F2 mockup: theme library with three-pane catalogue, A4 preview, CSS source](screenshots/f2.png)](design-thinking.html#f2)
+
+### F3 · Per-conversion options panel
+
+[![F3 mockup: per-conversion options panel with page size, margins, TOC](screenshots/f3.png)](design-thinking.html#f3)
+
+### F4 · Format hub (DOCX, EPUB, HTML, RTF)
+
+[![F4 mockup: format hub with the 3x6 conversion matrix](screenshots/f4.png)](design-thinking.html#f4)
+
+### F5 · Language workshop
+
+[![F5 mockup: language workshop with completion percentages and diff editor](screenshots/f5.png)](design-thinking.html#f5)
+
+### F6 · Conversion presets
+
+[![F6 mockup: conversion presets chip row above the dropzone](screenshots/f6.png)](design-thinking.html#f6)
+
+### F7 · Local conversion history
+
+[![F7 mockup: local conversion history in localStorage](screenshots/f7.png)](design-thinking.html#f7)
+
+### F8 · Preferences page
+
+[![F8 mockup: preferences page grouped in Defaults, UI, Privacy](screenshots/f8.png)](design-thinking.html#f8)
+
+## Foundations
+
+[![Foundations: tokens, type scale, components inventory](screenshots/foundations.png)](design-thinking.html#foundations)
+
+The "Foundations" section of the catalogue inventories what already
+ships: tokens, type scale, component primitives, routes, and API
+endpoints. Every new feature reuses them before adding anything new.
 
 ## How to propose a UI feature
 
