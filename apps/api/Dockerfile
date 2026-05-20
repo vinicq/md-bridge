@@ -7,7 +7,7 @@
 # ---- Stage 1: base ---------------------------------------------------------
 # Shared between runtime and test targets so dependencies and source are
 # installed exactly once.
-FROM mcr.microsoft.com/playwright/python:v1.60.0-noble AS base
+FROM mcr.microsoft.com/playwright/python:v1.60.0-noble@sha256:8ff591d613b01c884cc488339ed4318b4513eaf0c57a164a878ba49e70e3f384 AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
