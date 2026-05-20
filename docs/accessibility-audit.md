@@ -28,7 +28,7 @@
 
 The hidden file `<input type="file">` inside the DropZone had no `aria-label` attribute. Screen readers could not announce what the input was for.
 
-**Fix:** Added `aria-label={t.dropzone.ariaLabel(acceptLabel)}` to the file input, using the existing translation key that already described the drop zone purpose.
+**Fix:** Removed `aria-label` from the file input and placed it on the parent button-role div instead (now `aria-label={t.dropzone.ariaLabel(acceptLabel)}`). The input is hidden from AT via `aria-hidden="true"` — the wrapper div carries the accessible name for the widget.
 
 ### 2. SERIOUS — Nested interactive controls
 
@@ -38,7 +38,6 @@ The hidden file `<input type="file">` inside the DropZone had no `aria-label` at
 
 The outer `<div>` had `role="button"` with `tabIndex={0}`, and contained a focusable `<input type="file">`. Nested interactive controls confuse screen readers — the inner input would be announced inside the button context, creating ambiguity.
 
-**Fix:**
 **Fix:** Moved the file input outside the button-role div (now a sibling in a wrapper, not nested). Added `tabIndex={-1}` and `aria-hidden="true"` to the file input so it is not focusable via keyboard. The parent div retains `role="button"`, `tabIndex={0}`, keyboard handlers, and `aria-label` — it is the sole interactive element for this widget.
 
 ### 3. IMPROVEMENT — Navigation landmark label
@@ -78,7 +77,7 @@ The batch progress text (e.g. "2 of 5 complete") was not announced to screen rea
 
 ### `/convert/pdf-to-md`
 - **Status:** Clean after fixes
-- DropZone: file input now has aria-label, no nested interactive controls
+- DropZone: wrapper div has aria-label, no nested interactive controls
 - BatchPanel: progress announced via aria-live
 - Warnings list has `aria-label`
 - Download buttons have accessible names
@@ -110,7 +109,7 @@ To reproduce the audit:
 cd apps/web
 npm install
 npm run dev
-npx playwright test --config=tests/a11y/playwright.config.ts
+npx playwright test e2e/audit.spec.ts
 ```
 
 Or run axe-core manually in browser DevTools:

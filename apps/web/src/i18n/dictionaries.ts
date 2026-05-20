@@ -117,6 +117,7 @@ const en: Dictionary = {
     skipToContent: 'Skip to content',
   },
   home: {
+    title: 'Convert PDF and Markdown locally.',
     subtitle:
       'Deterministic heuristics between PDF and Markdown. Same input, same output, every run. No cloud, no subscriptions.',
     cards: {
