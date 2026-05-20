@@ -34,8 +34,10 @@ AGENTS.md
 CLAUDE.md
 CODEX.md
 
-# Internal planning / design docs (not part of the public repo)
-ARCHITECTURE.md
+# Internal planning / design docs (not part of the public repo).
+# Anchored to the repo root so docs/architecture.md (the public MkDocs
+# page) is not caught by case-insensitive matching on Windows.
+/ARCHITECTURE.md
 
 # Local PDF dump for developers experimenting with the converter. The committed
 # test fixtures live under apps/api/tests/fixtures/; this folder is a personal
