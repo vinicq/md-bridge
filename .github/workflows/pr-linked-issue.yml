@@ -69,7 +69,7 @@ jobs:
 
             body_file=$(mktemp)
             printf '%s\n\n%s\n' \
-              "Tracking on @$PR_AUTHOR via #$PR_NUMBER. GitHub does not let me set the assignee field for non-collaborators, so the attribution lives here and on the linked pull request." \
+              "@$PR_AUTHOR is working on this via #$PR_NUMBER." \
               "$marker" > "$body_file"
             gh issue comment "$n" -R "$REPO" --body-file "$body_file"
             rm -f "$body_file"
