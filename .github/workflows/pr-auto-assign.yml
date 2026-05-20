@@ -1,0 +1,84 @@
+name: PR auto-assign
+
+# When a pull request is opened (or reopened), assign the PR author so the
+# PR has an owner from the moment it shows up in the queue. The maintainer
+# rule on this project says every PR has an assignee, and GitHub does not
+# default to "author == assignee" on fork PRs, so this workflow closes the
+# gap automatically.
+#
+# Collaborators can be set as assignees directly. External contributors
+# cannot (GitHub rejects assignments to non-collaborators), so the
+# workflow falls back to a marker comment that anchors the attribution
+# in the PR history. Same pattern as `pr-linked-issue.yml`.
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  assign:
+    name: Assign PR author
+    if: github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Check if author is already an assignee
+        id: existing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          current=$(gh pr view "$PR_NUMBER" -R "$REPO" --json assignees --jq '[.assignees[].login] | join(",")')
+          case ",${current}," in
+            *",${AUTHOR},"*)
+              echo "already_assigned=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "already_assigned=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Try to assign PR author (works for collaborators)
+        id: assign
+        if: steps.existing.outputs.already_assigned == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          if gh pr edit "$PR_NUMBER" -R "$REPO" --add-assignee "$AUTHOR" 2>/dev/null; then
+            echo "assigned=true" >> "$GITHUB_OUTPUT"
+            echo "Assigned @$AUTHOR to PR #$PR_NUMBER."
+          else
+            echo "assigned=false" >> "$GITHUB_OUTPUT"
+            echo "@$AUTHOR is not a collaborator; falling back to marker comment."
+          fi
+
+      - name: Post marker comment for external authors
+        if: steps.existing.outputs.already_assigned == 'false' && steps.assign.outputs.assigned == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          marker="<!-- pr-author:${AUTHOR} -->"
+          existing=$(gh pr view "$PR_NUMBER" -R "$REPO" --json comments \
+            --jq ".comments[] | select(.body | contains(\"$marker\")) | .url" | head -n1)
+          if [ -n "$existing" ]; then
+            echo "Marker comment already exists on PR #$PR_NUMBER; skipping."
+            exit 0
+          fi
+          body_file=$(mktemp)
+          printf '@%s is the author of this PR. GitHub does not allow non-collaborators as assignees, so this comment anchors the attribution in the PR history.\n\n%s\n' \
+            "$AUTHOR" "$marker" > "$body_file"
+          gh pr comment "$PR_NUMBER" -R "$REPO" --body-file "$body_file"
+          rm -f "$body_file"
+          echo "Posted attribution comment on PR #$PR_NUMBER for external author @$AUTHOR."
