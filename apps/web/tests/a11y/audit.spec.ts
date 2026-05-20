@@ -1,15 +1,7 @@
-/**
- * Accessibility audit — uses Playwright test framework directly.
- * Run: cd apps/web && npx playwright test tests/a11y/audit.spec.ts --reporter=list --workers=1 --config=tests/a11y/playwright.config.ts
- * 
- * But since we have no config file for a11y, let's use a standalone script approach.
- */
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import fs from 'fs'
 import path from 'path'
-
-const BASE_URL = 'http://127.0.0.1:5173'
 
 const ROUTES = [
   { path: '/', name: 'Home' },
@@ -20,13 +12,13 @@ const ROUTES = [
 
 test.describe('WCAG 2.1 AA Accessibility Audit', () => {
   for (const route of ROUTES) {
-    test(`audit ${route.name} (${route.path})`, async ({ page }) => {
-      await page.goto(`${BASE_URL}${route.path}`, { waitUntil: 'networkidle' })
-      
+    test(`audit ${route.name} (${route.path})`, async ({ page }, testInfo) => {
+      await page.goto(route.path, { waitUntil: 'networkidle' })
+
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
         .analyze()
-      
+
       const data = {
         route: route.path,
         name: route.name,
@@ -53,28 +45,37 @@ test.describe('WCAG 2.1 AA Accessibility Audit', () => {
           incomplete: results.incomplete.length,
         }
       }
-      
-      const outDir = path.resolve('audit-results')
-      fs.mkdirSync(outDir, { recursive: true })
-      const outFile = path.join(outDir, (route.path.replace(/\//g, '_') || 'home') + '.json')
-      fs.writeFileSync(outFile, JSON.stringify(data, null, 2))
-      
+
+      // Write results to Playwright's output directory (no untracked files)
+      const outputFile = testInfo.outputPath(
+        `axe-${route.path.replace(/\//g, '_') || 'home'}.json`,
+      )
+      fs.mkdirSync(path.dirname(outputFile), { recursive: true })
+      fs.writeFileSync(outputFile, JSON.stringify(data, null, 2))
+
       console.log(`\n=== ${route.name} (${route.path}) ===`)
       console.log(`  Critical: ${data.summary.critical}`)
-      console.log(`  Serious: ${data.summary.serious}`)  
+      console.log(`  Serious: ${data.summary.serious}`)
       console.log(`  Moderate: ${data.summary.moderate}`)
       console.log(`  Minor: ${data.summary.minor}`)
       console.log(`  Passes: ${data.summary.passes}`)
-      
+
       for (const v of data.violations) {
         console.log(`\n  [${v.impact.toUpperCase()}] ${v.id}: ${v.help}`)
         console.log(`    WCAG: ${v.wcagTags.join(', ')}`)
-        console.log(`    ${v.description}`)
         for (const n of v.nodes.slice(0, 3)) {
           console.log(`    Element: ${n.html.slice(0, 100)}`)
-          console.log(`    Fix: ${n.failureSummary}`)
         }
       }
+
+      // CRITICAL ASSERTION: No critical or serious violations
+      const criticalSerious = results.violations.filter(
+        v => v.impact === 'critical' || v.impact === 'serious',
+      )
+      expect(
+        criticalSerious,
+        `Found ${criticalSerious.length} critical/serious violations on ${route.path}: ${criticalSerious.map(v => v.id).join(', ')}`,
+      ).toHaveLength(0)
     })
   }
 })

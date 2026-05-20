@@ -143,7 +143,8 @@ export function DropZone({
         className="dropzone__input"
         disabled={disabled}
         multiple={multiple}
-        aria-label={t.dropzone.ariaLabel(acceptLabel)}
+        tabIndex={-1}
+        aria-hidden="true"
         onChange={(e) => {
           const list = e.target.files ? Array.from(e.target.files) : []
           if (list.length > 0) handleFiles(list)

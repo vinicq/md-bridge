@@ -12,7 +12,8 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:a11y": "playwright test --config=tests/a11y/playwright.config.ts"
   },
   "dependencies": {
     "react": "^19.2.6",

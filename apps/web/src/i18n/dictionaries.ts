@@ -11,6 +11,10 @@ interface Dictionary {
     pdfToMd: string
     mdToPdf: string
     about: string
+    mainLabel: string
+  }
+  a11y: {
+    skipToContent: string
   }
   home: {
     title: string
@@ -107,9 +111,12 @@ const en: Dictionary = {
     pdfToMd: 'PDF · MD',
     mdToPdf: 'MD · PDF',
     about: 'About',
+    mainLabel: 'Main navigation',
+  },
+  a11y: {
+    skipToContent: 'Skip to content',
   },
   home: {
-    title: 'Convert PDF and Markdown locally.',
     subtitle:
       'Deterministic heuristics between PDF and Markdown. Same input, same output, every run. No cloud, no subscriptions.',
     cards: {
@@ -231,6 +238,10 @@ const pt: Dictionary = {
     pdfToMd: 'PDF · MD',
     mdToPdf: 'MD · PDF',
     about: 'Sobre',
+    mainLabel: 'Navegação principal',
+  },
+  a11y: {
+    skipToContent: 'Pular para o conteúdo',
   },
   home: {
     title: 'Converta PDF e Markdown local.',
@@ -355,6 +366,10 @@ const es: Dictionary = {
     pdfToMd: 'PDF · MD',
     mdToPdf: 'MD · PDF',
     about: 'Acerca de',
+    mainLabel: 'Navegación principal',
+  },
+  a11y: {
+    skipToContent: 'Saltar al contenido',
   },
   home: {
     title: 'Convierte PDF y Markdown localmente.',

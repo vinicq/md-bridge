@@ -1,8 +1,8 @@
 # Accessibility Audit — WCAG 2.1 AA
 
 **Date:** 2026-05-20
-**Tool:** axe-core 4.10.2 + Playwright
-**Standard:** WCAG 2.1 Level AA (success criteria 2.0a, 2.0aa, 2.1a, 2.1aa)
+**Tool:** axe-core ~4.11.4 (via @axe-core/playwright 4.11.3)
+**Standard:** WCAG 2.1 Level AA (axe tags: wcag2a, wcag2aa, wcag21a, wcag21aa)
 
 ## Executive Summary
 
@@ -39,9 +39,7 @@ The hidden file `<input type="file">` inside the DropZone had no `aria-label` at
 The outer `<div>` had `role="button"` with `tabIndex={0}`, and contained a focusable `<input type="file">`. Nested interactive controls confuse screen readers — the inner input would be announced inside the button context, creating ambiguity.
 
 **Fix:**
-- Added `tabIndex={-1}` to the file input (it is visually hidden; its click is triggered programmatically by the parent div)
-- Added `aria-hidden="true"` to the file input (the parent div's `aria-label` already describes the purpose)
-- The parent div retains `role="button"`, `tabIndex={0}`, keyboard handlers, and `aria-label` — it is the sole interactive element for this widget.
+**Fix:** Moved the file input outside the button-role div (now a sibling in a wrapper, not nested). Added `tabIndex={-1}` and `aria-hidden="true"` to the file input so it is not focusable via keyboard. The parent div retains `role="button"`, `tabIndex={0}`, keyboard handlers, and `aria-label` — it is the sole interactive element for this widget.
 
 ### 3. IMPROVEMENT — Navigation landmark label
 

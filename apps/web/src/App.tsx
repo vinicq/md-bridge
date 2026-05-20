@@ -9,14 +9,14 @@ export function App() {
   return (
     <>
       <a className="skip-link" href="#main-content">
-        Skip to content
+        {t.a11y.skipToContent}
       </a>
       <header className="app-header">
         <div className="container app-header__inner">
           <NavLink to="/" className="app-header__brand" end>
             md-bridge
           </NavLink>
-          <nav className="app-header__nav" aria-label="Main navigation">
+          <nav className="app-header__nav" aria-label={t.nav.mainLabel}>
             <NavLink to="/convert/pdf-to-md">{t.nav.pdfToMd}</NavLink>
             <NavLink to="/convert/md-to-pdf">{t.nav.mdToPdf}</NavLink>
             <NavLink to="/about">{t.nav.about}</NavLink>
