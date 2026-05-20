@@ -1,0 +1,177 @@
+name: Credit contributor on merge
+
+# Runs after every merged pull request from an external contributor. Infers
+# which contribution categories the change touched (code, doc, test, i18n,
+# infra, design), updates `.all-contributorsrc` via all-contributors-cli,
+# regenerates the README block, and opens a `chore(docs): credit @<author>`
+# PR. Replaces the manual mechanical checklist that lived in CONTRIBUTING.md.
+#
+# Maintainer PRs (vinicq) and bot PRs (Dependabot, release-drafter) are
+# skipped at the job-level `if`. PRs that close without merging never reach
+# this workflow because of the `merged == true` guard.
+#
+# The credit PR opens through gh pr create. The repo setting
+# `Settings -> Actions -> General -> Workflow permissions ->
+# Allow GitHub Actions to create and approve pull requests` must be ON or
+# the `gh pr create` call fails. The setting is one-time.
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: credit-contributor
+  cancel-in-progress: false
+
+jobs:
+  credit:
+    name: Credit @${{ github.event.pull_request.user.login }}
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.user.login != 'vinicq' &&
+      github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node 22
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
+        with:
+          node-version: "22"
+
+      - name: Install all-contributors-cli
+        run: npm install --no-save --no-audit --no-fund all-contributors-cli@^6.26.1
+
+      - name: Determine contribution types from the merged diff
+        id: types
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          files=$(gh pr diff "$PR_NUMBER" -R "$GITHUB_REPOSITORY" --name-only)
+          echo "Changed files:"
+          echo "$files"
+          echo "---"
+
+          types=()
+          if echo "$files" | grep -qE '\.(py|ts|tsx|js|jsx|mjs)$'; then
+            # Exclude pure-test files; the "test" bucket catches those.
+            non_test=$(echo "$files" | grep -E '\.(py|ts|tsx|js|jsx|mjs)$' \
+              | grep -vE '(test|spec)\.(py|ts|tsx|js|jsx|mjs)$' \
+              | grep -vE '/(tests?|e2e)/')
+            if [ -n "$non_test" ]; then
+              types+=("code")
+            fi
+          fi
+          if echo "$files" | grep -qE '(^|/)(test|spec)\.(py|ts|tsx)$|(/tests?/|/e2e/)'; then
+            types+=("test")
+          fi
+          if echo "$files" | grep -qE '(\.md$|^docs/|^CONTRIBUTING|^README|^CHANGELOG|^SECURITY|^CODE_OF_CONDUCT)'; then
+            # docs/scorecard-exceptions.md and similar are doc; design HTML is design (handled later)
+            types+=("doc")
+          fi
+          if echo "$files" | grep -qE '(^|/)(i18n|dictionaries\.ts|locales)'; then
+            types+=("translation")
+          fi
+          if echo "$files" | grep -qE '(^\.github/workflows/|^docker-compose|Dockerfile|^deployment/|^\.github/dependabot)'; then
+            types+=("infra")
+          fi
+          if echo "$files" | grep -qE '(^docs/design/|/tokens\.css$|/theme\.css$)'; then
+            types+=("design")
+          fi
+
+          # Default if nothing matched (rare, but keep the script safe)
+          if [ ${#types[@]} -eq 0 ]; then
+            types+=("code")
+          fi
+
+          # Dedupe and join with commas
+          joined=$(printf "%s\n" "${types[@]}" | sort -u | paste -sd, -)
+          echo "Inferred categories: $joined"
+          echo "types=$joined" >> "$GITHUB_OUTPUT"
+
+      - name: Add contributor and regenerate README block
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          TYPES: ${{ steps.types.outputs.types }}
+        run: |
+          set -euo pipefail
+          # all-contributors-cli `add` is idempotent: if the user already has
+          # an entry, the new categories are merged with the existing ones.
+          npx --no all-contributors-cli add "$AUTHOR" "$TYPES"
+          npx --no all-contributors-cli generate
+
+      - name: Check whether anything changed
+        id: changes
+        run: |
+          if git diff --quiet -- .all-contributorsrc README.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing to credit. @${AUTHOR} already has all of ${TYPES}."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          TYPES: ${{ steps.types.outputs.types }}
+
+      - name: Open credit PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          TYPES: ${{ steps.types.outputs.types }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="chore/credit-${AUTHOR}-${PR_NUMBER}"
+
+          # If a previous run already opened a branch for this PR, reuse it.
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            git fetch origin "$branch"
+            git checkout "$branch"
+            git checkout main -- .
+            npx --no all-contributors-cli add "$AUTHOR" "$TYPES"
+            npx --no all-contributors-cli generate
+          else
+            git checkout -b "$branch"
+          fi
+
+          git add .all-contributorsrc README.md
+          git commit -m "chore(docs): credit @${AUTHOR} for ${TYPES} (PR #${PR_NUMBER})"
+          git push -u origin "$branch"
+
+          body_file=$(mktemp)
+          cat > "$body_file" <<EOF
+          Automated post-merge credit update for #${PR_NUMBER}.
+
+          Categories inferred from the merged diff: \`${TYPES}\`. If a category is missing or off, edit \`.all-contributorsrc\` here and the README block will be regenerated by the next run, or close this PR and re-run the workflow manually.
+
+          The categories come from the all-contributors specification:
+          <https://allcontributors.org/docs/en/emoji-key>
+          EOF
+
+          # Check if a PR already exists for this branch (re-run case).
+          if existing=$(gh pr list -R "$GITHUB_REPOSITORY" --head "$branch" --json number --jq '.[0].number' 2>/dev/null) && [ -n "$existing" ]; then
+            gh pr comment "$existing" -R "$GITHUB_REPOSITORY" --body "Re-ran auto-credit. Categories: \`${TYPES}\`."
+          else
+            gh pr create -R "$GITHUB_REPOSITORY" \
+              --base main \
+              --title "chore(docs): credit @${AUTHOR}" \
+              --body-file "$body_file" \
+              --assignee "vinicq"
+          fi
+          rm -f "$body_file"
