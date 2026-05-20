@@ -135,24 +135,7 @@ export function DropZone({
   const onDragLeave = () => setOver(false)
 
   return (
-    <div
-      className={`dropzone ${over ? 'is-over' : ''} ${disabled ? 'is-disabled' : ''}`.trim()}
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      role="button"
-      tabIndex={disabled ? -1 : 0}
-      onClick={() => !disabled && inputRef.current?.click()}
-      onKeyDown={(e) => {
-        if (disabled) return
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          inputRef.current?.click()
-        }
-      }}
-      aria-disabled={disabled || undefined}
-      aria-label={t.dropzone.ariaLabel(acceptLabel)}
-    >
+    <div className="dropzone-wrapper">
       <input
         ref={inputRef}
         type="file"
@@ -160,24 +143,44 @@ export function DropZone({
         className="dropzone__input"
         disabled={disabled}
         multiple={multiple}
+        aria-label={t.dropzone.ariaLabel(acceptLabel)}
         onChange={(e) => {
           const list = e.target.files ? Array.from(e.target.files) : []
           if (list.length > 0) handleFiles(list)
           e.target.value = ''
         }}
       />
-      <div className="dropzone__inner">
-        <strong className="dropzone__name">
-          {multiple ? t.dropzone.dropFiles(acceptLabel) : t.dropzone.dropFile(acceptLabel)}
-        </strong>
-        <span className="dropzone__hint">
-          {multiple ? t.dropzone.orClickMany : t.dropzone.orClick}
-        </span>
-        {error && (
-          <span className="dropzone__error" role="alert">
-            {error}
+      <div
+        className={`dropzone ${over ? 'is-over' : ''} ${disabled ? 'is-disabled' : ''}`.trim()}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        onClick={() => !disabled && inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (disabled) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            inputRef.current?.click()
+          }
+        }}
+        aria-disabled={disabled || undefined}
+        aria-label={t.dropzone.ariaLabel(acceptLabel)}
+      >
+        <div className="dropzone__inner">
+          <strong className="dropzone__name">
+            {multiple ? t.dropzone.dropFiles(acceptLabel) : t.dropzone.dropFile(acceptLabel)}
+          </strong>
+          <span className="dropzone__hint">
+            {multiple ? t.dropzone.orClickMany : t.dropzone.orClick}
           </span>
-        )}
+          {error && (
+            <span className="dropzone__error" role="alert">
+              {error}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )

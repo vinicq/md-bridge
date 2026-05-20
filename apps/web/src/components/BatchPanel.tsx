@@ -47,7 +47,7 @@ export function BatchPanel<TResult>({
     <div className="batch">
       <header className="batch__head">
         <strong>{t.batch.heading(items.length)}</strong>
-        <span className="batch__progress">{t.batch.progress(done, items.length)}</span>
+        <span className="batch__progress" aria-live="polite">{t.batch.progress(done, items.length)}</span>
       </header>
 
       <ul className="batch__list">
