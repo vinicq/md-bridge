@@ -1,0 +1,69 @@
+/* ────────── theme tokens ────────── */
+
+/* These variables react to the [data-theme] attribute on <html>.  */
+/* Keep the surface values in a single source of truth so that every */
+/* UI component only ever references the semantic aliases.           */
+
+html {
+  --theme-surface-0: #1a1a1a;   /* strongest contrast (ink)    */
+  --theme-surface-1: #fdfaf3;     /* main background             */
+  --theme-surface-2: #f7f3ec;     /* secondary / page bg         */
+  --theme-surface-3: #d8d2c5;     /* borders, dividers           */
+  --theme-surface-4: #555555;     /* soft text, subtle fg        */
+  --theme-surface-5: #1a1a1a;     /* inverse ink (for buttons)   */
+
+  --theme-ok:   #2e7d4a;
+  --theme-warn: #b8860b;
+
+  --theme-accent:       #c8362f;
+  --theme-accent-soft: #f1d8d5;
+
+  --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --theme-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.08);
+
+  /* Material-style mapping (kept for components that already use them) */
+  --md-sys-color-primary:              #c8362f;
+  --md-sys-color-primary-container:    #f1d8d5;
+  --md-sys-color-on-primary:           #ffffff;
+  --md-sys-color-surface:              #fdfaf3;
+  --md-sys-color-surface-container-low:  #f7f3ec;
+  --md-sys-color-surface-container:    #f0ebe1;
+  --md-sys-color-surface-container-high: #e8e3d9;
+  --md-sys-color-on-surface:           #1a1a1a;
+  --md-sys-color-on-surface-variant:   #555555;
+  --md-sys-color-outline:              #d8d2c5;
+  --md-sys-color-outline-variant:      #e8e3d9;
+}
+
+html[data-theme="dark"] {
+  --theme-surface-0: #f0ebe1;   /* light text against dark bg */
+  --theme-surface-1: #121212;     /* main background – NOT pure black */
+  --theme-surface-2: #1a1a1a;     /* elevated cards / panels       */
+  --theme-surface-3: #2a2a2a;     /* borders, dividers           */
+  --theme-surface-4: #b0a896;     /* soft text, subtle fg        */
+  --theme-surface-5: #f0ebe1;     /* inverse ink (for buttons)   */
+
+  --theme-accent:       #ff8a80;
+  --theme-accent-soft: #3a1a1a;
+
+  --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --theme-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.4);
+
+  --md-sys-color-primary:              #ff8a80;
+  --md-sys-color-primary-container:    #3a1a1a;
+  --md-sys-color-on-primary:           #1a1a1a;
+  --md-sys-color-surface:              #121212;
+  --md-sys-color-surface-container-low:  #1a1a1a;
+  --md-sys-color-surface-container:    #222222;
+  --md-sys-color-surface-container-high: #2a2a2a;
+  --md-sys-color-on-surface:           #f0ebe1;
+  --md-sys-color-on-surface-variant:   #b0a896;
+  --md-sys-color-outline:              #3a3a3a;
+  --md-sys-color-outline-variant:      #2a2a2a;
+
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
