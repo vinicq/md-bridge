@@ -345,8 +345,11 @@ The header toggle picks the new locale up automatically.
 
 ## Contributing
 
-Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md)
-for the full guide; the headline rules are:
+Issues and pull requests are welcome. UI changes track back to the
+[design system in `docs/design/`](docs/design/) (also published with the
+docs site); features tagged `design-required` usually have a matching
+mockup there. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the full
+guide; the headline rules are:
 
 - Every behaviour change ships with tests at the lowest viable tier.
 - Pull requests stay small and aim for at most three commits.

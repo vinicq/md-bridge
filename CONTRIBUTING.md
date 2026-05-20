@@ -48,6 +48,20 @@ duplicates. If you do open one, the templates ask for the basics:
 Keep the title short and concrete. "PDF inspect endpoint returns 500 on
 tagged files" is better than "bug in API".
 
+### Features that need design
+
+Issues tagged `design-required` need a visual proposal before a PR
+lands. The project's design system at
+[`docs/design/`](docs/design/) (also published at
+<https://vinicq.github.io/md-bridge/design/>) catalogues every accepted
+mockup as features F1 through F8. When you pick up a `design-required`
+issue, scan the catalogue first; most open ones already have a matching
+mockup with a paste-ready acceptance spec you can implement against.
+
+For brand-new ideas, open the issue with a sketch (Excalidraw, plain
+PNG, even ASCII) and the maintainer will decide whether it slots into
+an existing F-section or warrants a fresh design pass.
+
 ## Your first pull request
 
 If you have never opened a pull request on GitHub before, this section is
