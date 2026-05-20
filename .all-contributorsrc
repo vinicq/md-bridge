@@ -53,6 +53,17 @@
         "infra",
         "translation"
       ]
+    },
+    {
+      "login": "GiulianaCDA",
+      "name": "Giuliana Arecippo",
+      "avatar_url": "https://avatars.githubusercontent.com/u/56075340?v=4",
+      "profile": "https://github.com/GiulianaCDA",
+      "contributions": [
+        "code",
+        "design",
+        "test"
+      ]
     }
   ]
 }

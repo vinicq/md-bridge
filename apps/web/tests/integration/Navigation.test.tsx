@@ -6,6 +6,7 @@ import { App } from '../../src/App'
 import { Home } from '../../src/pages/Home'
 import { About } from '../../src/pages/About'
 import { I18nProvider } from '../../src/i18n'
+import { ThemeProvider } from '../../src/theme'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -14,16 +15,18 @@ afterEach(() => {
 
 function renderApp(initialPath = '/') {
   return render(
-    <I18nProvider initialLocale="en">
-      <MemoryRouter initialEntries={[initialPath]}>
-        <Routes>
-          <Route path="/" element={<App />}>
-            <Route index element={<Home />} />
-            <Route path="about" element={<About />} />
-          </Route>
-        </Routes>
-      </MemoryRouter>
-    </I18nProvider>,
+    <ThemeProvider>
+      <I18nProvider initialLocale="en">
+        <MemoryRouter initialEntries={[initialPath]}>
+          <Routes>
+            <Route path="/" element={<App />}>
+              <Route index element={<Home />} />
+              <Route path="about" element={<About />} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </I18nProvider>
+    </ThemeProvider>,
   )
 }
 
