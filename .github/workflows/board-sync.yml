@@ -26,10 +26,15 @@ on:
 permissions:
   contents: read
 
+# PROJECTS_TOKEN is promoted to workflow-level env so that step-level `if`
+# expressions can read it. GitHub Actions does not expose step-level env to
+# the if expression of that same step, and the secrets context is not
+# allowed in if at all. Workflow-level env is the documented pattern.
 env:
   PROJECT_ID: PVT_kwHOBKlnSs4BYOXg
   STATUS_FIELD_ID: PVTSSF_lAHOBKlnSs4BYOXgzhTVs1Q
   STATUS_DONE_OPTION_ID: abd01daa
+  PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
 
 jobs:
   add-to-board:
@@ -39,8 +44,6 @@ jobs:
     steps:
       - name: Skip when PROJECTS_TOKEN missing
         if: env.PROJECTS_TOKEN == ''
-        env:
-          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
         run: |
           echo "::warning::PROJECTS_TOKEN secret is not set. Board sync skipped."
           echo "To enable: create a PAT with 'project' scope and add it as repo secret PROJECTS_TOKEN."
@@ -48,7 +51,6 @@ jobs:
       - name: Add to project
         if: env.PROJECTS_TOKEN != ''
         env:
-          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
           CONTENT_NODE_ID: ${{ github.event.issue.node_id || github.event.pull_request.node_id }}
         run: |
           gh api graphql \
@@ -75,8 +77,6 @@ jobs:
 
       - name: Skip when PROJECTS_TOKEN missing
         if: env.PROJECTS_TOKEN == ''
-        env:
-          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
         run: |
           echo "::warning::PROJECTS_TOKEN secret is not set. Board sync skipped."
           exit 0
@@ -85,7 +85,6 @@ jobs:
         if: env.PROJECTS_TOKEN != ''
         id: lookup
         env:
-          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
           CONTENT_NODE_ID: ${{ github.event.issue.node_id || github.event.pull_request.node_id }}
         run: |
           ITEM_ID=$(gh api graphql \
@@ -113,7 +112,6 @@ jobs:
       - name: Set status to Done
         if: env.PROJECTS_TOKEN != '' && steps.lookup.outputs.skip != 'true'
         env:
-          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
           ITEM_ID: ${{ steps.lookup.outputs.item_id }}
         run: |
           gh api graphql \
