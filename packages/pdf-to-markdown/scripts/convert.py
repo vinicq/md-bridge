@@ -611,6 +611,8 @@ def convert_document(
             try:
                 target.rmdir()
             except OSError:
+                # Directory may not be empty (extra files dropped by a
+                # custom hook). Leftover is harmless; keep going.
                 pass
 
     out_pages: list[str] = []
