@@ -388,10 +388,11 @@ review work on md-bridge ([emoji key](https://allcontributors.org/docs/en/emoji-
       </td>
       <td align="center" valign="top" width="14.28%">
         <a href="https://github.com/zhouzhou626">
-          <img src="https://avatars.githubusercontent.com/zhouzhou626?v=4?s=80" width="80px;" alt="zhouzhou626"/>
+          <img src="https://avatars.githubusercontent.com/u/255877794?v=4?s=80" width="80px;" alt="zhouzhou626"/>
           <br /><sub><b>zhouzhou626</b></sub>
         </a><br />
         <a href="#code" title="Code">💻</a>
+        <a href="#doc" title="Documentation">📖</a>
         <a href="#translation" title="Translation">🌍</a>
         <a href="#test" title="Tests">⚠️</a>
       </td>

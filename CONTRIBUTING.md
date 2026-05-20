@@ -599,6 +599,63 @@ description. There is no need to install a bot or open a second PR for
 this; the maintainer regenerates the README block as part of release
 maintenance.
 
+### Maintainer responsibility: keep the credit list current
+
+This subsection is the rule the maintainer follows after every merge so
+nobody has to remember it ad hoc.
+
+Every time a contributor PR merges, the maintainer must:
+
+1. **Inspect the diff and classify the contribution.** A single PR can
+   touch multiple categories. The mapping is mechanical, not
+   judgemental:
+   - Code changes under `apps/api`, `apps/web`, `packages/` →
+     `code` 💻
+   - Edits to `README.md`, `CONTRIBUTING.md`, `docs/**/*.md`, the
+     PR/issue templates, in-code docstrings → `doc` 📖
+   - New strings in `apps/web/src/i18n/dictionaries.ts` or any
+     locale file → `translation` 🌍
+   - New or expanded test files (`*.test.ts`, `*.spec.ts`,
+     `tests/**`) → `test` ⚠️
+   - Workflow or Dockerfile edits, dependency configuration,
+     deployment recipes → `infra` 🚇
+   - Visual or layout changes that come with a screenshot or design
+     rationale → `design` 🎨
+   - Approving review comments that catch a bug → `review` 👀
+   - Reporting a bug that gets fixed → `bug` 🐛
+
+2. **Open `.all-contributorsrc` and locate the contributor's entry.**
+   If they have no entry yet, add a new object with `login`, `name`,
+   `avatar_url`, and `profile`. Critical: the `avatar_url` field must
+   follow the form `https://avatars.githubusercontent.com/u/<numeric_id>?v=4`
+   where `<numeric_id>` comes from
+   `curl -s https://api.github.com/users/<login> | jq -r .id`. Using
+   the login in place of the numeric ID produces a broken URL that
+   falls back to an identicon.
+
+3. **Merge any missing contribution types into the contributor's
+   `contributions` array.** Do not remove existing types; types
+   accumulate over the contributor's lifetime in the project, they
+   never narrow.
+
+4. **Regenerate the README block.** Easiest path is the manual edit:
+   open the `<!-- ALL-CONTRIBUTORS-LIST -->` block in `README.md`,
+   find the contributor's `<td>`, add or update the matching
+   `<a href="#<type>" title="...">EMOJI</a>` lines, and confirm the
+   `<img src=...>` URL also uses the numeric-ID form. If the project
+   grows beyond what manual edit is comfortable, switch to
+   `npx all-contributors-cli generate` (the CLI reads
+   `.all-contributorsrc` and rewrites the block).
+
+5. **Land both files in the same commit.** Conventional Commits
+   subject: `chore(docs): credit <login> for <type1>+<type2>`. The
+   commit can ride inside a release-prep PR or be a standalone
+   `chore(docs):` PR before the next release.
+
+The rule is mechanical so that any maintainer (or any AI assistant)
+can apply it without judgement calls. The credit list is part of how
+the project respects the people who show up.
+
 ## Code of conduct
 
 This project follows the [Contributor Covenant 2.1](CODE_OF_CONDUCT.md).
