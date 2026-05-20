@@ -1,0 +1,77 @@
+name: PR linked issue automation
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+
+permissions: {}
+
+concurrency:
+  group: pr-linked-issue-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  attribute:
+    name: Attribute linked issues to PR author
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.user.login != 'vinicq' &&
+      github.event.pull_request.user.type != 'Bot'
+    permissions:
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Resolve linked issues and post attribution comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          numbers=$(gh pr view "$PR_NUMBER" -R "$REPO" \
+            --json closingIssuesReferences \
+            --jq '.closingIssuesReferences[].number')
+
+          if [ -z "$numbers" ]; then
+            echo "PR #$PR_NUMBER does not close any issue. Nothing to do."
+            exit 0
+          fi
+
+          for n in $numbers; do
+            assignees=$(gh issue view "$n" -R "$REPO" \
+              --json assignees --jq '[.assignees[].login] | join(",")')
+
+            if [ -n "$assignees" ]; then
+              echo "Issue #$n already has assignees ($assignees). Skipping."
+              continue
+            fi
+
+            # Try the native assignee path first. Works for collaborators.
+            if gh issue edit "$n" -R "$REPO" --add-assignee "$PR_AUTHOR" 2>/dev/null; then
+              echo "Assigned @$PR_AUTHOR to issue #$n."
+              continue
+            fi
+
+            # External contributors are not assignable. Fall back to a
+            # comment that anchors the attribution in the issue history.
+            marker="<!-- pr-linked-issue:$PR_NUMBER -->"
+            existing=$(gh issue view "$n" -R "$REPO" --json comments \
+              --jq ".comments[] | select(.body | contains(\"$marker\")) | .url" \
+              | head -n1)
+
+            if [ -n "$existing" ]; then
+              echo "Attribution comment already exists on issue #$n. Skipping."
+              continue
+            fi
+
+            body_file=$(mktemp)
+            printf '%s\n\n%s\n' \
+              "@$PR_AUTHOR is working on this via #$PR_NUMBER." \
+              "$marker" > "$body_file"
+            gh issue comment "$n" -R "$REPO" --body-file "$body_file"
+            rm -f "$body_file"
+            echo "Posted attribution comment on issue #$n."
+          done

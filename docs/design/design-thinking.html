@@ -1,0 +1,2755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>md-bridge · Design Thinking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* ── md-bridge tokens (copied verbatim from apps/web/src/styles/tokens.css) ── */
+  :root {
+    --font-display: "Fraunces", "Spectral", Georgia, serif;
+    --font-body: "IBM Plex Sans", "Inter", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", "Consolas", monospace;
+
+    --fs-xs: 0.8rem;
+    --fs-sm: 1rem;
+    --fs-md: 1.25rem;
+    --fs-lg: 1.563rem;
+    --fs-xl: 2.441rem;
+    --fs-2xl: 3.815rem;
+
+    --c-bg: #f7f3ec;
+    --c-bg-elev: #fdfaf3;
+    --c-ink: #1a1a1a;
+    --c-ink-soft: #555;
+    --c-rule: #d8d2c5;
+    --c-accent: #c8362f;
+    --c-accent-soft: #f1d8d5;
+    --c-ok: #2e7d4a;
+    --c-warn: #b8860b;
+
+    --s-1: 4px;
+    --s-2: 8px;
+    --s-3: 12px;
+    --s-4: 16px;
+    --s-6: 24px;
+    --s-8: 32px;
+    --s-12: 48px;
+    --s-16: 64px;
+
+    --r-sm: 2px;
+    --r-md: 6px;
+
+    --shadow-1: 0 1px 2px rgba(0,0,0,.06);
+    --shadow-2: 0 6px 18px rgba(0,0,0,.08);
+
+    --t-fast: 120ms;
+    --t-base: 220ms;
+    --easing: cubic-bezier(.2,.8,.2,1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-body);
+    font-size: var(--fs-sm);
+    background: var(--c-bg);
+    color: var(--c-ink);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  a { color: var(--c-accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+  a:hover { color: var(--c-ink); }
+
+  code, pre, kbd, samp { font-family: var(--font-mono); font-size: 0.9em; }
+
+  /* ── document chrome ───────────────────────────────────────── */
+  .doc {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 var(--s-8) var(--s-16);
+  }
+
+  .doc-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(247,243,236,.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--c-rule);
+  }
+  .doc-bar__inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: var(--s-3) var(--s-8);
+    display: flex;
+    align-items: center;
+    gap: var(--s-6);
+    min-height: 56px;
+  }
+  .doc-bar__brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: var(--fs-md);
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .doc-bar__brand small {
+    font-family: var(--font-mono);
+    font-weight: 400;
+    color: var(--c-ink-soft);
+    font-size: 11px;
+    margin-left: var(--s-2);
+    letter-spacing: 0;
+  }
+  .doc-bar__nav {
+    display: flex;
+    gap: var(--s-4);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .doc-bar__nav a { color: var(--c-ink-soft); border: 0; white-space: nowrap; position: relative; padding-bottom: 4px; transition: color var(--t-fast) var(--easing); }
+  .doc-bar__nav a:hover { color: var(--c-accent); }
+  .doc-bar__nav a.is-active { color: var(--c-accent); }
+  .doc-bar__nav a.is-active::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 2px;
+    background: var(--c-accent);
+    border-radius: 1px;
+  }
+
+  .doc-bar__tag {
+    border: 1px solid var(--c-rule);
+    color: var(--c-ink-soft);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  /* ── hero ──────────────────────────────────────────────────── */
+  .hero {
+    padding: var(--s-16) 0 var(--s-12);
+    border-bottom: 1px solid var(--c-rule);
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: var(--s-12);
+    align-items: end;
+  }
+  .hero h1 {
+    font-size: clamp(2.8rem, 5.5vw, 4.5rem);
+    letter-spacing: -0.03em;
+    line-height: 0.98;
+    margin-bottom: var(--s-6);
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--c-accent);
+    font-weight: 500;
+  }
+  .hero p {
+    font-size: var(--fs-md);
+    color: var(--c-ink-soft);
+    max-width: 46ch;
+    margin: 0;
+  }
+  .hero-meta {
+    border-left: 2px solid var(--c-rule);
+    padding-left: var(--s-6);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--c-ink-soft);
+    line-height: 1.9;
+  }
+  .hero-meta strong { color: var(--c-ink); font-weight: 500; }
+  .hero-meta .kv { display: flex; gap: var(--s-4); }
+  .hero-meta .kv span:first-child { width: 92px; color: var(--c-ink); }
+
+  /* ── section scaffolding ───────────────────────────────────── */
+  .section { padding: var(--s-16) 0 var(--s-12); border-bottom: 1px solid var(--c-rule); }
+  .section:last-of-type { border-bottom: 0; }
+
+  .section__head { display: grid; grid-template-columns: 120px 1fr; gap: var(--s-8); margin-bottom: var(--s-12); align-items: baseline; }
+  .section__num {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--c-ink-soft);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .section__head h2 { font-size: var(--fs-xl); letter-spacing: -0.02em; max-width: 22ch; }
+  .section__head p { color: var(--c-ink-soft); max-width: 60ch; margin: var(--s-4) 0 0; font-size: var(--fs-sm); }
+
+  /* ── system inventory ─────────────────────────────────────── */
+  .sys-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--s-6);
+  }
+  .sys-card {
+    border: 1px solid var(--c-rule);
+    background: var(--c-bg-elev);
+    border-radius: var(--r-md);
+    padding: var(--s-6);
+  }
+  .sys-card h4 {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--c-ink-soft);
+    margin-bottom: var(--s-4);
+  }
+  .sys-card h4::before { content: "// "; color: var(--c-rule); }
+
+  .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-3); }
+  .swatch {
+    display: flex; flex-direction: column; gap: var(--s-1);
+    font-family: var(--font-mono); font-size: 11px; color: var(--c-ink-soft);
+  }
+  .swatch .chip {
+    height: 56px; border-radius: var(--r-sm); border: 1px solid var(--c-rule);
+  }
+  .swatch b { color: var(--c-ink); font-weight: 500; }
+
+  .type-stack { display: flex; flex-direction: column; gap: var(--s-4); }
+  .type-stack .row { display: grid; grid-template-columns: 90px 1fr; align-items: baseline; gap: var(--s-4); }
+  .type-stack .row code { color: var(--c-ink-soft); font-size: 11px; }
+
+  .scale-list { display: flex; align-items: baseline; gap: var(--s-4); flex-wrap: wrap; }
+  .scale-list span { color: var(--c-ink); }
+  .scale-list .s-0 { font-size: var(--fs-xs); }
+  .scale-list .s-1 { font-size: var(--fs-sm); }
+  .scale-list .s-2 { font-size: var(--fs-md); }
+  .scale-list .s-3 { font-size: var(--fs-lg); }
+  .scale-list .s-4 { font-size: var(--fs-xl); }
+
+  .components-list {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: var(--s-2);
+  }
+  .components-list li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--c-rule);
+    font-size: var(--fs-xs);
+  }
+  .components-list li:last-child { border-bottom: 0; }
+  .components-list li code { font-size: 11px; color: var(--c-accent); }
+  .components-list li span { color: var(--c-ink-soft); }
+
+  .col-4 { grid-column: span 4; }
+  .col-6 { grid-column: span 6; }
+  .col-8 { grid-column: span 8; }
+  .col-12 { grid-column: span 12; }
+  @media (max-width: 900px) {
+    .col-4, .col-6, .col-8 { grid-column: span 12; }
+  }
+
+  /* ── feature mock frame (looks like the real app) ─────────── */
+  .feature { display: grid; grid-template-columns: 1.55fr 1fr; gap: var(--s-8); align-items: start; }
+  @media (max-width: 1000px) { .feature { grid-template-columns: 1fr; } }
+
+  .feature__head {
+    display: flex; align-items: baseline; gap: var(--s-4);
+    margin-bottom: var(--s-6);
+    flex-wrap: wrap;
+  }
+  .feature__num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--c-accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .feature__title { font-size: var(--fs-lg); letter-spacing: -0.01em; }
+  .feature__tags { display: flex; gap: var(--s-2); flex-wrap: wrap; margin-left: auto; }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--c-ink-soft);
+    border: 1px solid var(--c-rule);
+    border-radius: 999px;
+    padding: 3px 8px;
+  }
+  .tag--accent { color: var(--c-accent); border-color: var(--c-accent-soft); background: var(--c-accent-soft); }
+  .tag--ok { color: var(--c-ok); border-color: #c8e2ce; background: #e9f3eb; }
+  .tag--warn { color: var(--c-warn); border-color: #ecdcb0; background: #f7ecd0; }
+
+  .feature__body { display: flex; flex-direction: column; gap: var(--s-6); }
+  .feature__lede { font-size: var(--fs-md); line-height: 1.45; max-width: 38ch; }
+  .feature__lede em { font-style: italic; color: var(--c-accent); }
+
+  /* The "browser" frame that holds the app mock */
+  .browser {
+    border: 1px solid var(--c-rule);
+    border-radius: 8px;
+    background: var(--c-bg-elev);
+    overflow: hidden;
+    box-shadow: var(--shadow-2);
+  }
+  .browser__chrome {
+    display: flex; align-items: center; gap: var(--s-3);
+    padding: 8px 12px;
+    background: #eee7d8;
+    border-bottom: 1px solid var(--c-rule);
+  }
+  .browser__dots { display: flex; gap: 6px; }
+  .browser__dots span {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #c8c0ad;
+  }
+  .browser__url {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--c-ink-soft);
+    background: var(--c-bg);
+    border: 1px solid var(--c-rule);
+    border-radius: 4px;
+    padding: 3px 8px;
+    text-align: center;
+  }
+  .browser__inner { padding: var(--s-6); background: var(--c-bg); }
+
+  /* Replicate the md-bridge app header inside each mock */
+  .app-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--c-rule);
+    margin-bottom: var(--s-6);
+  }
+  .app-header__brand {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: var(--fs-sm); letter-spacing: -0.02em;
+  }
+  .app-header__nav {
+    display: flex; gap: var(--s-4);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--c-ink-soft);
+  }
+  .app-header__nav .current { color: var(--c-accent); }
+  .lang-toggle {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-left: var(--s-3);
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+    border: 1px solid var(--c-rule); border-radius: var(--r-sm);
+    padding: 3px;
+    color: var(--c-ink-soft);
+  }
+  .lang-toggle b { background: var(--c-ink); color: var(--c-bg); padding: 2px 5px; border-radius: 2px; }
+
+  .mock-h1 { font-family: var(--font-display); font-size: var(--fs-lg); margin-bottom: 4px; }
+  .mock-sub { color: var(--c-ink-soft); font-size: var(--fs-xs); margin-bottom: var(--s-6); }
+
+  /* ── issue card (right column) ────────────────────────────── */
+  .issue {
+    border: 1px solid var(--c-rule);
+    background: var(--c-bg-elev);
+    border-radius: var(--r-md);
+    padding: var(--s-6);
+    display: flex; flex-direction: column; gap: var(--s-4);
+    position: sticky;
+    top: 80px;
+  }
+  .issue__top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+  .issue__top h4 {
+    font-family: var(--font-mono); font-weight: 500;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--c-ink-soft);
+  }
+  .issue__top h4::before { content: "// "; color: var(--c-rule); }
+  .issue__copy {
+    font-family: var(--font-body); font-size: 11px;
+    background: transparent; border: 1px solid var(--c-rule);
+    color: var(--c-ink); border-radius: var(--r-sm);
+    padding: 4px 10px; cursor: pointer;
+    transition: all var(--t-fast) var(--easing);
+  }
+  .issue__copy:hover { border-color: var(--c-accent); color: var(--c-accent); }
+  .issue__copy.is-copied { border-color: var(--c-ok); color: var(--c-ok); }
+
+  .issue h5 {
+    font-family: var(--font-display); font-weight: 600;
+    font-size: var(--fs-md); letter-spacing: -0.01em;
+    margin-bottom: 2px;
+  }
+  .issue .meta-row {
+    display: flex; gap: var(--s-2); flex-wrap: wrap;
+    font-family: var(--font-mono); font-size: 10px;
+  }
+  .issue .label {
+    border: 1px solid var(--c-rule);
+    padding: 2px 7px; border-radius: 999px;
+    color: var(--c-ink-soft);
+  }
+  .issue .label--enh { background: #e8eef6; color: #2a4a73; border-color: #c3d0e2; }
+  .issue .label--good { background: #e9f3eb; color: var(--c-ok); border-color: #c8e2ce; }
+  .issue .label--help { background: var(--c-accent-soft); color: var(--c-accent); border-color: #e2bdb9; }
+  .issue .label--i18n { background: #f3e9f0; color: #8a3f78; border-color: #d8c4d0; }
+
+  .issue dl { margin: 0; display: flex; flex-direction: column; gap: var(--s-3); }
+  .issue dt {
+    font-family: var(--font-mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--c-ink-soft);
+    margin-bottom: 4px;
+  }
+  .issue dd { margin: 0; font-size: var(--fs-xs); line-height: 1.55; color: var(--c-ink); }
+  .issue dd ul { margin: 4px 0 0; padding-left: 18px; }
+  .issue dd li { margin: 2px 0; }
+  .issue dd code { background: var(--c-bg); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--c-rule); }
+
+  /* ── shared mock UI bits ─────────────────────────────────── */
+  .dropzone-m {
+    height: 130px;
+    border: 2px dashed var(--c-rule);
+    border-radius: var(--r-md);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--c-bg-elev);
+    text-align: center;
+  }
+  .dropzone-m strong { font-family: var(--font-display); font-size: var(--fs-sm); }
+  .dropzone-m span { color: var(--c-ink-soft); font-size: 11px; }
+
+  .btn-m {
+    display: inline-flex; align-items: center; gap: 6px;
+    font: inherit; font-size: 11px;
+    padding: 6px 14px;
+    border-radius: var(--r-md);
+    border: 1px solid transparent;
+    cursor: default;
+  }
+  .btn-m--primary { background: var(--c-ink); color: var(--c-bg); }
+  .btn-m--ghost { background: transparent; color: var(--c-ink); border-color: var(--c-rule); }
+  .btn-m--accent { background: var(--c-accent); color: #fff; }
+
+  .row-m { display: flex; gap: var(--s-3); align-items: center; }
+
+  .panel {
+    border: 1px solid var(--c-rule);
+    border-radius: var(--r-md);
+    background: var(--c-bg-elev);
+    padding: var(--s-4);
+  }
+  .panel__head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: var(--s-3);
+  }
+  .panel__title {
+    font-family: var(--font-mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--c-ink-soft);
+  }
+
+  /* ── theme picker thumbnails (used by feature 1) ─────────── */
+  .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+  .theme-tile {
+    border: 1px solid var(--c-rule);
+    border-radius: var(--r-md);
+    background: var(--c-bg-elev);
+    overflow: hidden;
+    cursor: default;
+    transition: border-color var(--t-fast) var(--easing);
+  }
+  .theme-tile.is-selected {
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 3px var(--c-accent-soft);
+  }
+  .theme-tile__preview {
+    aspect-ratio: 0.78;
+    background: #fff;
+    border-bottom: 1px solid var(--c-rule);
+    padding: 8px;
+    font-size: 4.5px;
+    line-height: 1.45;
+    color: #1f1f1f;
+    overflow: hidden;
+  }
+  .theme-tile__meta { display: flex; justify-content: space-between; padding: 6px 8px; align-items: baseline; }
+  .theme-tile__meta b { font-family: var(--font-display); font-size: 11px; font-weight: 600; }
+  .theme-tile__meta span { font-family: var(--font-mono); font-size: 9px; color: var(--c-ink-soft); }
+
+  /* Inside each theme thumbnail */
+  .tt-h1 { font-weight: 700; font-size: 7px; margin-bottom: 3px; padding-bottom: 1px; border-bottom: 0.5px solid #222; }
+  .tt-h2 { font-weight: 600; font-size: 5.5px; margin: 6px 0 1px; }
+  .tt-p { margin: 0 0 2px; }
+  .tt-rule { height: 0.4px; background: #aaa; margin: 4px 0; }
+  .tt-bullet { padding-left: 6px; margin: 0; }
+  .tt-bullet li { list-style: disc; }
+
+  /* Theme variations */
+  .tt--academic { font-family: "Times New Roman", serif; }
+  .tt--academic .tt-h1 { font-size: 8px; border: 0; text-align: center; }
+  .tt--academic .tt-h2 { font-style: italic; }
+  .tt--technical { font-family: "Consolas", monospace; font-size: 4px; }
+  .tt--technical .tt-h1 { background: #1a1a1a; color: #fff; padding: 2px 3px; border: 0; }
+  .tt--technical .tt-h2 { color: var(--c-accent); }
+  .tt--minimal { font-family: Helvetica, Arial, sans-serif; font-size: 4.2px; }
+  .tt--minimal .tt-h1 { font-weight: 300; letter-spacing: 0.5px; border: 0; font-size: 9px; }
+  .tt--minimal .tt-h2 { font-weight: 400; color: #888; text-transform: uppercase; letter-spacing: 0.7px; font-size: 5px; }
+  .tt--corporate { font-family: Georgia, serif; }
+  .tt--corporate .tt-h1 { color: #1a3553; border-bottom-color: #1a3553; }
+  .tt--corporate .tt-h2 { color: #1a3553; }
+  .tt--corporate .tt-rule { background: #1a3553; height: 0.6px; }
+  .tt--brief { font-family: Garamond, serif; font-size: 4.5px; }
+  .tt--brief .tt-h1 { font-style: italic; font-weight: 400; font-size: 9px; border: 0; }
+  .tt--brief .tt-h2 { font-style: italic; font-weight: 400; }
+
+  /* ── small repeating bits ────────────────────────────────── */
+  .kbd {
+    font-family: var(--font-mono); font-size: 10px;
+    border: 1px solid var(--c-rule); border-bottom-width: 2px;
+    padding: 1px 5px; border-radius: 3px;
+    background: var(--c-bg-elev); color: var(--c-ink);
+  }
+
+  .tile {
+    border: 1px solid var(--c-rule);
+    border-radius: var(--r-md);
+    padding: var(--s-3);
+    background: var(--c-bg-elev);
+  }
+
+  .checkbox {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px;
+  }
+  .checkbox .box {
+    width: 12px; height: 12px;
+    border: 1px solid var(--c-rule);
+    border-radius: 2px;
+    background: var(--c-bg-elev);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 9px; color: var(--c-bg);
+  }
+  .checkbox.is-on .box { background: var(--c-ink); border-color: var(--c-ink); color: var(--c-bg); }
+
+  .seg {
+    display: inline-flex;
+    border: 1px solid var(--c-rule);
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.06em;
+  }
+  .seg span { padding: 3px 8px; color: var(--c-ink-soft); border-right: 1px solid var(--c-rule); }
+  .seg span:last-child { border-right: 0; }
+  .seg span.on { background: var(--c-ink); color: var(--c-bg); }
+
+  .num-stat { display: flex; flex-direction: column; }
+  .num-stat b { font-family: var(--font-display); font-size: var(--fs-md); }
+  .num-stat span { font-family: var(--font-mono); font-size: 10px; color: var(--c-ink-soft); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Footer */
+  .footer {
+    padding: var(--s-12) 0 var(--s-16);
+    border-top: 1px solid var(--c-rule);
+    color: var(--c-ink-soft);
+    font-size: var(--fs-xs);
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--s-8);
+  }
+  .footer h3 { font-family: var(--font-display); font-size: var(--fs-md); color: var(--c-ink); margin-bottom: var(--s-3); }
+  .footer ul { list-style: none; padding: 0; margin: 0; line-height: 2; }
+
+  /* ── pre-formatted invisible block holding the issue markdown ── */
+  .issue-md { display: none; }
+
+  /* spacing between sections */
+  .section-feature { padding-bottom: var(--s-16); }
+
+  /* MD/HTML preview content used in mockups */
+  .md-preview {
+    font-family: var(--font-display);
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--c-ink);
+    background: var(--c-bg-elev);
+    border: 1px solid var(--c-rule);
+    border-radius: var(--r-md);
+    padding: var(--s-4);
+    height: 130px;
+    overflow: hidden;
+  }
+  .md-preview h3 { font-size: 14px; margin-bottom: 4px; }
+  .md-preview h4 { font-size: 11px; margin: 8px 0 2px; }
+  .md-preview p { font-size: 10px; line-height: 1.5; margin: 0 0 4px; font-family: var(--font-body); }
+  .md-preview ul { margin: 4px 0; padding-left: 18px; font-family: var(--font-body); font-size: 10px; }
+
+  /* ─────────────────────────────────────────────────────────────
+     v0.2 polish — alignment, nowrap, crush-protection
+     ──────────────────────────────────────────────────────────── */
+
+  /* Tags, labels, kbd, mock buttons, status pills never split mid-label */
+  .tag, .label, .kbd, .btn-m, .status-pill { white-space: nowrap; }
+
+  /* Grid items inside .feature must accept fr math (otherwise the
+     issue-card column gets crushed when the mock column has long
+     unbreakable strings inside). */
+  .feature > * { min-width: 0; }
+  .feature__body { min-width: 0; }
+
+  /* Inner two-col grids inside a mock browser also need min-width:0
+     so neither side overflows the other. */
+  .mock-row { display: grid; gap: var(--s-4); }
+  .mock-row > * { min-width: 0; }
+
+  /* ── Theme tiles — stack the meta labels so they stop colliding ── */
+  .theme-tile__meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 10px;
+  }
+  .theme-tile__meta b { font-size: 11px; line-height: 1.1; }
+  .theme-tile__meta span { font-size: 9.5px; color: var(--c-ink-soft); }
+
+  /* ── Panel header — wrap the right side text instead of squishing it ── */
+  .panel__head { flex-wrap: wrap; gap: var(--s-2) var(--s-3); }
+
+  /* ── Format matrix — never break a badge across lines ── */
+  .format-matrix { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: auto; }
+  .format-matrix th, .format-matrix td { white-space: nowrap; }
+  .format-matrix td:first-child, .format-matrix th:first-child { white-space: normal; }
+
+  /* ── Status pill (red SHIPPED badge) ── */
+  .status-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--c-accent);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Recent (history) panel rows — flex so filenames never crush ── */
+  .recent-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-3);
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--c-rule);
+    font-size: 11px;
+  }
+  .recent-row:last-child { border-bottom: 0; }
+  .recent-row__name {
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+  .recent-row__name b {
+    display: block;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .recent-row__name small {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--c-ink-soft);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .recent-row__name small.is-warn { color: var(--c-accent); }
+  .recent-row__name small.is-mute { color: var(--c-ink-soft); }
+  .recent-row__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+
+  /* ── Preset chips — wrap the row, never the chip text ── */
+  .preset-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    flex-wrap: wrap;
+    padding: var(--s-3) var(--s-4);
+    background: var(--c-bg-elev);
+    border: 1px solid var(--c-rule);
+    border-radius: var(--r-md);
+    margin-bottom: var(--s-4);
+  }
+  .preset-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--c-rule);
+    font-size: 11px;
+    color: var(--c-ink-soft);
+    white-space: nowrap;
+  }
+  .preset-chip.is-active { background: var(--c-ink); color: var(--c-bg); border-color: var(--c-ink); }
+  .preset-chip.is-add { border-style: dashed; }
+  .preset-chip__meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    opacity: .85;
+  }
+  .preset-chip.is-active .preset-chip__meta { opacity: .7; }
+
+  /* ── "Selected entry · preview" right column gets a real width ── */
+  .recent-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
+    gap: var(--s-4);
+  }
+  .recent-grid > * { min-width: 0; }
+
+  /* ── md-preview should never one-word-per-line itself ── */
+  .md-preview { min-width: 200px; }
+  .md-preview p { word-break: normal; overflow-wrap: anywhere; }
+
+  /* Slightly more breathing room in the sample preview card */
+  .md-preview { padding: var(--s-4); line-height: 1.65; }
+
+  /* Eyebrow over the panel head for clearer info hierarchy */
+  .panel__title strong { color: var(--c-ink); font-weight: 500; }
+
+  /* Issue card spacing — better balance with feature body */
+  .issue { gap: var(--s-3); padding: var(--s-4) var(--s-4) var(--s-6); }
+  .issue h5 { line-height: 1.25; }
+
+  /* Section feature head — make tags row align right cleanly */
+  .feature__head { row-gap: var(--s-2); }
+  @media (max-width: 720px) { .feature__tags { margin-left: 0; } }
+
+  /* Hero meta — keep the labels from breaking */
+  .hero-meta .kv span:first-child { white-space: nowrap; }
+
+  /* Theme tile preview — slight breathing on padding so the
+     mini-h1 doesn't kiss the edge */
+  .theme-tile__preview { padding: 10px; }
+
+  /* The wider feature grid — give the mock a little more space */
+  @media (min-width: 1100px) {
+    .feature { grid-template-columns: 1.75fr 1fr; gap: var(--s-12); }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     v0.3 · responsive — phone, tablet, desktop
+     Single source of truth for every adaptive break.
+     Breakpoints: 1100 (desktop+) · 960 (small desktop)
+                  760 (tablet) · 560 (phone landscape) · 420 (phone)
+     ──────────────────────────────────────────────────────────── */
+
+  /* ── document container & sticky bar — looser padding on small screens ── */
+  @media (max-width: 760px) {
+    .doc { padding: 0 var(--s-4) var(--s-12); }
+    .doc-bar__inner { padding: var(--s-3) var(--s-4); gap: var(--s-3); }
+    .doc-bar__tag { display: none; }
+    .doc-bar__brand small { display: none; }
+    .doc-bar__nav { gap: var(--s-3); font-size: 9.5px; }
+  }
+  @media (max-width: 560px) {
+    .doc-bar__inner { flex-wrap: wrap; }
+    .doc-bar__nav { justify-content: flex-start; padding-top: var(--s-2); border-top: 1px dashed var(--c-rule); width: 100%; }
+  }
+
+  /* ── hero — stack vertically below the small-desktop break ── */
+  @media (max-width: 960px) {
+    .hero {
+      grid-template-columns: 1fr;
+      gap: var(--s-8);
+      padding: var(--s-12) 0 var(--s-8);
+    }
+    .hero h1 { font-size: clamp(2.2rem, 8vw, 3.6rem); }
+    .hero-meta { border-left: 0; border-top: 2px solid var(--c-rule); padding: var(--s-6) 0 0; }
+  }
+  @media (max-width: 560px) {
+    .hero { padding: var(--s-8) 0 var(--s-6); }
+    .hero p { font-size: var(--fs-sm); }
+  }
+
+  /* ── section heads — collapse the eyebrow number above on small ── */
+  @media (max-width: 760px) {
+    .section { padding: var(--s-12) 0 var(--s-8); }
+    .section__head {
+      grid-template-columns: 1fr;
+      gap: var(--s-3);
+      margin-bottom: var(--s-8);
+    }
+    .section__head h2 { font-size: var(--fs-lg); }
+  }
+
+  /* ── sys-grid (Foundations + Roadmap + Appendix cards) ── */
+  @media (max-width: 760px) {
+    .sys-grid { gap: var(--s-4); }
+    .col-4, .col-6, .col-8, .col-12 { grid-column: 1 / -1; }
+    .swatches { grid-template-columns: repeat(2, 1fr); }
+    .type-stack .row { grid-template-columns: 1fr; gap: var(--s-1); }
+  }
+
+  /* ── feature row — stack issue card under the mock from 1000px down ── */
+  @media (max-width: 1000px) {
+    .feature { grid-template-columns: 1fr; gap: var(--s-6); }
+    .issue { position: static; }
+  }
+  @media (max-width: 760px) {
+    .feature__head { gap: var(--s-2); }
+    .feature__tags { margin-left: 0; width: 100%; }
+    .feature__lede { font-size: var(--fs-sm); max-width: none; }
+    .section-feature { padding-bottom: var(--s-12); }
+  }
+
+  /* ── browser frame — tighten chrome + body on phones ── */
+  @media (max-width: 760px) {
+    .browser__chrome { padding: 6px 10px; gap: var(--s-2); }
+    .browser__url { font-size: 10px; padding: 2px 6px; }
+    .browser__inner { padding: var(--s-4); }
+    .app-header { flex-wrap: wrap; gap: var(--s-2); }
+    .app-header__nav { font-size: 10px; gap: var(--s-3); flex-wrap: wrap; }
+    .mock-h1 { font-size: var(--fs-md); }
+  }
+
+  /* ── ANY inline two-col grid inside a mock collapses to one column ── */
+  @media (max-width: 760px) {
+    .browser__inner > div[style*="grid-template-columns"],
+    .browser__inner div[style*="grid-template-columns:1fr 1fr"],
+    .browser__inner div[style*="grid-template-columns:1.1fr 1fr"],
+    .browser__inner div[style*="grid-template-columns:1.2fr 1fr"],
+    .browser__inner div[style*="grid-template-columns:1.55fr 1fr"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* ── F2 theme library three-pane → stack on tablet, single col on phone ── */
+  @media (max-width: 960px) {
+    .browser__inner div[style*="200px"][style*="minmax(0,1.2fr)"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* ── F1 theme tiles — 2 cols then 1 ── */
+  @media (max-width: 760px) {
+    .theme-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 460px) {
+    .theme-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── F4 format matrix already has overflow-x:auto; trim padding ── */
+  @media (max-width: 560px) {
+    .format-matrix th, .format-matrix td { padding: 6px 8px; }
+  }
+
+  /* ── F5 locale grid (4 cols at desktop) — 2 then 1 ── */
+  @media (max-width: 760px) {
+    .browser__inner div[style*="repeat(4, 1fr)"] {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+  @media (max-width: 460px) {
+    .browser__inner div[style*="repeat(4, 1fr)"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* ── F6 preset row already flex-wraps; keep the meta visible ── */
+  @media (max-width: 460px) {
+    .preset-row { padding: var(--s-3); }
+    .preset-row > span:first-child { width: 100%; margin-right: 0; }
+    .preset-row > span:last-child { width: 100%; text-align: left; margin-left: 0 !important; }
+  }
+
+  /* ── F7 recent-grid: stack the preview below the list ── */
+  @media (max-width: 880px) {
+    .recent-grid {
+      grid-template-columns: 1fr;
+      gap: var(--s-4);
+    }
+    .md-preview { min-height: 140px; }
+  }
+
+  /* ── F7 recent rows — already flex; bring actions full-width on phone ── */
+  @media (max-width: 520px) {
+    .recent-row__actions {
+      margin-left: 0;
+      width: 100%;
+      justify-content: flex-start;
+    }
+    .recent-row__name { flex: 1 1 100%; }
+  }
+
+  /* ── F3 / F8 options + prefs — already use 1fr 1fr inline; stack on phone ── */
+  @media (max-width: 560px) {
+    .seg { font-size: 9px; }
+    .seg span { padding: 2px 6px; }
+    .panel { padding: var(--s-3); }
+  }
+
+  /* ── footer ── */
+  @media (max-width: 760px) {
+    .footer { grid-template-columns: 1fr; gap: var(--s-6); padding: var(--s-8) 0 var(--s-12); }
+  }
+
+  /* ── issue card spacing on small screens ── */
+  @media (max-width: 760px) {
+    .issue { padding: var(--s-4); }
+    .issue h5 { font-size: var(--fs-sm); }
+  }
+
+  /* ── horizontal-overflow safety net: never let a child push the page wider ── */
+  html, body { overflow-x: hidden; }
+  .browser, .panel, .sys-card, .issue { max-width: 100%; }
+
+  /* Theme tile preview text should rebreak on narrow widths */
+  .theme-tile__preview { word-break: break-word; }
+
+  /* Keep the F2 catalogue list usable when stacked: cap height + scroll */
+  @media (max-width: 960px) {
+    .browser__inner ul[style*="list-style:none"] {
+      max-height: 240px;
+      overflow-y: auto;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header class="doc-bar">
+  <div class="doc-bar__inner">
+  <div class="doc-bar__brand">md-bridge <small>design&nbsp;thinking · v0.1</small></div>
+    <nav class="doc-bar__nav">
+      <a href="#foundations">Foundations</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#f1">Themes</a>
+      <a href="#f2">Library</a>
+      <a href="#f3">Options</a>
+      <a href="#f4">Formats</a>
+      <a href="#f5">i18n</a>
+      <a href="#f6">Presets</a>
+      <a href="#f7">History</a>
+      <a href="#f8">Settings</a>
+    </nav>
+    <span class="doc-bar__tag">design doc</span>
+  </div>
+</header>
+
+<main class="doc">
+
+  <!-- ────────────────── HERO ────────────────── -->
+  <section class="hero">
+    <div>
+      <h1>Same logic.<br><em>More bridges.</em></h1>
+      <p>A design-thinking base for the next round of <strong>md-bridge</strong> features &mdash; built on the editorial system that already ships, ready to be sliced into community-friendly GitHub issues.</p>
+    </div>
+    <aside class="hero-meta">
+      <div class="kv"><span>Project</span><strong>vinicq/md-bridge</strong></div>
+      <div class="kv"><span>License</span><strong>MIT · open source</strong></div>
+      <div class="kv"><span>Stack</span><strong>FastAPI · React · Vite</strong></div>
+      <div class="kv"><span>Locales</span><strong>EN · PT · ES</strong></div>
+      <div class="kv"><span>Tests</span><strong>124, all green</strong></div>
+      <div class="kv"><span>Author</span><strong>Vinicius Queiroz</strong></div>
+    </aside>
+  </section>
+
+  <!-- ────────────────── PRINCIPLES ────────────────── -->
+  <section class="section" id="principles">
+    <div class="section__head">
+      <span class="section__num">00 · Read me first</span>
+      <div>
+        <h2>Five rules every new feature must respect.</h2>
+        <p>These are not opinions &mdash; they&apos;re what makes md-bridge <em>md-bridge</em>. Any contribution that breaks one is a different product, not a feature.</p>
+      </div>
+    </div>
+
+    <div class="sys-grid">
+      <div class="sys-card col-4">
+        <h4>1 · Deterministic</h4>
+        <p style="margin:0;font-size:var(--fs-xs);color:var(--c-ink-soft);">Same input, same output, every run. No AI in the conversion pipeline &mdash; pure heuristics. Features can <em>help</em> the user choose, but the conversion itself stays reproducible.</p>
+      </div>
+      <div class="sys-card col-4">
+        <h4>2 · Local-first</h4>
+        <p style="margin:0;font-size:var(--fs-xs);color:var(--c-ink-soft);">No external API calls during conversion. Temp files removed before the response goes out. Anything new that needs the network has to be opt-in and explicit.</p>
+      </div>
+      <div class="sys-card col-4">
+        <h4>3 · No persistence</h4>
+        <p style="margin:0;font-size:var(--fs-xs);color:var(--c-ink-soft);">No accounts, no database, no telemetry. User state lives in <code>localStorage</code> or the URL &mdash; that&apos;s the only memory we&apos;re allowed.</p>
+      </div>
+      <div class="sys-card col-4">
+        <h4>4 · Heuristic-first</h4>
+        <p style="margin:0;font-size:var(--fs-xs);color:var(--c-ink-soft);">Every new format pair (DOCX, EPUB, RTF) follows the same vendored-skill pattern under <code>packages/</code>. The route layer stays thin.</p>
+      </div>
+      <div class="sys-card col-4">
+        <h4>5 · Editorial UI</h4>
+        <p style="margin:0;font-size:var(--fs-xs);color:var(--c-ink-soft);">Fraunces + IBM Plex. Cream + ink + a single red accent. No purple gradients, no Inter, no glassy cards. Hierarchy over decoration.</p>
+      </div>
+      <div class="sys-card col-4" style="background:var(--c-accent-soft);border-color:#e2bdb9;">
+        <h4 style="color:var(--c-accent);">→ Use this doc as a base</h4>
+        <p style="margin:0;font-size:var(--fs-xs);color:var(--c-ink);">Every section below pairs a hi-fi mock (cream/red, same components, same logic) with a ready-to-paste <strong>GitHub Issue</strong>. Hit <em>Copy issue</em> and open it on the repo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ────────────────── FOUNDATIONS ────────────────── -->
+  <section class="section" id="foundations">
+    <div class="section__head">
+      <span class="section__num">01 · Foundations</span>
+      <div>
+        <h2>What md-bridge already gives us to build on.</h2>
+        <p>The design system lives in <code>apps/web/src/styles/tokens.css</code> (49 lines, 14 variables). Every mock below reuses these exact tokens &mdash; no new font, no new color.</p>
+      </div>
+    </div>
+
+    <div class="sys-grid">
+
+      <!-- Color -->
+      <div class="sys-card col-6">
+        <h4>Color tokens · 9 ramps</h4>
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background:#f7f3ec;"></div><b>bg</b>#f7f3ec</div>
+          <div class="swatch"><div class="chip" style="background:#fdfaf3;"></div><b>bg-elev</b>#fdfaf3</div>
+          <div class="swatch"><div class="chip" style="background:#1a1a1a;"></div><b>ink</b>#1a1a1a</div>
+          <div class="swatch"><div class="chip" style="background:#555;"></div><b>ink-soft</b>#555</div>
+          <div class="swatch"><div class="chip" style="background:#d8d2c5;"></div><b>rule</b>#d8d2c5</div>
+          <div class="swatch"><div class="chip" style="background:#c8362f;"></div><b>accent</b>#c8362f</div>
+          <div class="swatch"><div class="chip" style="background:#f1d8d5;"></div><b>accent-soft</b>#f1d8d5</div>
+          <div class="swatch"><div class="chip" style="background:#2e7d4a;"></div><b>ok</b>#2e7d4a</div>
+        </div>
+      </div>
+
+      <!-- Type -->
+      <div class="sys-card col-6">
+        <h4>Type stack · 3 families</h4>
+        <div class="type-stack">
+          <div class="row">
+            <code>--font-display</code>
+            <span style="font-family:var(--font-display);font-size:18px;font-weight:600;letter-spacing:-0.01em;">Fraunces &mdash; editorial serif</span>
+          </div>
+          <div class="row">
+            <code>--font-body</code>
+            <span style="font-family:var(--font-body);font-size:13px;">IBM Plex Sans &mdash; humanist sans</span>
+          </div>
+          <div class="row">
+            <code>--font-mono</code>
+            <span style="font-family:var(--font-mono);font-size:12px;">JetBrains Mono &mdash; mono</span>
+          </div>
+        </div>
+        <div style="margin-top:var(--s-4);padding-top:var(--s-3);border-top:1px dashed var(--c-rule);">
+          <div class="scale-list">
+            <span class="s-0">xs</span>
+            <span class="s-1">sm</span>
+            <span class="s-2">md</span>
+            <span class="s-3">lg</span>
+            <span class="s-4">xl</span>
+          </div>
+          <p style="margin:6px 0 0;font-size:11px;color:var(--c-ink-soft);font-family:var(--font-mono);">modular scale · ratio 1.25</p>
+        </div>
+      </div>
+
+      <!-- Components inventory -->
+      <div class="sys-card col-6">
+        <h4>Existing components · reuse don&apos;t recreate</h4>
+        <ul class="components-list">
+          <li><code>&lt;DropZone /&gt;</code><span>drag, click, folder walk, MIME validation</span></li>
+          <li><code>&lt;Button /&gt;</code><span>primary · ghost · icon · loading</span></li>
+          <li><code>&lt;Card /&gt;</code><span>surface · outline</span></li>
+          <li><code>&lt;ConvertButton /&gt;</code><span>state machine: idle / loading / ok / error</span></li>
+          <li><code>&lt;MarkdownPreview /&gt;</code><span>react-markdown with in-app theme</span></li>
+          <li><code>&lt;DiagnosticPanel /&gt;</code><span>fonts, sizes, tagged-PDF, OCR hint</span></li>
+          <li><code>&lt;BatchPanel /&gt;</code><span>queue, per-row status, per-row download</span></li>
+          <li><code>&lt;Toast /&gt;</code><span>3s auto-hide, accent border-left</span></li>
+          <li><code>&lt;Spinner /&gt;</code><span>thin SVG, accent color</span></li>
+          <li><code>&lt;LanguageSwitcher /&gt;</code><span>EN / PT / ES, localStorage</span></li>
+        </ul>
+      </div>
+
+      <!-- Routes -->
+      <div class="sys-card col-6">
+        <h4>Pages today</h4>
+        <ul class="components-list">
+          <li><code>/</code><span>Hero + two cards</span></li>
+          <li><code>/convert/pdf-to-md</code><span>DropZone · Diagnostic · BatchPanel · MarkdownPreview</span></li>
+          <li><code>/convert/md-to-pdf</code><span>DropZone · paste textarea · BatchPanel · PDF iframe</span></li>
+          <li><code>/about</code><span>narrative, limits, links</span></li>
+        </ul>
+        <h4 style="margin-top:var(--s-6);">API surface</h4>
+        <ul class="components-list">
+          <li><code>POST /api/pdf-to-md</code><span>multipart · options json</span></li>
+          <li><code>POST /api/md-to-pdf</code><span>multipart · returns application/pdf</span></li>
+          <li><code>POST /api/inspect-pdf</code><span>diagnostics for the panel</span></li>
+          <li><code>GET /api/health</code><span>status + version</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ────────────────── ROADMAP HEADER ────────────────── -->
+  <section class="section" id="roadmap">
+    <div class="section__head">
+      <span class="section__num">02 · Roadmap</span>
+      <div>
+        <h2>Eight features. Eight issues. One coherent system.</h2>
+        <p>Ordered by the user&apos;s explicit ask first (theme picker, custom CSS, future formats, languages), then by what unlocks the rest. Each card below carries a <em>type</em>, a <em>scope</em>, and a complexity hint so contributors can self-select.</p>
+      </div>
+    </div>
+
+    <div class="sys-grid">
+      <a class="sys-card col-4" href="#f1" style="border-color:var(--c-accent-soft);background:var(--c-accent-soft);text-decoration:none;color:inherit;">
+        <div class="row-m" style="justify-content:space-between;margin-bottom:var(--s-2);">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);letter-spacing:0.12em;">F1 · MD→PDF</span>
+          <span class="tag tag--accent">USER ASK</span>
+        </div>
+        <h4 style="font-family:var(--font-display);font-size:var(--fs-md);color:var(--c-ink);letter-spacing:-0.01em;">CSS theme picker</h4>
+        <p style="margin:6px 0 0;font-size:11px;color:var(--c-ink);">Six bundled themes for the PDF render &mdash; default editorial, academic, technical, minimal, corporate, brief.</p>
+      </a>
+      <a class="sys-card col-4" href="#f2" style="text-decoration:none;color:inherit;">
+        <div class="row-m" style="justify-content:space-between;margin-bottom:var(--s-2);">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);letter-spacing:0.12em;">F2 · MD→PDF</span>
+          <span class="tag">curated</span>
+        </div>
+        <h4 style="font-family:var(--font-display);font-size:var(--fs-md);color:var(--c-ink);letter-spacing:-0.01em;">Theme library &mdash; deep picker</h4>
+        <p style="margin:6px 0 0;font-size:11px;color:var(--c-ink-soft);">A dedicated browser with 12+ pre-defined themes. Visual A4 preview <em>and</em> read-only CSS source side-by-side. The user only picks &mdash; never edits.</p>
+      </a>
+      <a class="sys-card col-4" href="#f3" style="text-decoration:none;color:inherit;">
+        <div class="row-m" style="justify-content:space-between;margin-bottom:var(--s-2);">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);letter-spacing:0.12em;">F3 · MD→PDF</span>
+          <span class="tag">options</span>
+        </div>
+        <h4 style="font-family:var(--font-display);font-size:var(--fs-md);color:var(--c-ink);letter-spacing:-0.01em;">Per-conversion options</h4>
+        <p style="margin:6px 0 0;font-size:11px;color:var(--c-ink-soft);">Page size, margins, TOC, page numbers, header/footer text. Per file or per batch.</p>
+      </a>
+      <a class="sys-card col-4" href="#f4" style="border-color:var(--c-accent-soft);background:var(--c-accent-soft);text-decoration:none;color:inherit;">
+        <div class="row-m" style="justify-content:space-between;margin-bottom:var(--s-2);">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);letter-spacing:0.12em;">F4 · platform</span>
+          <span class="tag tag--accent">USER ASK</span>
+        </div>
+        <h4 style="font-family:var(--font-display);font-size:var(--fs-md);color:var(--c-ink);letter-spacing:-0.01em;">More formats: DOCX · EPUB · HTML</h4>
+        <p style="margin:6px 0 0;font-size:11px;color:var(--c-ink);">Generalise the <code>/convert/X-to-Y</code> shape so adding a new format pair is one route + one service.</p>
+      </a>
+      <a class="sys-card col-4" href="#f5" style="border-color:var(--c-accent-soft);background:var(--c-accent-soft);text-decoration:none;color:inherit;">
+        <div class="row-m" style="justify-content:space-between;margin-bottom:var(--s-2);">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);letter-spacing:0.12em;">F5 · i18n</span>
+          <span class="tag tag--accent">USER ASK</span>
+        </div>
+        <h4 style="font-family:var(--font-display);font-size:var(--fs-md);color:var(--c-ink);letter-spacing:-0.01em;">Language workshop</h4>
+        <p style="margin:6px 0 0;font-size:11px;color:var(--c-ink);">A page that lists every locale, shows missing keys, and lets contributors export a draft PR-ready dictionary.</p>
+      </a>
+      <a class="sys-card col-4" href="#f6" style="text-decoration:none;color:inherit;">
+        <div class="row-m" style="justify-content:space-between;margin-bottom:var(--s-2);">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);letter-spacing:0.12em;">F6 · UX</span>
+          <span class="tag">power user</span>
+        </div>
+        <h4 style="font-family:var(--font-display);font-size:var(--fs-md);color:var(--c-ink);letter-spacing:-0.01em;">Conversion presets</h4>
+        <p style="margin:6px 0 0;font-size:11px;color:var(--c-ink-soft);">Save the current set of options as a named preset, recall it from the dropzone toolbar.</p>
+      </a>
+      <a class="sys-card col-4" href="#f7" style="text-decoration:none;color:inherit;">
+        <div class="row-m" style="justify-content:space-between;margin-bottom:var(--s-2);">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);letter-spacing:0.12em;">F7 · UX</span>
+          <span class="tag">local-only</span>
+        </div>
+        <h4 style="font-family:var(--font-display);font-size:var(--fs-md);color:var(--c-ink);letter-spacing:-0.01em;">Local conversion history</h4>
+        <p style="margin:6px 0 0;font-size:11px;color:var(--c-ink-soft);">File names + sizes + result blob URLs in localStorage. Re-download a recent result without re-running.</p>
+      </a>
+      <a class="sys-card col-4" href="#f8" style="text-decoration:none;color:inherit;">
+        <div class="row-m" style="justify-content:space-between;margin-bottom:var(--s-2);">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);letter-spacing:0.12em;">F8 · settings</span>
+          <span class="tag">polish</span>
+        </div>
+        <h4 style="font-family:var(--font-display);font-size:var(--fs-md);color:var(--c-ink);letter-spacing:-0.01em;">Preferences page</h4>
+        <p style="margin:6px 0 0;font-size:11px;color:var(--c-ink-soft);">Default theme, default locale, accent color override, &quot;no telemetry&quot; affirmation badge.</p>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<!-- ────────────────────────────────────────────────────────────── -->
+<!-- ── FEATURE SECTIONS (each = mock + issue card pair) ──────── -->
+<!-- ────────────────────────────────────────────────────────────── -->
+
+<main class="doc">
+
+  <!-- ═════════════════ F1 · THEMES ═════════════════ -->
+  <section class="section section-feature" id="f1">
+    <div class="feature__head">
+      <span class="feature__num">Feature 01</span>
+      <h3 class="feature__title">CSS theme picker for Markdown → PDF</h3>
+      <div class="feature__tags">
+        <span class="tag tag--accent">user ask</span>
+        <span class="tag">MD→PDF</span>
+        <span class="tag">good first issue</span>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature__body">
+        <p class="feature__lede">A gallery sits under the dropzone. Six bundled stylesheets &mdash; <em>Default Editorial</em>, <em>Academic</em>, <em>Technical</em>, <em>Minimal</em>, <em>Corporate</em>, <em>Brief</em>. One click = the next render uses that theme.</p>
+
+        <div class="browser">
+          <div class="browser__chrome">
+            <div class="browser__dots"><span></span><span></span><span></span></div>
+            <div class="browser__url">localhost:5173 / convert / md-to-pdf</div>
+          </div>
+          <div class="browser__inner">
+            <header class="app-header">
+              <div class="app-header__brand">md-bridge</div>
+              <nav class="app-header__nav">
+                <span>PDF · MD</span><span class="current">MD · PDF</span><span>ABOUT</span>
+                <span class="lang-toggle"><b>EN</b>PT ES</span>
+              </nav>
+            </header>
+
+            <h2 class="mock-h1">Markdown to PDF</h2>
+            <p class="mock-sub">Upload a .md or paste text. Pick a theme for the PDF.</p>
+
+            <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:var(--s-4);">
+              <div style="display:flex;flex-direction:column;gap:var(--s-3);">
+                <div class="dropzone-m">
+                  <strong>Drop Markdown files or a folder</strong>
+                  <span>or click to pick files</span>
+                </div>
+
+                <div class="panel">
+                  <div class="panel__head">
+                    <span class="panel__title">// PDF theme</span>
+                    <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);">Academic</span>
+                  </div>
+                  <div class="theme-grid">
+
+                    <div class="theme-tile">
+                      <div class="theme-tile__preview">
+                        <div class="tt-h1">Default Editorial</div>
+                        <p class="tt-p">A paragraph with body copy in a humanist sans, justified text.</p>
+                        <div class="tt-h2">Subheading</div>
+                        <ul class="tt-bullet"><li>item one</li><li>item two</li></ul>
+                      </div>
+                      <div class="theme-tile__meta"><b>Default</b><span>editorial</span></div>
+                    </div>
+
+                    <div class="theme-tile is-selected">
+                      <div class="theme-tile__preview tt--academic">
+                        <div class="tt-h1">Academic</div>
+                        <p class="tt-p">Abstract. A paragraph with body copy set in a transitional serif.</p>
+                        <div class="tt-h2">1. Introduction</div>
+                        <p class="tt-p">Body paragraph two.</p>
+                      </div>
+                      <div class="theme-tile__meta"><b>Academic</b><span>serif</span></div>
+                    </div>
+
+                    <div class="theme-tile">
+                      <div class="theme-tile__preview tt--technical">
+                        <div class="tt-h1">TECHNICAL</div>
+                        <p class="tt-p">// monospace body for code-heavy docs</p>
+                        <div class="tt-h2">## Section</div>
+                        <p class="tt-p">- item one</p>
+                        <p class="tt-p">- item two</p>
+                      </div>
+                      <div class="theme-tile__meta"><b>Technical</b><span>mono</span></div>
+                    </div>
+
+                    <div class="theme-tile">
+                      <div class="theme-tile__preview tt--minimal">
+                        <div class="tt-h1">Minimal</div>
+                        <p class="tt-p">Quiet body type, generous whitespace, no rules.</p>
+                        <div class="tt-h2">SUBHEAD</div>
+                        <p class="tt-p">A second paragraph follows.</p>
+                      </div>
+                      <div class="theme-tile__meta"><b>Minimal</b><span>sans</span></div>
+                    </div>
+
+                    <div class="theme-tile">
+                      <div class="theme-tile__preview tt--corporate">
+                        <div class="tt-h1">Corporate</div>
+                        <p class="tt-p">A paragraph with a slightly more formal body style.</p>
+                        <div class="tt-h2">Subheading</div>
+                        <div class="tt-rule"></div>
+                        <p class="tt-p">Body paragraph two.</p>
+                      </div>
+                      <div class="theme-tile__meta"><b>Corporate</b><span>navy</span></div>
+                    </div>
+
+                    <div class="theme-tile">
+                      <div class="theme-tile__preview tt--brief">
+                        <div class="tt-h1">Brief</div>
+                        <p class="tt-p">A paragraph set in an italic display face for short docs.</p>
+                        <div class="tt-h2">Subheading</div>
+                        <p class="tt-p">Body paragraph two.</p>
+                      </div>
+                      <div class="theme-tile__meta"><b>Brief</b><span>italic</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row-m">
+                  <span class="btn-m btn-m--primary">Convert with Academic</span>
+                  <a href="#f2" class="btn-m btn-m--ghost" style="text-decoration:none;color:inherit;">Browse all 12 →</a>
+                </div>
+              </div>
+
+              <div class="md-preview">
+                <h3>Sample heading</h3>
+                <p>A paragraph with <b>bold</b> and <i>italic</i> text. The right side is the live HTML preview &mdash; PDF render uses the selected theme&apos;s CSS at <code style="font-family:var(--font-mono);font-size:9px;">@page</code> level.</p>
+                <h4>Subheading</h4>
+                <ul><li>item one</li><li>item two</li></ul>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue card -->
+      <aside class="issue">
+        <div class="issue__top">
+          <h4>Issue · ready to paste</h4>
+          <button class="issue__copy" data-target="md-f1">Copy issue</button>
+        </div>
+        <div>
+          <h5>[feature] CSS theme picker for Markdown → PDF</h5>
+          <div class="meta-row" style="margin-top:6px;">
+            <span class="label label--enh">enhancement</span>
+            <span class="label label--good">good first issue</span>
+            <span class="label label--help">help wanted</span>
+          </div>
+        </div>
+
+        <dl>
+          <div><dt>Problem</dt><dd>Today every render uses <code>packages/markdown-to-pdf/templates/default.css</code>. Users have asked for the ability to pick a different look without forking the repo.</dd></div>
+          <div><dt>Proposal</dt><dd>Ship 6 bundled themes under <code>packages/markdown-to-pdf/templates/</code>: <code>default.css</code>, <code>academic.css</code>, <code>technical.css</code>, <code>minimal.css</code>, <code>corporate.css</code>, <code>brief.css</code>. Expose a <code>theme</code> string in the MD→PDF options. Render a 3×2 gallery under the dropzone with thumbnails.</dd></div>
+          <div><dt>Acceptance</dt><dd><ul>
+            <li>API: <code>options.theme</code> accepts the 6 ids; invalid → 422 with the canonical error envelope.</li>
+            <li>UI: selected theme persists in <code>localStorage</code> under <code>md-bridge:md-to-pdf:theme</code>.</li>
+            <li>Each thumbnail is a real screenshot of <code>sample.md</code> rendered with that CSS, generated by a script in <code>scripts/build-theme-thumbs.py</code>.</li>
+            <li>i18n: theme names + descriptions added to <code>dictionaries.ts</code> for EN / PT / ES.</li>
+            <li>Tests: API unit test per theme id, frontend RTL test for selection, regression golden for the academic theme.</li>
+          </ul></dd></div>
+        </dl>
+        <pre class="issue-md" id="md-f1">## Problem
+
+Today every render uses `packages/markdown-to-pdf/templates/default.css`. Users have asked for the ability to pick a different look without forking the repo.
+
+## Proposal
+
+Ship 6 bundled themes under `packages/markdown-to-pdf/templates/`:
+- `default.css` (current)
+- `academic.css` (serif, justified, numbered headings)
+- `technical.css` (mono body, code-block-friendly)
+- `minimal.css` (quiet sans, no rules)
+- `corporate.css` (navy accent, sectioned)
+- `brief.css` (italic display, short docs)
+
+Expose `options.theme` in the MD→PDF endpoint. Render a 3×2 theme gallery under the dropzone with thumbnails.
+
+## Acceptance criteria
+
+- [ ] API: `options.theme` accepts the 6 ids; invalid → 422 with the canonical error envelope.
+- [ ] UI: selected theme persists in localStorage under `md-bridge:md-to-pdf:theme`.
+- [ ] Each thumbnail is a real screenshot of `sample.md` rendered with that CSS, generated by `scripts/build-theme-thumbs.py`.
+- [ ] i18n: theme names + descriptions added to `dictionaries.ts` for EN / PT / ES.
+- [ ] Tests: API unit test per theme id, frontend RTL test for selection, regression golden for the `academic` theme.
+
+## Labels
+
+`enhancement` · `good first issue` · `help wanted`</pre>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═════════════════ F2 · THEME LIBRARY ═════════════════ -->
+  <section class="section section-feature" id="f2">
+    <div class="feature__head">
+      <span class="feature__num">Feature 02</span>
+      <h3 class="feature__title">Theme library &mdash; deep picker with code preview</h3>
+      <div class="feature__tags">
+        <span class="tag">MD→PDF</span>
+        <span class="tag">curated</span>
+        <span class="tag">help wanted</span>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature__body">
+        <p class="feature__lede">F1 is the quick gallery on the convert page. <em>F2 is the deep browser</em> &mdash; a dedicated <code>/themes</code> route with a curated catalogue of 12+ pre-defined themes, full A4 preview, <em>and</em> the read-only CSS source for transparency. The user picks. They never edit.</p>
+
+        <div class="browser">
+          <div class="browser__chrome">
+            <div class="browser__dots"><span></span><span></span><span></span></div>
+            <div class="browser__url">localhost:5173 / themes</div>
+          </div>
+          <div class="browser__inner">
+            <header class="app-header">
+              <div class="app-header__brand">md-bridge</div>
+              <nav class="app-header__nav">
+                <span>PDF · MD</span><span>MD · PDF</span><span class="current">THEMES</span><span>ABOUT</span>
+                <span class="lang-toggle"><b>EN</b>PT ES</span>
+              </nav>
+            </header>
+
+            <h2 class="mock-h1">Theme library</h2>
+            <p class="mock-sub">Twelve curated stylesheets for the PDF render. Pick one &mdash; we show you exactly what it does.</p>
+
+            <!-- Filter chips -->
+            <div class="preset-row" style="margin-bottom:var(--s-4);">
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);text-transform:uppercase;letter-spacing:0.1em;margin-right:var(--s-2);">Filter</span>
+              <span class="preset-chip is-active">All <span class="preset-chip__meta">12</span></span>
+              <span class="preset-chip">Serif <span class="preset-chip__meta">5</span></span>
+              <span class="preset-chip">Sans <span class="preset-chip__meta">4</span></span>
+              <span class="preset-chip">Mono <span class="preset-chip__meta">2</span></span>
+              <span class="preset-chip">Numbered <span class="preset-chip__meta">3</span></span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">Showing 12 · sorted by name</span>
+            </div>
+
+            <!-- Three-pane layout: list · A4 preview · CSS source -->
+            <div style="display:grid;grid-template-columns:200px minmax(0,1.2fr) minmax(0,1fr);gap:var(--s-3);align-items:start;">
+
+              <!-- LEFT · theme list -->
+              <div class="panel" style="padding:0;">
+                <div class="panel__head" style="padding:8px 12px;margin:0;border-bottom:1px solid var(--c-rule);">
+                  <span class="panel__title">// catalogue</span>
+                </div>
+                <ul style="list-style:none;margin:0;padding:0;">
+                  <li style="padding:8px 12px;font-size:11px;color:var(--c-ink);border-bottom:1px solid var(--c-rule);"><b style="font-family:var(--font-display);font-size:12px;">Default Editorial</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">serif · A4 · v1</span></li>
+                  <li style="padding:8px 12px;font-size:11px;border-bottom:1px solid var(--c-rule);background:var(--c-accent-soft);border-left:3px solid var(--c-accent);"><b style="font-family:var(--font-display);font-size:12px;">Academic</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);">serif · numbered · selected</span></li>
+                  <li style="padding:8px 12px;font-size:11px;border-bottom:1px solid var(--c-rule);"><b style="font-family:var(--font-display);font-size:12px;">Technical</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">mono · code-friendly</span></li>
+                  <li style="padding:8px 12px;font-size:11px;border-bottom:1px solid var(--c-rule);"><b style="font-family:var(--font-display);font-size:12px;">Minimal</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">sans · quiet</span></li>
+                  <li style="padding:8px 12px;font-size:11px;border-bottom:1px solid var(--c-rule);"><b style="font-family:var(--font-display);font-size:12px;">Corporate</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">serif · navy accent</span></li>
+                  <li style="padding:8px 12px;font-size:11px;border-bottom:1px solid var(--c-rule);"><b style="font-family:var(--font-display);font-size:12px;">Brief</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">italic · short docs</span></li>
+                  <li style="padding:8px 12px;font-size:11px;border-bottom:1px solid var(--c-rule);"><b style="font-family:var(--font-display);font-size:12px;">Newsroom</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">serif · columns</span></li>
+                  <li style="padding:8px 12px;font-size:11px;border-bottom:1px solid var(--c-rule);"><b style="font-family:var(--font-display);font-size:12px;">Thesis</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">serif · double-spaced</span></li>
+                  <li style="padding:8px 12px;font-size:11px;border-bottom:1px solid var(--c-rule);"><b style="font-family:var(--font-display);font-size:12px;">Whitepaper</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">sans · cover page</span></li>
+                  <li style="padding:8px 12px;font-size:11px;border-bottom:1px solid var(--c-rule);"><b style="font-family:var(--font-display);font-size:12px;">Memo</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">sans · letter-size</span></li>
+                  <li style="padding:8px 12px;font-size:11px;border-bottom:1px solid var(--c-rule);"><b style="font-family:var(--font-display);font-size:12px;">Manuscript</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">Courier · industry</span></li>
+                  <li style="padding:8px 12px;font-size:11px;"><b style="font-family:var(--font-display);font-size:12px;">Notebook</b><br><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">mono · ruled</span></li>
+                </ul>
+              </div>
+
+              <!-- CENTRE · A4 visual preview -->
+              <div class="panel" style="padding:0;overflow:hidden;">
+                <div class="panel__head" style="padding:8px 12px;margin:0;border-bottom:1px solid var(--c-rule);">
+                  <span class="panel__title">// visual preview · Academic</span>
+                  <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">A4 · 11pt body · sample.md</span>
+                </div>
+                <div style="background:#fff;padding:18px 22px;font-family:'Times New Roman', Times, serif;font-size:9.5px;line-height:1.55;color:#1a1a1a;min-height:340px;">
+                  <div style="text-align:center;font-size:16px;font-weight:700;margin-bottom:4px;">A Brief Survey of Markdown to PDF Pipelines</div>
+                  <div style="text-align:center;font-size:9px;color:#555;margin-bottom:14px;">md-bridge documentation team &middot; 20 May 2026</div>
+                  <div style="font-style:italic;font-size:9px;border-left:2px solid #999;padding-left:8px;margin-bottom:10px;color:#333;"><b style="font-style:normal;">Abstract.</b> We describe the heuristics behind deterministic conversion between PDF and Markdown, with emphasis on stable output across runs.</div>
+                  <div style="font-weight:700;font-size:11px;font-style:italic;margin:14px 0 4px;">1. Introduction</div>
+                  <p style="margin:0 0 6px;text-align:justify;">A paragraph with <b>bold</b> and <i>italic</i> text. Body copy is set in a transitional serif at 11pt with hanging indents and justified text, in the style of an academic article. Page numbers appear at the bottom centre from page 2 onward.</p>
+                  <div style="font-weight:700;font-size:11px;font-style:italic;margin:12px 0 4px;">1.1. Heading detection</div>
+                  <p style="margin:0 0 6px;text-align:justify;">Sample paragraph two with longer body text that demonstrates justified line-breaking and hyphenation behaviour configured by this theme&rsquo;s stylesheet.</p>
+                  <ul style="margin:4px 0 6px;padding-left:18px;"><li>font size + outline heuristic</li><li>list recovery</li><li>table extraction</li></ul>
+                  <div style="text-align:center;color:#999;font-size:7.5px;margin-top:20px;">1 / 12</div>
+                </div>
+              </div>
+
+              <!-- RIGHT · CSS source (read-only) -->
+              <div class="panel" style="padding:0;overflow:hidden;">
+                <div class="panel__head" style="padding:8px 12px;margin:0;border-bottom:1px solid var(--c-rule);">
+                  <span class="panel__title">// source &middot; academic.css</span>
+                  <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">read-only &middot; 142 lines</span>
+                </div>
+                <div style="background:#fdfaf3;font-family:var(--font-mono);font-size:9.5px;line-height:1.7;color:var(--c-ink);padding:12px 14px;min-height:340px;overflow:hidden;">
+<span style="color:#999;">/* academic.css &mdash; transitional serif</span><br>
+<span style="color:#999;">&nbsp;&nbsp; numbered headings, justified body */</span><br><br>
+<span style="color:var(--c-accent);">@page</span> { size: A4; margin: 2.5cm 2cm;<br>
+&nbsp;&nbsp;<span style="color:var(--c-accent);">@bottom-center</span> { content: counter(page) <br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#3a7;">&quot; / &quot;</span> counter(pages); }<br>
+}<br><br>
+<span style="color:#3a7;">body</span> {<br>
+&nbsp;&nbsp;font-family: <span style="color:#3a7;">&quot;Times New Roman&quot;</span>, serif;<br>
+&nbsp;&nbsp;font-size: 11pt;<br>
+&nbsp;&nbsp;line-height: 1.55;<br>
+&nbsp;&nbsp;text-align: justify;<br>
+&nbsp;&nbsp;hyphens: auto;<br>
+}<br><br>
+<span style="color:#3a7;">h1</span> { text-align: center; font-size: 18pt; }<br>
+<span style="color:#3a7;">h2</span> { font-style: italic;<br>
+&nbsp;&nbsp;counter-reset: subsec;<br>
+&nbsp;&nbsp;counter-increment: sec; }<br>
+<span style="color:#3a7;">h2::before</span> { content: counter(sec) <span style="color:#3a7;">&quot;. &quot;</span>; }<br>
+<span style="color:#3a7;">h3::before</span> { content: counter(sec)<br>
+&nbsp;&nbsp;<span style="color:#3a7;">&quot;.&quot;</span> counter(subsec) <span style="color:#3a7;">&quot;. &quot;</span>; }<br><br>
+<span style="color:#999;">/* &hellip; 124 more lines */</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer action row -->
+            <div class="row-m" style="margin-top:var(--s-4);justify-content:space-between;flex-wrap:wrap;gap:var(--s-3);">
+              <div style="display:flex;gap:var(--s-3);align-items:center;flex-wrap:wrap;">
+                <span class="btn-m btn-m--primary">Use Academic</span>
+                <span class="btn-m btn-m--ghost">Download .css</span>
+                <span class="btn-m btn-m--ghost">Try sample render</span>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);text-align:right;">
+                <div>Last updated <b style="color:var(--c-ink);">v0.4.1 &middot; 12 Mar 2026</b></div>
+                <div>Author <b style="color:var(--c-ink);">md-bridge core</b> &middot; License <b style="color:var(--c-ink);">MIT</b></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <aside class="issue">
+        <div class="issue__top">
+          <h4>Issue · ready to paste</h4>
+          <button class="issue__copy" data-target="md-f2">Copy issue</button>
+        </div>
+        <div>
+          <h5>[feature] Theme library page · curated themes + code preview</h5>
+          <div class="meta-row" style="margin-top:6px;">
+            <span class="label label--enh">enhancement</span>
+            <span class="label label--help">help wanted</span>
+          </div>
+        </div>
+        <dl>
+          <div><dt>Problem</dt><dd>The inline gallery from F1 is a quick chooser, but the user has no way to <em>understand</em> what each theme actually does before committing. They want to see the CSS source, the metadata (version, author, license) and a full-size A4 preview of <code>sample.md</code> rendered against that stylesheet.</dd></div>
+          <div><dt>Proposal</dt><dd>A dedicated <code>/themes</code> route. Three-pane layout:
+            <ul>
+              <li><b>Left</b> &mdash; scrollable list of the 12+ curated themes shipped under <code>packages/markdown-to-pdf/templates/</code>.</li>
+              <li><b>Centre</b> &mdash; full A4 visual preview of <code>sample.md</code> rendered with that theme.</li>
+              <li><b>Right</b> &mdash; the actual <code>.css</code> source, syntax-highlighted, <strong>read-only</strong>.</li>
+            </ul>
+            Filter chips at the top: <em>All / Serif / Sans / Mono / Numbered</em>. No upload, no editor &mdash; F2 is strictly a chooser with full transparency about <em>what</em> is being chosen.</dd></div>
+          <div><dt>Acceptance</dt><dd><ul>
+            <li>New page at <code>/themes</code>; entry from the header nav and from the F1 gallery (&laquo;Browse all 12 →&raquo;).</li>
+            <li>Each theme exposes a metadata file <code>theme.json</code> in its folder: <code>{name, family, tags, author, version, updatedAt, license}</code>.</li>
+            <li>The A4 preview is generated at build time by the same Playwright pipeline that renders the production PDF &mdash; not a hand-tuned mock.</li>
+            <li>The CSS source pane reads the stylesheet over <code>GET /api/themes/&lt;id&gt;/css</code> and renders it with PrismJS or Shiki for highlighting.</li>
+            <li>Selecting a theme writes <code>md-bridge:md-to-pdf:theme</code> and toasts &laquo;Academic will be used for new conversions&raquo;.</li>
+            <li>i18n: catalogue names + family/tag labels translated for EN / PT / ES.</li>
+            <li>Tests: API unit test for the catalogue endpoint, RTL test for theme selection + filter, regression golden for the rendered preview of <code>academic.css</code>.</li>
+          </ul></dd></div>
+          <div><dt>Out of scope</dt><dd>User-uploaded CSS, paste-your-own, editor &mdash; explicitly <strong>not</strong> in F2. The curated catalogue is what users get; custom-CSS is a separate discussion if community demand surfaces.</dd></div>
+          <div><dt>Depends on</dt><dd>F1 (Theme picker) ships the 6-tile gallery this page expands on. F2 adds 6+ more themes plus the deeper view.</dd></div>
+        </dl>
+        <pre class="issue-md" id="md-f2">## Problem
+
+The inline gallery from F1 is a quick chooser, but the user has no way to **understand** what each theme actually does before committing. They want to see the CSS source, the metadata (version, author, license) and a full-size A4 preview of `sample.md` rendered against that stylesheet.
+
+## Proposal
+
+A dedicated `/themes` route with a three-pane layout:
+
+- **Left** — scrollable list of the 12+ curated themes shipped under `packages/markdown-to-pdf/templates/`.
+- **Centre** — full A4 visual preview of `sample.md` rendered with that theme.
+- **Right** — the actual `.css` source, syntax-highlighted, **read-only**.
+
+Filter chips at the top: All / Serif / Sans / Mono / Numbered.
+
+No upload, no editor — F2 is strictly a chooser with full transparency about *what* is being chosen.
+
+## Acceptance criteria
+
+- [ ] New page at `/themes`; entry from the header nav and from the F1 gallery ("Browse all 12 →").
+- [ ] Each theme exposes a metadata file `theme.json` in its folder: `{name, family, tags, author, version, updatedAt, license}`.
+- [ ] The A4 preview is generated at build time by the same Playwright pipeline that renders the production PDF — not a hand-tuned mock.
+- [ ] The CSS source pane reads the stylesheet over `GET /api/themes/<id>/css` and renders it with PrismJS or Shiki for highlighting.
+- [ ] Selecting a theme writes `md-bridge:md-to-pdf:theme` and toasts "Academic will be used for new conversions".
+- [ ] i18n: catalogue names + family/tag labels translated for EN / PT / ES.
+- [ ] Tests: API unit test for the catalogue endpoint, RTL test for theme selection + filter, regression golden for the rendered preview of `academic.css`.
+
+## Out of scope
+
+User-uploaded CSS, paste-your-own, editor — explicitly **not** in F2. The curated catalogue is what users get; custom-CSS is a separate discussion if community demand surfaces.
+
+## Depends on
+
+#F1 (Theme picker) ships the 6-tile gallery this page expands on. F2 adds 6+ more themes plus the deeper view.
+
+## Labels
+
+`enhancement` · `help wanted`</pre>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═════════════════ F3 · OPTIONS ═════════════════ -->
+  <section class="section section-feature" id="f3">
+    <div class="feature__head">
+      <span class="feature__num">Feature 03</span>
+      <h3 class="feature__title">Per-conversion options panel</h3>
+      <div class="feature__tags">
+        <span class="tag">MD→PDF</span>
+        <span class="tag">PDF→MD</span>
+        <span class="tag">good first issue</span>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature__body">
+        <p class="feature__lede">An <em>Options</em> panel folds open above the convert button. Today it holds page-size, margins, TOC, page numbers, header text. Tomorrow it&apos;s where every new option lives so the right column doesn&apos;t grow forever.</p>
+
+        <div class="browser">
+          <div class="browser__chrome">
+            <div class="browser__dots"><span></span><span></span><span></span></div>
+            <div class="browser__url">localhost:5173 / convert / md-to-pdf</div>
+          </div>
+          <div class="browser__inner">
+            <header class="app-header">
+              <div class="app-header__brand">md-bridge</div>
+              <nav class="app-header__nav">
+                <span>PDF · MD</span><span class="current">MD · PDF</span><span>ABOUT</span>
+                <span class="lang-toggle"><b>EN</b>PT ES</span>
+              </nav>
+            </header>
+
+            <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:var(--s-4);">
+              <div style="display:flex;flex-direction:column;gap:var(--s-3);">
+                <div class="dropzone-m" style="height:80px;">
+                  <strong style="font-size:13px;">Drop Markdown files</strong>
+                  <span>or click to pick</span>
+                </div>
+
+                <div class="panel">
+                  <div class="panel__head">
+                    <span class="panel__title">// PDF options</span>
+                    <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">5 set · 0 default</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3);">
+                    <!-- Page size -->
+                    <div>
+                      <div style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Page size</div>
+                      <div class="seg"><span class="on">A4</span><span>Letter</span><span>Legal</span></div>
+                    </div>
+
+                    <!-- Margins -->
+                    <div>
+                      <div style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Margins</div>
+                      <div class="seg"><span>Tight</span><span class="on">Normal</span><span>Loose</span></div>
+                    </div>
+
+                    <!-- TOC -->
+                    <div>
+                      <div style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Table of contents</div>
+                      <span class="checkbox is-on"><span class="box">✓</span>Generate from headings</span>
+                    </div>
+
+                    <!-- Page numbers -->
+                    <div>
+                      <div style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Page numbers</div>
+                      <span class="checkbox is-on"><span class="box">✓</span>Footer · centred</span>
+                    </div>
+
+                    <!-- Header text -->
+                    <div style="grid-column:span 2;">
+                      <div style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Header text</div>
+                      <input type="text" value="{{ title }} · md-bridge" style="width:100%;border:1px solid var(--c-rule);border-radius:4px;background:var(--c-bg);padding:6px 10px;font-family:var(--font-mono);font-size:11px;" disabled>
+                      <p style="font-size:10px;color:var(--c-ink-soft);margin:4px 0 0;">Tokens: <code>{{ title }}</code> · <code>{{ author }}</code> · <code>{{ date }}</code> · <code>{{ page }} / {{ pages }}</code></p>
+                    </div>
+
+                    <!-- Front matter -->
+                    <div style="grid-column:span 2;padding-top:var(--s-3);border-top:1px dashed var(--c-rule);">
+                      <span class="checkbox is-on" style="margin-right:var(--s-4);"><span class="box">✓</span>Include YAML front matter</span>
+                      <span class="checkbox"><span class="box"></span>Page break before each H1</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row-m" style="margin-top:4px;">
+                  <span class="btn-m btn-m--primary">Convert all (3)</span>
+                  <span class="btn-m btn-m--ghost">Save as preset →</span>
+                  <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);margin-left:auto;">Options apply to this batch</span>
+                </div>
+              </div>
+
+              <div>
+                <div class="panel" style="padding:0;overflow:hidden;">
+                  <div class="panel__head" style="padding:8px 12px;margin:0;border-bottom:1px solid var(--c-rule);">
+                    <span class="panel__title">// preview</span>
+                    <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">A4 · loose</span>
+                  </div>
+                  <div style="background:#fff;padding:16px;font-size:9px;line-height:1.6;color:#111;min-height:260px;">
+                    <div style="color:#999;font-size:7px;margin-bottom:4px;">syllabus · md-bridge</div>
+                    <div style="font-family:Georgia, serif;font-size:14px;font-weight:600;margin-bottom:6px;">Sample heading</div>
+                    <p style="margin:0 0 4px;">A paragraph with <b>bold</b> and <i>italic</i> text. Headers and footers pick up the live tokens above. TOC will go before the first H1 when enabled.</p>
+                    <div style="font-family:Georgia, serif;font-size:11px;font-weight:600;margin:8px 0 2px;">Subheading</div>
+                    <ul style="margin:0 0 6px;padding-left:14px;"><li>item one</li><li>item two</li></ul>
+                    <div style="text-align:center;color:#aaa;font-size:7px;margin-top:18px;">1 / 1</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="issue">
+        <div class="issue__top">
+          <h4>Issue · ready to paste</h4>
+          <button class="issue__copy" data-target="md-f3">Copy issue</button>
+        </div>
+        <div>
+          <h5>[feature] Per-conversion options panel</h5>
+          <div class="meta-row" style="margin-top:6px;">
+            <span class="label label--enh">enhancement</span>
+            <span class="label label--good">good first issue</span>
+          </div>
+        </div>
+        <dl>
+          <div><dt>Problem</dt><dd>The schema already lists fields like <code>page_break</code>, <code>front_matter</code>, <code>lang</code> but the UI doesn&apos;t expose them. New options keep getting added to the API and never reach the user.</dd></div>
+          <div><dt>Proposal</dt><dd>One reusable <code>&lt;OptionsPanel/&gt;</code> component on both convert pages. Fields: <em>page size</em>, <em>margins</em>, <em>TOC</em>, <em>page numbers</em>, <em>header text</em> with tokens, <em>front matter</em>, <em>page-break-on-h1</em>.</dd></div>
+          <div><dt>Acceptance</dt><dd><ul>
+            <li>Component lives at <code>apps/web/src/components/OptionsPanel.tsx</code> and is consumed by both pages.</li>
+            <li>Header text supports <code>{{ title }}</code>, <code>{{ author }}</code>, <code>{{ date }}</code>, <code>{{ page }}</code>, <code>{{ pages }}</code>.</li>
+            <li>Options forwarded to <code>convertMdToPdf(file, options)</code> &mdash; no breaking change to <code>useBatchConvert</code>.</li>
+            <li>Each field has an EN / PT / ES label + a tooltip explaining what it does.</li>
+            <li>Tests: schema validation (api), one RTL test per control.</li>
+          </ul></dd></div>
+        </dl>
+        <pre class="issue-md" id="md-f3">## Problem
+
+The schema already lists fields like `page_break`, `front_matter`, `lang` but the UI doesn't expose them. New options keep getting added to the API and never reach the user.
+
+## Proposal
+
+One reusable `<OptionsPanel/>` component on both convert pages. Fields:
+- Page size: A4 · Letter · Legal
+- Margins: Tight · Normal · Loose
+- Table of contents: generate from headings
+- Page numbers: footer / header / off
+- Header text with tokens: `{{ title }}`, `{{ author }}`, `{{ date }}`, `{{ page }}`, `{{ pages }}`
+- Front matter: on / off
+- Page break before each H1
+
+## Acceptance criteria
+
+- [ ] Component lives at `apps/web/src/components/OptionsPanel.tsx` and is consumed by both pages.
+- [ ] Options forwarded to `convertMdToPdf(file, options)` — no breaking change to `useBatchConvert`.
+- [ ] EN / PT / ES labels + tooltip per control.
+- [ ] Tests: schema validation (api), one RTL test per control.
+
+## Labels
+
+`enhancement` · `good first issue`</pre>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═════════════════ F4 · FORMAT HUB ═════════════════ -->
+  <section class="section section-feature" id="f4">
+    <div class="feature__head">
+      <span class="feature__num">Feature 04</span>
+      <h3 class="feature__title">Format hub &mdash; DOCX, EPUB, HTML, RTF</h3>
+      <div class="feature__tags">
+        <span class="tag tag--accent">user ask</span>
+        <span class="tag">platform</span>
+        <span class="tag">help wanted</span>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature__body">
+        <p class="feature__lede">Two conversion pairs today; six tomorrow. The Home page becomes a matrix &mdash; columns are <em>output</em>, rows are <em>input</em>. Filled cells route to <code>/convert/X-to-Y</code>. Empty cells say &laquo;wanted &mdash; open an issue&raquo;.</p>
+
+        <div class="browser">
+          <div class="browser__chrome">
+            <div class="browser__dots"><span></span><span></span><span></span></div>
+            <div class="browser__url">localhost:5173 /</div>
+          </div>
+          <div class="browser__inner">
+            <header class="app-header">
+              <div class="app-header__brand">md-bridge</div>
+              <nav class="app-header__nav">
+                <span class="current">Home</span><span>PDF · MD</span><span>MD · PDF</span><span>ABOUT</span>
+                <span class="lang-toggle"><b>EN</b>PT ES</span>
+              </nav>
+            </header>
+
+            <h2 class="mock-h1" style="font-size:24px;letter-spacing:-0.02em;text-align:center;margin-top:var(--s-4);">Convert documents <em style="font-style:italic;color:var(--c-accent);">locally.</em></h2>
+            <p class="mock-sub" style="text-align:center;margin-bottom:var(--s-6);">Same deterministic heuristics. More format pairs.</p>
+
+            <!-- Format matrix -->
+            <div style="border:1px solid var(--c-rule);border-radius:var(--r-md);background:var(--c-bg-elev);padding:var(--s-3);overflow-x:auto;">
+              <table class="format-matrix">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;padding:6px 10px;font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--c-ink-soft);text-transform:uppercase;letter-spacing:0.1em;">From &nbsp; ↓ &nbsp; to →</th>
+                    <th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--c-ink-soft);">PDF</th>
+                    <th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--c-ink-soft);">Markdown</th>
+                    <th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--c-ink-soft);">DOCX</th>
+                    <th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--c-ink-soft);">EPUB</th>
+                    <th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--c-ink-soft);">HTML</th>
+                    <th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--c-ink-soft);">RTF</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- PDF row -->
+                  <tr>
+                    <td style="padding:8px 10px;border-top:1px solid var(--c-rule);font-family:var(--font-display);font-weight:600;font-size:13px;">PDF</td>
+                    <td style="text-align:center;padding:8px 10px;border-top:1px solid var(--c-rule);color:var(--c-ink-soft);">—</td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="status-pill">SHIPPED</span></td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag" style="font-size:9px;">wanted</span></td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag tag--warn" style="font-size:9px;">v0.3</span></td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag tag--ok" style="font-size:9px;">in PR #142</span></td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag" style="font-size:9px;">wanted</span></td>
+                  </tr>
+                  <!-- MD row -->
+                  <tr>
+                    <td style="padding:8px 10px;border-top:1px solid var(--c-rule);font-family:var(--font-display);font-weight:600;font-size:13px;">Markdown</td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="status-pill">SHIPPED</span></td>
+                    <td style="text-align:center;padding:8px 10px;border-top:1px solid var(--c-rule);color:var(--c-ink-soft);">—</td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag tag--warn" style="font-size:9px;">v0.2 · this issue</span></td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag tag--warn" style="font-size:9px;">v0.3</span></td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag tag--warn" style="font-size:9px;">v0.2</span></td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag" style="font-size:9px;">wanted</span></td>
+                  </tr>
+                  <!-- DOCX row -->
+                  <tr>
+                    <td style="padding:8px 10px;border-top:1px solid var(--c-rule);font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--c-ink-soft);">DOCX</td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag" style="font-size:9px;">wanted</span></td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag tag--warn" style="font-size:9px;">v0.3</span></td>
+                    <td style="text-align:center;padding:8px 10px;border-top:1px solid var(--c-rule);color:var(--c-ink-soft);">—</td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag" style="font-size:9px;">wanted</span></td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag" style="font-size:9px;">wanted</span></td>
+                    <td style="text-align:center;padding:6px 10px;border-top:1px solid var(--c-rule);"><span class="tag" style="font-size:9px;">wanted</span></td>
+                  </tr>
+                </tbody>
+              </table>
+              <p style="margin:var(--s-3) 0 0;font-size:10px;color:var(--c-ink-soft);font-family:var(--font-mono);display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;">
+                <span class="status-pill" style="padding:2px 7px;font-size:9px;">SHIPPED</span>
+                <span class="tag tag--ok" style="font-size:9px;">in PR</span>
+                <span class="tag tag--warn" style="font-size:9px;">on roadmap</span>
+                <span class="tag" style="font-size:9px;">community wanted</span>
+                <span>&mdash; clicking opens a GitHub issue template pre-filled with the pair.</span>
+              </p>
+            </div>
+
+            <!-- Quick stats -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-4);margin-top:var(--s-6);padding-top:var(--s-4);border-top:1px solid var(--c-rule);">
+              <div class="num-stat"><b>2</b><span>shipped today</span></div>
+              <div class="num-stat"><b>3</b><span>on roadmap</span></div>
+              <div class="num-stat"><b>7</b><span>community wanted</span></div>
+              <div class="num-stat"><b>0</b><span>cloud calls</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="issue">
+        <div class="issue__top">
+          <h4>Issue · ready to paste</h4>
+          <button class="issue__copy" data-target="md-f4">Copy issue</button>
+        </div>
+        <div>
+          <h5>[platform] Generalise to N format pairs (MD → DOCX first)</h5>
+          <div class="meta-row" style="margin-top:6px;">
+            <span class="label label--enh">enhancement</span>
+            <span class="label label--help">help wanted</span>
+          </div>
+        </div>
+        <dl>
+          <div><dt>Problem</dt><dd>The router and the home page hard-code the two existing pairs. Adding a third (DOCX, EPUB, HTML) means touching four files in lockstep.</dd></div>
+          <div><dt>Proposal</dt><dd>Refactor to a <code>FORMATS</code> registry &mdash; each pair declares its id, label, input mime, output mime, service fn, and supported options. Routes and home matrix render from the registry. Land the first new pair: <code>MD → DOCX</code> via <code>python-docx</code> (pure Python, no native deps).</dd></div>
+          <div><dt>Acceptance</dt><dd><ul>
+            <li>New file: <code>packages/markdown-to-docx/scripts/convert.py</code> following the same vendored-skill pattern.</li>
+            <li>New route: <code>POST /api/md-to-docx</code> with the same multipart + options envelope.</li>
+            <li>Home page renders a 3×6 conversion matrix with status pills (shipped / in PR / on roadmap / wanted).</li>
+            <li>Empty cells link to <code>.github/ISSUE_TEMPLATE/feature_request.md?title=feature%3A+X-to-Y</code>.</li>
+            <li>Tests: regression golden for <code>MD → DOCX</code> on the ISTQB fixture, RTL test for the matrix.</li>
+          </ul></dd></div>
+        </dl>
+        <pre class="issue-md" id="md-f4">## Problem
+
+The router and the home page hard-code the two existing pairs. Adding a third (DOCX, EPUB, HTML) means touching four files in lockstep.
+
+## Proposal
+
+1. Refactor to a `FORMATS` registry — each pair declares `{id, label, inputMime, outputMime, serviceFn, options}`.
+2. Routes and the home matrix render from the registry.
+3. Land the first new pair: **MD → DOCX** via `python-docx` (pure Python, no native deps).
+
+## Acceptance criteria
+
+- [ ] New file: `packages/markdown-to-docx/scripts/convert.py` following the vendored-skill pattern.
+- [ ] New route: `POST /api/md-to-docx` with the same multipart + options envelope.
+- [ ] Home page renders a 3×6 conversion matrix with status pills (shipped / in PR / on roadmap / wanted).
+- [ ] Empty cells link to `.github/ISSUE_TEMPLATE/feature_request.md?title=feature%3A+X-to-Y`.
+- [ ] Tests: regression golden for `MD → DOCX` on the ISTQB fixture, RTL test for the matrix.
+
+## Why DOCX first
+
+- No native dependency (pure-Python lib).
+- Maps 1:1 onto Markdown elements we already detect.
+- Highest-frequency ask in user feedback.
+
+## Labels
+
+`enhancement` · `help wanted` · `platform`</pre>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═════════════════ F5 · I18N ═════════════════ -->
+  <section class="section section-feature" id="f5">
+    <div class="feature__head">
+      <span class="feature__num">Feature 05</span>
+      <h3 class="feature__title">Language workshop &mdash; contribute a locale from the UI</h3>
+      <div class="feature__tags">
+        <span class="tag tag--accent">user ask</span>
+        <span class="tag">i18n</span>
+        <span class="tag">good first issue</span>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature__body">
+        <p class="feature__lede">A new page at <em>/contribute/i18n</em> lists every locale, shows untranslated keys against the EN reference, and exports a draft <code>dictionaries.ts</code> diff. Translators get a real workflow; maintainers get clean PRs.</p>
+
+        <div class="browser">
+          <div class="browser__chrome">
+            <div class="browser__dots"><span></span><span></span><span></span></div>
+            <div class="browser__url">localhost:5173 / contribute / i18n</div>
+          </div>
+          <div class="browser__inner">
+            <header class="app-header">
+              <div class="app-header__brand">md-bridge</div>
+              <nav class="app-header__nav">
+                <span>PDF · MD</span><span>MD · PDF</span><span class="current">CONTRIBUTE</span><span>ABOUT</span>
+                <span class="lang-toggle"><b>EN</b>PT ES</span>
+              </nav>
+            </header>
+
+            <h2 class="mock-h1">Language workshop</h2>
+            <p class="mock-sub">Pick a locale, fill in the missing keys, export the diff. Open the PR with one paste.</p>
+
+            <!-- Locale grid -->
+            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:var(--s-3);margin-bottom:var(--s-4);">
+              <div class="tile" style="border-color:var(--c-rule);">
+                <div class="row-m" style="justify-content:space-between;"><b style="font-family:var(--font-display);font-size:14px;">English</b><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">en</span></div>
+                <div style="height:4px;background:var(--c-rule);border-radius:2px;overflow:hidden;margin-top:6px;"><div style="width:100%;height:100%;background:var(--c-ok);"></div></div>
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">128 / 128 · source</span>
+              </div>
+              <div class="tile">
+                <div class="row-m" style="justify-content:space-between;"><b style="font-family:var(--font-display);font-size:14px;">Português</b><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">pt</span></div>
+                <div style="height:4px;background:var(--c-rule);border-radius:2px;overflow:hidden;margin-top:6px;"><div style="width:100%;height:100%;background:var(--c-ok);"></div></div>
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">128 / 128 · complete</span>
+              </div>
+              <div class="tile">
+                <div class="row-m" style="justify-content:space-between;"><b style="font-family:var(--font-display);font-size:14px;">Español</b><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">es</span></div>
+                <div style="height:4px;background:var(--c-rule);border-radius:2px;overflow:hidden;margin-top:6px;"><div style="width:96%;height:100%;background:var(--c-ok);"></div></div>
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">123 / 128 · 5 missing</span>
+              </div>
+              <div class="tile" style="border-color:var(--c-accent);background:#fff7f5;">
+                <div class="row-m" style="justify-content:space-between;"><b style="font-family:var(--font-display);font-size:14px;color:var(--c-accent);">Français</b><span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);">fr · in progress</span></div>
+                <div style="height:4px;background:var(--c-rule);border-radius:2px;overflow:hidden;margin-top:6px;"><div style="width:38%;height:100%;background:var(--c-accent);"></div></div>
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);">49 / 128 · 79 missing</span>
+              </div>
+            </div>
+
+            <!-- Add a locale strip -->
+            <div class="panel" style="display:flex;align-items:center;gap:var(--s-4);margin-bottom:var(--s-4);background:#fff;border-style:dashed;">
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--c-ink-soft);">+ Start a new locale:</span>
+              <input type="text" placeholder="de · Deutsch" style="border:1px solid var(--c-rule);border-radius:4px;background:var(--c-bg);padding:6px 10px;font-family:var(--font-mono);font-size:11px;width:160px;" disabled>
+              <span class="btn-m btn-m--ghost">Create draft</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">PR template + dictionary stub will be downloaded</span>
+            </div>
+
+            <!-- Editor -->
+            <div class="panel">
+              <div class="panel__head">
+                <span class="panel__title">// editing · français (fr) · 5 of 79 shown</span>
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-accent);">38% complete</span>
+              </div>
+
+              <table style="width:100%;border-collapse:collapse;font-size:11px;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;padding:6px 8px;font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--c-ink-soft);">key</th>
+                    <th style="text-align:left;padding:6px 8px;font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--c-ink-soft);">english (source)</th>
+                    <th style="text-align:left;padding:6px 8px;font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--c-accent);">français · your draft</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-top:1px solid var(--c-rule);">
+                    <td style="padding:8px 8px;font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">home.title</td>
+                    <td style="padding:8px 8px;">Convert PDF and Markdown locally.</td>
+                    <td style="padding:6px 8px;"><input type="text" value="Convertir PDF et Markdown localement." style="width:100%;border:1px solid var(--c-rule);border-radius:3px;background:var(--c-bg-elev);padding:5px 8px;font-size:11px;font-family:var(--font-body);" disabled></td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--c-rule);">
+                    <td style="padding:8px 8px;font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">pdfToMd.title</td>
+                    <td style="padding:8px 8px;">PDF to Markdown</td>
+                    <td style="padding:6px 8px;"><input type="text" value="PDF vers Markdown" style="width:100%;border:1px solid var(--c-rule);border-radius:3px;background:var(--c-bg-elev);padding:5px 8px;font-size:11px;font-family:var(--font-body);" disabled></td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--c-rule);background:#fff7f5;">
+                    <td style="padding:8px 8px;font-family:var(--font-mono);font-size:10px;color:var(--c-accent);">batch.convertAll</td>
+                    <td style="padding:8px 8px;">Convert all</td>
+                    <td style="padding:6px 8px;"><input type="text" placeholder="missing… type here" style="width:100%;border:1px solid var(--c-accent);border-radius:3px;background:#fff;padding:5px 8px;font-size:11px;font-family:var(--font-body);" disabled></td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--c-rule);background:#fff7f5;">
+                    <td style="padding:8px 8px;font-family:var(--font-mono);font-size:10px;color:var(--c-accent);">dropzone.orClickMany</td>
+                    <td style="padding:8px 8px;">or click to pick files</td>
+                    <td style="padding:6px 8px;"><input type="text" placeholder="missing…" style="width:100%;border:1px solid var(--c-accent);border-radius:3px;background:#fff;padding:5px 8px;font-size:11px;font-family:var(--font-body);" disabled></td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--c-rule);">
+                    <td style="padding:8px 8px;font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">about.title</td>
+                    <td style="padding:8px 8px;">About md-bridge</td>
+                    <td style="padding:6px 8px;"><input type="text" value="À propos de md-bridge" style="width:100%;border:1px solid var(--c-rule);border-radius:3px;background:var(--c-bg-elev);padding:5px 8px;font-size:11px;font-family:var(--font-body);" disabled></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="row-m" style="margin-top:var(--s-4);">
+              <span class="btn-m btn-m--primary">Export PR-ready diff (.patch)</span>
+              <span class="btn-m btn-m--ghost">Copy as JSON</span>
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);margin-left:auto;">Draft kept in localStorage · md-bridge:i18n-draft:fr</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <aside class="issue">
+        <div class="issue__top">
+          <h4>Issue · ready to paste</h4>
+          <button class="issue__copy" data-target="md-f5">Copy issue</button>
+        </div>
+        <div>
+          <h5>[i18n] Language workshop page · contribute a locale from the UI</h5>
+          <div class="meta-row" style="margin-top:6px;">
+            <span class="label label--enh">enhancement</span>
+            <span class="label label--i18n">i18n</span>
+            <span class="label label--good">good first issue</span>
+          </div>
+        </div>
+        <dl>
+          <div><dt>Problem</dt><dd>Adding a locale today means editing TypeScript by hand. The README onboards by listing 3 steps, but contributors still drop PRs with missing keys, mistyped unions, or out-of-sync ordering.</dd></div>
+          <div><dt>Proposal</dt><dd>A <code>/contribute/i18n</code> page that diffs every locale against EN, lets the contributor type the missing strings inline, and exports a <code>.patch</code> against <code>dictionaries.ts</code> that applies cleanly.</dd></div>
+          <div><dt>Acceptance</dt><dd><ul>
+            <li>Page lists every locale + completion %.</li>
+            <li>Editor table: key · EN reference · target draft. Missing keys highlighted in <span style="color:var(--c-accent);">accent</span>.</li>
+            <li>Draft persists per locale in <code>md-bridge:i18n-draft:&lt;locale&gt;</code>.</li>
+            <li>&laquo;Export PR-ready diff&raquo; emits a unified diff valid for <code>git apply</code>.</li>
+            <li>&laquo;Start a new locale&raquo; downloads a dictionary stub + a CONTRIBUTING checklist.</li>
+            <li>Tests: completion math, diff generation, draft persistence.</li>
+          </ul></dd></div>
+        </dl>
+        <pre class="issue-md" id="md-f5">## Problem
+
+Adding a locale today means editing TypeScript by hand. The README onboards by listing 3 steps, but contributors still drop PRs with missing keys, mistyped unions, or out-of-sync ordering.
+
+## Proposal
+
+A `/contribute/i18n` page that:
+1. Lists every locale with a completion % vs the EN source.
+2. Diffs each locale's dictionary against EN.
+3. Lets the contributor type the missing strings inline.
+4. Exports a `.patch` against `dictionaries.ts` that applies cleanly with `git apply`.
+
+## Acceptance criteria
+
+- [ ] Page lists every locale + completion %.
+- [ ] Editor table: key · EN reference · target draft. Missing keys highlighted in accent.
+- [ ] Draft persists per locale in `md-bridge:i18n-draft:<locale>`.
+- [ ] "Export PR-ready diff" emits a unified diff valid for `git apply`.
+- [ ] "Start a new locale" downloads a dictionary stub + a CONTRIBUTING checklist.
+- [ ] Tests: completion math, diff generation, draft persistence.
+
+## Labels
+
+`enhancement` · `i18n` · `good first issue`</pre>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═════════════════ F6 · PRESETS ═════════════════ -->
+  <section class="section section-feature" id="f6">
+    <div class="feature__head">
+      <span class="feature__num">Feature 06</span>
+      <h3 class="feature__title">Conversion presets</h3>
+      <div class="feature__tags">
+        <span class="tag">UX</span>
+        <span class="tag">power user</span>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature__body">
+        <p class="feature__lede">Once F1–F3 land there are a dozen knobs per conversion. A preset bundles them with a name. The dropzone toolbar gets a chip-style selector. Stored locally &mdash; no backend, no account.</p>
+
+        <div class="browser">
+          <div class="browser__chrome">
+            <div class="browser__dots"><span></span><span></span><span></span></div>
+            <div class="browser__url">localhost:5173 / convert / md-to-pdf</div>
+          </div>
+          <div class="browser__inner">
+            <header class="app-header">
+              <div class="app-header__brand">md-bridge</div>
+              <nav class="app-header__nav">
+                <span>PDF · MD</span><span class="current">MD · PDF</span><span>ABOUT</span>
+                <span class="lang-toggle"><b>EN</b>PT ES</span>
+              </nav>
+            </header>
+
+            <h2 class="mock-h1">Markdown to PDF</h2>
+
+            <!-- Presets row -->
+            <div class="preset-row">
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);text-transform:uppercase;letter-spacing:0.1em;margin-right:var(--s-2);">Preset</span>
+
+              <span class="preset-chip is-active">
+                Internal briefs <span class="preset-chip__meta">A4 · brief · TOC</span>
+              </span>
+              <span class="preset-chip">
+                Acme corporate <span class="preset-chip__meta">Letter · acme</span>
+              </span>
+              <span class="preset-chip">
+                Lecture notes <span class="preset-chip__meta">academic · numbered</span>
+              </span>
+              <span class="preset-chip is-add">
+                + Save current as preset
+              </span>
+
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">3 saved · max 12</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4);">
+              <div style="display:flex;flex-direction:column;gap:var(--s-3);">
+                <div class="dropzone-m" style="height:90px;">
+                  <strong style="font-size:13px;">Drop Markdown files</strong>
+                  <span>preset &laquo;Internal briefs&raquo; will be applied</span>
+                </div>
+
+                <div class="panel">
+                  <div class="panel__head">
+                    <span class="panel__title">// active preset · Internal briefs</span>
+                    <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">Edit →</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;line-height:1.6;">
+                    <div><span style="color:var(--c-ink-soft);">Theme</span><br><b>Brief (italic display)</b></div>
+                    <div><span style="color:var(--c-ink-soft);">Page</span><br><b>A4 · normal margins</b></div>
+                    <div><span style="color:var(--c-ink-soft);">TOC</span><br><b>Yes &mdash; H1+H2</b></div>
+                    <div><span style="color:var(--c-ink-soft);">Page numbers</span><br><b>Centred footer</b></div>
+                    <div><span style="color:var(--c-ink-soft);">Header</span><br><b>{{ title }} · Internal</b></div>
+                    <div><span style="color:var(--c-ink-soft);">Front matter</span><br><b>Hidden</b></div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div class="panel" style="background:#fff7f5;border-color:var(--c-accent-soft);">
+                  <div class="panel__head"><span class="panel__title" style="color:var(--c-accent);">// new preset</span></div>
+                  <p style="font-size:11px;margin:0 0 var(--s-3);">Name it. Tag it. It&apos;s yours &mdash; lives in this browser only.</p>
+                  <div style="display:flex;flex-direction:column;gap:var(--s-2);">
+                    <input type="text" value="Q4 board pack" style="border:1px solid var(--c-rule);border-radius:4px;padding:6px 10px;font-size:11px;background:#fff;" disabled>
+                    <textarea style="border:1px solid var(--c-rule);border-radius:4px;padding:6px 10px;font-size:10px;background:#fff;font-family:var(--font-mono);min-height:54px;resize:none;" disabled>theme: corporate
+page: A4 · loose
+toc: H1+H2
+page_numbers: footer-right
+header: "Q4 · {{ title }}"</textarea>
+                    <div class="row-m">
+                      <span class="btn-m btn-m--accent">Save preset</span>
+                      <span class="btn-m btn-m--ghost">Export as JSON</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="issue">
+        <div class="issue__top">
+          <h4>Issue · ready to paste</h4>
+          <button class="issue__copy" data-target="md-f6">Copy issue</button>
+        </div>
+        <div>
+          <h5>[feature] Conversion presets</h5>
+          <div class="meta-row" style="margin-top:6px;">
+            <span class="label label--enh">enhancement</span>
+            <span class="label label--help">help wanted</span>
+          </div>
+        </div>
+        <dl>
+          <div><dt>Problem</dt><dd>Once theme + options + custom CSS exist, the same user keeps re-picking the same combination. Each conversion costs 6 clicks.</dd></div>
+          <div><dt>Proposal</dt><dd>A chip-row above the dropzone surfaces saved presets. &laquo;Save current as preset&raquo; serialises the current options + theme into a named entry under <code>md-bridge:presets</code>. JSON import/export so a team can share by email.</dd></div>
+          <div><dt>Acceptance</dt><dd><ul>
+            <li>Schema: <code>{name, format, options, theme, customCssId?, createdAt}</code>.</li>
+            <li>Max 12 presets per format pair.</li>
+            <li>Selected preset highlighted; &laquo;active preset&raquo; shown in the options panel header.</li>
+            <li>Import: drop a <code>.json</code> file with one or many presets &mdash; validate schema and merge.</li>
+            <li>Export: download every preset for the current format pair as a single file.</li>
+            <li>Tests: schema validation, merge logic, max-cap enforcement.</li>
+          </ul></dd></div>
+          <div><dt>Depends on</dt><dd>F3 (Options panel) must exist for there to be anything to save.</dd></div>
+        </dl>
+        <pre class="issue-md" id="md-f6">## Problem
+
+Once theme + options + custom CSS exist, the same user keeps re-picking the same combination. Each conversion costs 6 clicks.
+
+## Proposal
+
+A chip-row above the dropzone surfaces saved presets. "Save current as preset" serialises the current options + theme into a named entry under `md-bridge:presets`. JSON import/export so a team can share by email.
+
+## Acceptance criteria
+
+- [ ] Schema: `{name, format, options, theme, customCssId?, createdAt}`.
+- [ ] Max 12 presets per format pair.
+- [ ] Selected preset highlighted; "active preset" shown in the options panel header.
+- [ ] Import: drop a `.json` file with one or many presets — validate schema and merge.
+- [ ] Export: download every preset for the current format pair as a single file.
+- [ ] Tests: schema validation, merge logic, max-cap enforcement.
+
+## Depends on
+
+#F3 (Options panel) must exist for there to be anything to save.
+
+## Labels
+
+`enhancement` · `help wanted`</pre>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═════════════════ F7 · HISTORY ═════════════════ -->
+  <section class="section section-feature" id="f7">
+    <div class="feature__head">
+      <span class="feature__num">Feature 07</span>
+      <h3 class="feature__title">Local conversion history</h3>
+      <div class="feature__tags">
+        <span class="tag">UX</span>
+        <span class="tag">local-only</span>
+        <span class="tag">good first issue</span>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature__body">
+        <p class="feature__lede">Closing the tab today loses the result blob. A modest local history (just <em>names</em>, sizes, settings, and blob URLs while alive) lets users re-download or re-run the same input. No server, no privacy regression.</p>
+
+        <div class="browser">
+          <div class="browser__chrome">
+            <div class="browser__dots"><span></span><span></span><span></span></div>
+            <div class="browser__url">localhost:5173 / convert / pdf-to-md</div>
+          </div>
+          <div class="browser__inner">
+            <header class="app-header">
+              <div class="app-header__brand">md-bridge</div>
+              <nav class="app-header__nav">
+                <span class="current">PDF · MD</span><span>MD · PDF</span><span>ABOUT</span>
+                <span class="lang-toggle"><b>EN</b>PT ES</span>
+              </nav>
+            </header>
+
+            <h2 class="mock-h1">PDF to Markdown</h2>
+            <p class="mock-sub">Upload a PDF and extract its content as structured Markdown.</p>
+
+            <div class="recent-grid">
+              <div style="display:flex;flex-direction:column;gap:var(--s-3);min-width:0;">
+                <div class="dropzone-m" style="height:90px;">
+                  <strong style="font-size:13px;">Drop PDF files or a folder</strong>
+                  <span>or click to pick files</span>
+                </div>
+
+                <div class="panel">
+                  <div class="panel__head">
+                    <span class="panel__title">// recent · this browser only · 24h</span>
+                    <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">5 of 5 · Clear all</span>
+                  </div>
+                  <ul style="list-style:none;margin:0;padding:0;">
+                    <li class="recent-row">
+                      <div class="recent-row__name">
+                        <b>ddp-factsheet-en.pdf</b>
+                        <small>2.3 MB · 12 pages · default theme · 4 m ago</small>
+                      </div>
+                      <div class="recent-row__actions">
+                        <span class="tag tag--ok" style="font-size:9px;">done</span>
+                        <span class="btn-m btn-m--ghost" style="padding:4px 10px;font-size:10px;">Re-download .md</span>
+                        <span class="btn-m btn-m--ghost" style="padding:4px 10px;font-size:10px;">Re-run</span>
+                      </div>
+                    </li>
+                    <li class="recent-row">
+                      <div class="recent-row__name">
+                        <b>cpre_foundationlevel_syllabus_br_v3.2.2.pdf</b>
+                        <small>8.7 MB · 89 pages · default · 22 m ago</small>
+                      </div>
+                      <div class="recent-row__actions">
+                        <span class="tag tag--ok" style="font-size:9px;">done</span>
+                        <span class="btn-m btn-m--ghost" style="padding:4px 10px;font-size:10px;">Re-download .md</span>
+                        <span class="btn-m btn-m--ghost" style="padding:4px 10px;font-size:10px;">Re-run</span>
+                      </div>
+                    </li>
+                    <li class="recent-row" style="background:#fff7f5;">
+                      <div class="recent-row__name">
+                        <b>scanned-receipt.pdf</b>
+                        <small class="is-warn">needs_ocr · 1.1 MB · 31 m ago</small>
+                      </div>
+                      <div class="recent-row__actions">
+                        <span class="tag" style="font-size:9px;color:var(--c-warn);border-color:#ecdcb0;background:#f7ecd0;">warn</span>
+                        <span class="btn-m btn-m--ghost" style="padding:4px 10px;font-size:10px;color:var(--c-ink-soft);">Re-download .md</span>
+                        <span class="btn-m btn-m--ghost" style="padding:4px 10px;font-size:10px;">Re-run</span>
+                      </div>
+                    </li>
+                    <li class="recent-row">
+                      <div class="recent-row__name">
+                        <b>notes.md → PDF</b>
+                        <small>9 KB · academic theme · 2 h ago</small>
+                      </div>
+                      <div class="recent-row__actions">
+                        <span class="tag tag--ok" style="font-size:9px;">done</span>
+                        <span class="btn-m btn-m--ghost" style="padding:4px 10px;font-size:10px;">Re-download .pdf</span>
+                        <span class="btn-m btn-m--ghost" style="padding:4px 10px;font-size:10px;">Re-run</span>
+                      </div>
+                    </li>
+                    <li class="recent-row" style="color:var(--c-ink-soft);">
+                      <div class="recent-row__name">
+                        <b>handbook.pdf</b>
+                        <small class="is-mute">3.4 MB · 56 pages · 20 h ago · result expired</small>
+                      </div>
+                      <div class="recent-row__actions">
+                        <span class="tag" style="font-size:9px;">expired</span>
+                        <span style="font-family:var(--font-mono);font-size:10px;color:var(--c-ink-soft);">—</span>
+                        <span class="btn-m btn-m--ghost" style="padding:4px 10px;font-size:10px;">Re-run</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+
+                <p style="font-size:11px;color:var(--c-ink-soft);margin:0;">
+                  History lives in this browser, not on the server. Results are kept as blob URLs while the tab is open. After 24h the entry remains but the result is &laquo;expired&raquo; &mdash; re-run to regenerate.
+                </p>
+              </div>
+
+              <div class="md-preview" style="height:auto;min-height:300px;">
+                <h3>Selected entry · preview</h3>
+                <p>Click any history row to load its result back into the preview pane on the right.</p>
+                <p style="color:var(--c-ink-soft);">Blob URLs survive until the tab closes. Nothing here is sent anywhere &mdash; clearing browser data clears the history.</p>
+              </div>
+            </div>
+<!-- OLD_RECENT_BLOCK_END -->
+          </div>
+        </div>
+      </div>
+
+      <aside class="issue">
+        <div class="issue__top">
+          <h4>Issue · ready to paste</h4>
+          <button class="issue__copy" data-target="md-f7">Copy issue</button>
+        </div>
+        <div>
+          <h5>[feature] Local conversion history (no server)</h5>
+          <div class="meta-row" style="margin-top:6px;">
+            <span class="label label--enh">enhancement</span>
+            <span class="label label--good">good first issue</span>
+          </div>
+        </div>
+        <dl>
+          <div><dt>Problem</dt><dd>Closing the tab loses the blob URL and the user re-uploads the same file just to grab the .md again. The project&apos;s &laquo;no persistence&raquo; rule applies to <em>the server</em>; the browser is fair game.</dd></div>
+          <div><dt>Proposal</dt><dd>A &laquo;Recent&raquo; panel under the dropzone keeps a list of conversions in <code>localStorage</code> (file name, size, format pair, options digest, timestamp, last result URL). Blob URLs alive while the tab is &mdash; after 24h or page refresh the row is marked &laquo;expired&raquo; and offers <em>Re-run</em>.</dd></div>
+          <div><dt>Acceptance</dt><dd><ul>
+            <li>Key: <code>md-bridge:history</code>. Max 20 entries, FIFO eviction.</li>
+            <li>Each row: name, size, format, settings summary, age, status badge, Re-download (if alive), Re-run.</li>
+            <li>&laquo;Clear all&raquo; on the panel header.</li>
+            <li>Privacy paragraph below the list (translated EN / PT / ES).</li>
+            <li>About page gets a new line: &laquo;No server persistence. Optional local browser history.&raquo;</li>
+            <li>Tests: FIFO cap, expiry detection, serialization round-trip.</li>
+          </ul></dd></div>
+        </dl>
+        <pre class="issue-md" id="md-f7">## Problem
+
+Closing the tab loses the blob URL and the user re-uploads the same file just to grab the .md again. The project's "no persistence" rule applies to the **server**; the browser is fair game.
+
+## Proposal
+
+A "Recent" panel under the dropzone keeps a list of conversions in `localStorage`:
+- File name, size, format pair, options digest, timestamp, last blob URL.
+- Blob URLs alive while the tab is — after 24h or page refresh the row is "expired" and offers Re-run.
+
+## Acceptance criteria
+
+- [ ] Storage key: `md-bridge:history`. Max 20 entries, FIFO eviction.
+- [ ] Each row: name, size, format, settings summary, age, status badge, Re-download (if alive), Re-run.
+- [ ] "Clear all" on the panel header.
+- [ ] Privacy paragraph below the list (translated EN / PT / ES).
+- [ ] About page gets a new line: "No server persistence. Optional local browser history."
+- [ ] Tests: FIFO cap, expiry detection, serialization round-trip.
+
+## Labels
+
+`enhancement` · `good first issue`</pre>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═════════════════ F8 · SETTINGS ═════════════════ -->
+  <section class="section section-feature" id="f8">
+    <div class="feature__head">
+      <span class="feature__num">Feature 08</span>
+      <h3 class="feature__title">Preferences page</h3>
+      <div class="feature__tags">
+        <span class="tag">settings</span>
+        <span class="tag">polish</span>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature__body">
+        <p class="feature__lede">Once a dozen preferences live in <code>localStorage</code>, they need a home. <em>/preferences</em> is that home &mdash; one column, sectioned, no surprises. Every setting links back to the feature it belongs to.</p>
+
+        <div class="browser">
+          <div class="browser__chrome">
+            <div class="browser__dots"><span></span><span></span><span></span></div>
+            <div class="browser__url">localhost:5173 / preferences</div>
+          </div>
+          <div class="browser__inner">
+            <header class="app-header">
+              <div class="app-header__brand">md-bridge</div>
+              <nav class="app-header__nav">
+                <span>PDF · MD</span><span>MD · PDF</span><span>ABOUT</span><span class="current">PREFS</span>
+                <span class="lang-toggle"><b>EN</b>PT ES</span>
+              </nav>
+            </header>
+
+            <div style="max-width:640px;margin:0 auto;">
+              <h2 class="mock-h1">Preferences</h2>
+              <p class="mock-sub">Per-browser. Nothing leaves this device.</p>
+
+              <!-- Section: defaults -->
+              <div style="border-top:1px solid var(--c-rule);padding:var(--s-4) 0;">
+                <h4 style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.15em;color:var(--c-ink-soft);margin-bottom:var(--s-3);">// defaults</h4>
+
+                <div style="display:grid;grid-template-columns:1fr auto;gap:var(--s-3);align-items:center;padding:var(--s-2) 0;border-bottom:1px dashed var(--c-rule);">
+                  <div>
+                    <b style="font-size:13px;">Default language</b>
+                    <p style="margin:2px 0 0;font-size:11px;color:var(--c-ink-soft);">Falls back if browser locale is unsupported.</p>
+                  </div>
+                  <div class="seg"><span>EN</span><span class="on">PT</span><span>ES</span></div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr auto;gap:var(--s-3);align-items:center;padding:var(--s-2) 0;border-bottom:1px dashed var(--c-rule);">
+                  <div>
+                    <b style="font-size:13px;">Default PDF theme</b>
+                    <p style="margin:2px 0 0;font-size:11px;color:var(--c-ink-soft);">Applied to every new MD→PDF batch. <a href="#f1">F1 →</a></p>
+                  </div>
+                  <span style="font-family:var(--font-mono);font-size:11px;border:1px solid var(--c-rule);border-radius:4px;padding:3px 10px;background:var(--c-bg);">academic ▾</span>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr auto;gap:var(--s-3);align-items:center;padding:var(--s-2) 0;border-bottom:1px dashed var(--c-rule);">
+                  <div>
+                    <b style="font-size:13px;">Default page size</b>
+                    <p style="margin:2px 0 0;font-size:11px;color:var(--c-ink-soft);">A4 outside the US, Letter inside.</p>
+                  </div>
+                  <div class="seg"><span class="on">A4</span><span>Letter</span><span>Legal</span></div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr auto;gap:var(--s-3);align-items:center;padding:var(--s-2) 0;">
+                  <div>
+                    <b style="font-size:13px;">Open PDF preview in new tab</b>
+                    <p style="margin:2px 0 0;font-size:11px;color:var(--c-ink-soft);">Off → inline iframe (current behaviour).</p>
+                  </div>
+                  <span class="checkbox is-on"><span class="box">✓</span>On</span>
+                </div>
+              </div>
+
+              <!-- Section: UI -->
+              <div style="border-top:1px solid var(--c-rule);padding:var(--s-4) 0;">
+                <h4 style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.15em;color:var(--c-ink-soft);margin-bottom:var(--s-3);">// UI</h4>
+
+                <div style="display:grid;grid-template-columns:1fr auto;gap:var(--s-3);align-items:center;padding:var(--s-2) 0;border-bottom:1px dashed var(--c-rule);">
+                  <div>
+                    <b style="font-size:13px;">Accent colour</b>
+                    <p style="margin:2px 0 0;font-size:11px;color:var(--c-ink-soft);">Brand red by default. Choose any HSL.</p>
+                  </div>
+                  <div style="display:flex;gap:6px;">
+                    <span style="width:22px;height:22px;border-radius:50%;background:#c8362f;border:2px solid var(--c-ink);"></span>
+                    <span style="width:22px;height:22px;border-radius:50%;background:#1f5e9e;border:1px solid var(--c-rule);"></span>
+                    <span style="width:22px;height:22px;border-radius:50%;background:#2e7d4a;border:1px solid var(--c-rule);"></span>
+                    <span style="width:22px;height:22px;border-radius:50%;background:#1a1a1a;border:1px solid var(--c-rule);"></span>
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr auto;gap:var(--s-3);align-items:center;padding:var(--s-2) 0;">
+                  <div>
+                    <b style="font-size:13px;">Reduce motion</b>
+                    <p style="margin:2px 0 0;font-size:11px;color:var(--c-ink-soft);">Skip fades and transitions. Auto-on if your OS asks.</p>
+                  </div>
+                  <span class="checkbox"><span class="box"></span>Off</span>
+                </div>
+              </div>
+
+              <!-- Section: privacy badge -->
+              <div style="border-top:1px solid var(--c-rule);padding:var(--s-4) 0;">
+                <h4 style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.15em;color:var(--c-ink-soft);margin-bottom:var(--s-3);">// privacy</h4>
+                <div style="display:flex;gap:var(--s-3);align-items:center;padding:var(--s-3);border:1px solid var(--c-ok);background:#eaf2ec;border-radius:var(--r-md);">
+                  <span style="width:32px;height:32px;border-radius:50%;background:var(--c-ok);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-family:var(--font-mono);">∅</span>
+                  <div>
+                    <b style="font-size:13px;color:var(--c-ok);">No telemetry. No cookies. No accounts.</b>
+                    <p style="margin:2px 0 0;font-size:11px;color:var(--c-ink-soft);">Verified at build by <code>scripts/audit-deps.py</code>. <a href="#">View report →</a></p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row-m" style="margin-top:var(--s-3);">
+                <span class="btn-m btn-m--ghost">Reset all preferences</span>
+                <span class="btn-m btn-m--ghost">Export as JSON</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <aside class="issue">
+        <div class="issue__top">
+          <h4>Issue · ready to paste</h4>
+          <button class="issue__copy" data-target="md-f8">Copy issue</button>
+        </div>
+        <div>
+          <h5>[feature] Preferences page</h5>
+          <div class="meta-row" style="margin-top:6px;">
+            <span class="label label--enh">enhancement</span>
+            <span class="label label--help">help wanted</span>
+          </div>
+        </div>
+        <dl>
+          <div><dt>Problem</dt><dd>By F7 there are 10+ <code>localStorage</code> keys: locale, theme, preset list, history, custom CSS, options digest&hellip; The user has no single place to inspect or reset them.</dd></div>
+          <div><dt>Proposal</dt><dd>One page at <code>/preferences</code> grouped in three sections: <em>Defaults</em>, <em>UI</em>, <em>Privacy</em>. Each row links to the feature that owns it. &laquo;Reset all&raquo; clears the namespace.</dd></div>
+          <div><dt>Acceptance</dt><dd><ul>
+            <li>All settings persisted under <code>md-bridge:prefs</code> (single key, merged on read).</li>
+            <li>Accent colour writes a CSS variable override on <code>:root</code>.</li>
+            <li>Reduce-motion respects <code>prefers-reduced-motion</code> by default; manual toggle overrides.</li>
+            <li>&laquo;No telemetry&raquo; badge points at <code>scripts/audit-deps.py</code> output committed in CI.</li>
+            <li>Tests: read/write round-trip, reset clears every <code>md-bridge:*</code> key.</li>
+          </ul></dd></div>
+        </dl>
+        <pre class="issue-md" id="md-f8">## Problem
+
+By F7 there are 10+ `localStorage` keys: locale, theme, preset list, history, custom CSS, options digest. The user has no single place to inspect or reset them.
+
+## Proposal
+
+One page at `/preferences` grouped in three sections: **Defaults**, **UI**, **Privacy**. Each row links to the feature that owns it. "Reset all" clears the `md-bridge:*` namespace.
+
+## Acceptance criteria
+
+- [ ] All settings persisted under `md-bridge:prefs` (single key, merged on read).
+- [ ] Accent colour writes a CSS variable override on `:root`.
+- [ ] Reduce-motion respects `prefers-reduced-motion` by default; manual toggle overrides.
+- [ ] "No telemetry" badge points at `scripts/audit-deps.py` output committed in CI.
+- [ ] Tests: read/write round-trip, reset clears every `md-bridge:*` key.
+
+## Labels
+
+`enhancement` · `help wanted`</pre>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═════════════════ APPENDIX ═════════════════ -->
+  <section class="section" id="appendix">
+    <div class="section__head">
+      <span class="section__num">03 · Appendix</span>
+      <div>
+        <h2>Issue hygiene &mdash; how to file these as a maintainer.</h2>
+        <p>Short checklist to keep this batch of issues tidy as community PRs land. Reuses the existing labels and templates.</p>
+      </div>
+    </div>
+
+    <div class="sys-grid">
+
+      <div class="sys-card col-6">
+        <h4>1 · One issue per F-number</h4>
+        <p style="margin:0;font-size:var(--fs-xs);color:var(--c-ink-soft);">Paste the markdown card into <code>.github/ISSUE_TEMPLATE/feature_request.md</code>. Title prefix matches the bracket convention already in use (e.g. <code>[feature]</code>, <code>[i18n]</code>, <code>[platform]</code>).</p>
+      </div>
+
+      <div class="sys-card col-6">
+        <h4>2 · Link the doc</h4>
+        <p style="margin:0;font-size:var(--fs-xs);color:var(--c-ink-soft);">Every issue body links back to this file under <code>docs/design/Design&nbsp;Thinking.html</code>. That way a contributor can see the mock and the rationale before writing a line of code.</p>
+      </div>
+
+      <div class="sys-card col-6">
+        <h4>3 · Suggested order</h4>
+        <p style="margin:0 0 var(--s-3) 0;font-size:var(--fs-xs);color:var(--c-ink-soft);">F3 (Options) → F1 (Themes) → F2 (Custom CSS) → F6 (Presets) → F7 (History) → F8 (Prefs) → F4 (Formats) → F5 (i18n).</p>
+        <p style="margin:0;font-size:var(--fs-xs);color:var(--c-ink-soft);">Front-load the dependency root (Options panel) so everything else has somewhere to attach.</p>
+      </div>
+
+      <div class="sys-card col-6">
+        <h4>4 · Labels we&apos;re reusing</h4>
+        <p style="margin:0;font-size:var(--fs-xs);color:var(--c-ink-soft);">
+          <span class="label label--enh" style="font-size:10px;">enhancement</span>
+          <span class="label label--good" style="font-size:10px;">good first issue</span>
+          <span class="label label--help" style="font-size:10px;">help wanted</span>
+          <span class="label label--i18n" style="font-size:10px;">i18n</span>
+          <br><br>
+          No new labels invented. Sticking with the GitHub defaults + the i18n one you already use.
+        </p>
+      </div>
+
+      <div class="sys-card col-12" style="background:var(--c-accent-soft);border-color:#e2bdb9;">
+        <h4 style="color:var(--c-accent);">Next steps</h4>
+        <ol style="margin:0;padding-left:18px;font-size:var(--fs-xs);color:var(--c-ink);line-height:1.8;">
+          <li>Save this file at <code>docs/design/Design Thinking.html</code> in the repo (or wherever you keep design docs).</li>
+          <li>Open <strong>8 issues</strong> on <code>vinicq/md-bridge</code> using the &laquo;Copy issue&raquo; buttons.</li>
+          <li>Add a short paragraph to <code>CONTRIBUTING.md</code> pointing newcomers at this doc as the &laquo;start here&raquo; map.</li>
+          <li>Tag the F1, F4, and F5 issues as &laquo;Hacktoberfest&raquo;-friendly when next October rolls around.</li>
+        </ol>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>
+      <h3>md-bridge · Design Thinking v0.1</h3>
+      <p style="margin:0 0 var(--s-3);">A base document for contributors. Same tokens, same components, same logic &mdash; just more reach.</p>
+      <p style="margin:0;font-family:var(--font-mono);font-size:11px;">Built reading <code>apps/web/src/styles/tokens.css</code>, <code>ARCHITECTURE.md</code>, and the existing component tree. No new aesthetic was invented in the making of this doc.</p>
+    </div>
+    <div>
+      <h3>Quick links</h3>
+      <ul>
+        <li><a href="#foundations">Design foundations</a></li>
+        <li><a href="#roadmap">Roadmap matrix</a></li>
+        <li><a href="#f1">F1 · Themes</a></li>
+        <li><a href="#f4">F4 · More formats</a></li>
+        <li><a href="#f5">F5 · Languages</a></li>
+        <li><a href="#appendix">Appendix · issue hygiene</a></li>
+      </ul>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  // Copy-to-clipboard for each issue card.
+  document.querySelectorAll('.issue__copy').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-target');
+      const src = document.getElementById(id);
+      if (!src) return;
+      const text = src.textContent || '';
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch {}
+        ta.remove();
+      }
+      const original = btn.textContent;
+      btn.textContent = 'Copied ✓';
+      btn.classList.add('is-copied');
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove('is-copied');
+      }, 1800);
+    });
+  });
+</script>
+
+<script>
+  // ── Scroll-spy: highlight the nav anchor whose section the reader is in. ──
+  // Click locks the highlight while smooth scroll lands; spy resumes after.
+  (function () {
+    const navLinks = Array.from(document.querySelectorAll('.doc-bar__nav a[href^="#"]'));
+    if (navLinks.length === 0) return;
+    const sections = navLinks
+      .map((a) => ({ link: a, target: document.querySelector(a.getAttribute('href')) }))
+      .filter((s) => s.target);
+    if (sections.length === 0) return;
+
+    const OFFSET = 110;
+    const CLICK_LOCK_MS = 1600; // covers smooth-scroll across the whole doc
+    let lastActive = null;
+    let lockUntil = 0;
+
+    function applyActive(active) {
+      if (active === lastActive) return;
+      lastActive = active;
+      sections.forEach((s) => s.link.classList.toggle('is-active', s === active));
+    }
+
+    function update() {
+      if (performance.now() < lockUntil) return; // click owns the highlight
+      let active = sections[0];
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const top = sections[i].target.getBoundingClientRect().top;
+        if (top <= OFFSET) { active = sections[i]; break; }
+      }
+      const atEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
+      if (atEnd) active = sections[sections.length - 1];
+      applyActive(active);
+    }
+
+    let scheduled = false;
+    function schedule() {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => { scheduled = false; update(); });
+    }
+
+    // Click a nav anchor → mark it active immediately and lock the spy
+    // until the smooth scroll lands. After the lock, scroll position takes over.
+    navLinks.forEach((a) => {
+      a.addEventListener('click', () => {
+        const href = a.getAttribute('href');
+        const target = sections.find((s) => '#' + s.target.id === href);
+        if (target) {
+          lockUntil = performance.now() + CLICK_LOCK_MS;
+          applyActive(target);
+        }
+      });
+    });
+
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    window.addEventListener('hashchange', schedule);
+    window.addEventListener('load', schedule);
+
+    update();
+  })();
+</script>
+
+<style>
+  /* Anchor target offset so clicking a nav link lands the section under the
+     sticky bar, not behind it — which makes the scroll-spy match what the
+     reader sees. */
+  html { scroll-behavior: smooth; }
+  .section, .section-feature, #principles, #foundations, #roadmap, #appendix,
+  #f1, #f2, #f3, #f4, #f5, #f6, #f7, #f8 {
+    scroll-margin-top: 96px;
+  }
+</style>
+
+</body>
+</html>

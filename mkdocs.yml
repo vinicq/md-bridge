@@ -49,6 +49,7 @@ nav:
   - Deploy:
       - Oracle Cloud Always Free: deployment/oracle-cloud.md
   - API reference: API.md
+  - Design system: design/index.md
   - Contributing: contributing.md
   - Security: security.md
   - Changelog: changelog.md

@@ -335,6 +335,26 @@ To add a new locale:
 
 The header toggle picks the new locale up automatically.
 
+## Design system
+
+![Roadmap of the md-bridge design system: eight features, eight issues, one coherent system](docs/design/screenshots/hero.png)
+
+Every UI change tracks back to a mockup in
+[`docs/design/`](docs/design/). The catalogue is a single self-contained
+HTML file (`design-thinking.html`) with hi-fi mockups and paste-ready
+issue specs for eight features (CSS theme picker, theme library,
+per-conversion options panel, format hub for DOCX/EPUB/HTML/RTF,
+language workshop, conversion presets, local history, preferences
+page). Published on the docs site under
+[/design/](https://vinicq.github.io/md-bridge/design/), with the live
+catalogue at
+[/design/design-thinking.html](https://vinicq.github.io/md-bridge/design/design-thinking.html).
+
+Open issues tagged `design-required` point back at the matching
+F-section. To propose a brand-new UI change, open a feature-request
+issue with a sketch; the maintainer decides whether it slots into an
+existing F-section or warrants a fresh design pass.
+
 ## Limits
 
 - 500 MB cap per upload
@@ -345,8 +365,11 @@ The header toggle picks the new locale up automatically.
 
 ## Contributing
 
-Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md)
-for the full guide; the headline rules are:
+Issues and pull requests are welcome. UI changes track back to the
+[design system in `docs/design/`](docs/design/) (also published with the
+docs site); features tagged `design-required` usually have a matching
+mockup there. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the full
+guide; the headline rules are:
 
 - Every behaviour change ships with tests at the lowest viable tier.
 - Pull requests stay small and aim for at most three commits.

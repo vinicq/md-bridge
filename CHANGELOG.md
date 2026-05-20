@@ -35,6 +35,25 @@ If a section is empty in a release, the section is omitted entirely.
 
 ### Added
 
+- `docs/design/` design system catalogue. Self-contained HTML
+  (`design-thinking.html`) with hi-fi mockups and paste-ready issue
+  specs for eight features: F1 CSS theme picker, F2 theme library,
+  F3 per-conversion options panel, F4 format hub (DOCX/EPUB/HTML/RTF),
+  F5 language workshop, F6 conversion presets, F7 local history, and
+  F8 preferences page. The HTML reuses
+  `apps/web/src/styles/tokens.css` verbatim so visual changes to the
+  React app propagate to the catalogue. Published with the docs site
+  at
+  [/design/](https://vinicq.github.io/md-bridge/design/);
+  MkDocs nav now includes a Design system entry; CONTRIBUTING.md
+  routes contributors who pick up `design-required` issues at the
+  catalogue first; README gains a dedicated Design system section
+  above Limits.
+- `docs/design/screenshots/` retina captures (1440x900 at 2x device
+  scale) of every catalogue section: hero, principles, foundations,
+  roadmap, plus F1..F8 mockup spreads. The design landing page and
+  the GitHub-view README render the gallery so contributors preview
+  the catalogue before opening the HTML.
 - `docs/screenshots/home-es.png` Spanish home-page screenshot at the
   same 2880x1800 retina resolution as the EN and PT companions.
   README's screenshot section now shows the trilingual UI in a
