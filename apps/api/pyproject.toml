@@ -7,10 +7,15 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
     "pydantic>=2.9",
-    "python-multipart>=0.0.20",
+    # python-multipart 0.0.27+ closes GHSA-mj87-hwqh-73pj, GHSA-pp6c-gr5w-3c5g,
+    # GHSA-wp53-j4wj-2cfg (malicious-input resource exhaustion).
+    "python-multipart>=0.0.27",
     "PyMuPDF>=1.24",
-    "pypdf>=5.0",
-    "markdown>=3.7",
+    # pypdf 6.10.2+ closes 22 GHSAs accumulated through the 5.x and 6.x lines
+    # (XMP exhaustion, FlateDecode/startxref long-runtimes, outline loops).
+    "pypdf>=6.10.2",
+    # markdown 3.8.1+ closes GHSA-5wmx-573v-2qwq (uncaught exception).
+    "markdown>=3.8.1",
     "playwright>=1.49",
 ]
 
