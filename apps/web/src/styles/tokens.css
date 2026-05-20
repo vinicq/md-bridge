@@ -12,16 +12,20 @@
   --fs-xl: 2.441rem;
   --fs-2xl: 3.815rem;
 
-  /* Color */
-  --c-bg: #f7f3ec;
-  --c-bg-elev: #fdfaf3;
-  --c-ink: #1a1a1a;
-  --c-ink-soft: #555;
-  --c-rule: #d8d2c5;
-  --c-accent: #c8362f;
-  --c-accent-soft: #f1d8d5;
-  --c-ok: #2e7d4a;
-  --c-warn: #b8860b;
+  /* Semantic color tokens - react to data-theme on <html> */
+  --c-bg: var(--theme-surface-2);
+  --c-bg-elev: var(--theme-surface-1);
+  --c-ink: var(--theme-surface-0);
+  --c-ink-soft: var(--theme-surface-4);
+  --c-rule: var(--theme-surface-3);
+  --c-accent: var(--theme-accent);
+  --c-accent-soft: var(--theme-accent-soft);
+  --c-ok: var(--theme-ok);
+  --c-warn: var(--theme-warn);
+
+  /* Shadows */
+  --shadow-1: var(--theme-shadow-1);
+  --shadow-2: var(--theme-shadow-2);
 
   /* Spacing (4-step scale) */
   --s-1: 4px;
@@ -36,10 +40,6 @@
   /* Radius */
   --r-sm: 2px;
   --r-md: 6px;
-
-  /* Shadows */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.08);
 
   /* Motion */
   --t-fast: 120ms;

@@ -1,0 +1,22 @@
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--c-rule);
+  background: transparent;
+  color: var(--c-ink-soft);
+  cursor: pointer;
+  transition:
+    color var(--t-fast) var(--easing),
+    border-color var(--t-fast) var(--easing),
+    background var(--t-fast) var(--easing);
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  color: var(--c-accent);
+  border-color: var(--c-accent);
+}

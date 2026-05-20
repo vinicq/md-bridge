@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
+import { ThemeToggle } from './components/ThemeToggle'
 import { useTranslation } from './i18n'
 import './styles/globals.css'
 import './App.css'
@@ -21,6 +22,7 @@ export function App() {
             <NavLink to="/convert/md-to-pdf">{t.nav.mdToPdf}</NavLink>
             <NavLink to="/about">{t.nav.about}</NavLink>
             <LanguageSwitcher />
+            <ThemeToggle />
           </nav>
         </div>
       </header>
