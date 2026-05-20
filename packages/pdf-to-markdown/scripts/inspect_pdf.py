@@ -31,6 +31,8 @@ def check_tagged(pdf_path: Path) -> dict:
         try:
             catalog = catalog.get_object() if hasattr(catalog, "get_object") else catalog
         except Exception:
+            # pypdf raises on malformed indirect references; fall back to the
+            # raw value so the rest of the inspection still runs.
             pass
 
         mark_info = catalog.get("/MarkInfo")
@@ -38,6 +40,7 @@ def check_tagged(pdf_path: Path) -> dict:
             try:
                 mark_info = mark_info.get_object()
             except Exception:
+                # See note above: keep the raw object on resolution failure.
                 pass
             info["marked"] = bool(mark_info.get("/Marked", False))
 
@@ -47,6 +50,7 @@ def check_tagged(pdf_path: Path) -> dict:
             try:
                 struct_root = struct_root.get_object()
             except Exception:
+                # See note above: keep the raw object on resolution failure.
                 pass
 
             tag_counter: Counter[str] = Counter()
@@ -56,6 +60,7 @@ def check_tagged(pdf_path: Path) -> dict:
                 try:
                     node = node.get_object() if hasattr(node, "get_object") else node
                 except Exception:
+                    # A node we cannot resolve is a node we cannot count.
                     return
                 if isinstance(node, dict):
                     tag = node.get("/S")
@@ -66,6 +71,8 @@ def check_tagged(pdf_path: Path) -> dict:
                         try:
                             kids = kids.get_object()
                         except Exception:
+                            # See note above: keep the raw value and let the
+                            # isinstance branches below sort it out.
                             pass
                         if isinstance(kids, list):
                             for k in kids:

@@ -16,4 +16,5 @@ def test_zzz_regression_cleanup():
                 elif p.exists():
                     p.unlink(missing_ok=True)
             except OSError:
+                # Best-effort cleanup; leftover temp files do not fail CI.
                 pass
