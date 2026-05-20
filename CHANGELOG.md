@@ -15,6 +15,76 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+## [0.2.3] — 2026-05-20
+
+Minor release. Headline change is the **first external contribution**:
+@ko4lax landed the WCAG 2.1 AA audit and remediation in PR #54. The
+release also ships the new design system catalogue (PRs #58 + #65)
+that future UI work tracks back to, plus the trilingual screenshots
+refresh, the Spanish locale page tests, the all-contributors adoption,
+and a handful of CI hygiene fixes accumulated since `v0.2.2`.
+
+### Added
+
+- **WCAG 2.1 AA accessibility audit and remediation** by @ko4lax (first
+  external contributor on the project). `DropZone.tsx` refactored so
+  the file input is a sibling of the `role="button"` wrapper instead of
+  nested inside it (closes the axe nested-interactive-controls
+  violation); skip-to-content link added in `App.tsx`; nav landmark
+  labelled `Main navigation`; batch progress carries an
+  `aria-live="polite"` announcement. New `docs/accessibility-audit.md`
+  documents findings with WCAG identifiers (`wcag2a`, `wcag2aa`,
+  `wcag21a`, `wcag21aa`) and reproduction steps. New
+  `apps/web/e2e/audit.spec.ts` wires `@axe-core/playwright` into the
+  existing E2E job so CI fails on critical or serious violations
+  going forward. (#54, closes #36)
+- **`docs/design/` design system catalogue.** Self-contained HTML
+  (`design-thinking.html`) with hi-fi mockups and paste-ready issue
+  specs for eight features: F1 CSS theme picker, F2 theme library,
+  F3 per-conversion options panel, F4 format hub (DOCX/EPUB/HTML/RTF),
+  F5 language workshop, F6 conversion presets, F7 local history, and
+  F8 preferences page. The HTML reuses
+  `apps/web/src/styles/tokens.css` verbatim so visual changes to the
+  React app propagate to the catalogue. Published with the docs site
+  at [/design/](https://vinicq.github.io/md-bridge/design/); MkDocs nav
+  now includes a Design system entry; CONTRIBUTING.md routes
+  contributors who pick up `design-required` issues at the catalogue
+  first; README gains a dedicated Design system section above Limits.
+  Seeds six new feature issues (#59 F3, #60 F4, #61 F5, #62 F6, #63 F7,
+  #64 F8). (#58)
+- **`docs/design/screenshots/` retina captures** (1440x900 at 2x device
+  scale) of every catalogue section: hero, principles, foundations,
+  roadmap, plus F1..F8 mockup spreads. The design landing page and the
+  GitHub-view README render the gallery so contributors preview the
+  catalogue before opening the HTML. (#65)
+- `docs/screenshots/home-es.png` Spanish home-page screenshot at the
+  same 2880x1800 retina resolution as the EN and PT companions.
+  README's screenshot section now shows the trilingual UI in a
+  3-column table (EN / PT / ES). `docs/screenshots/demo.gif` was
+  regenerated with the three locales at the start so the README hero
+  shows the trilingual capability before the conversion flow. (#49)
+- Spanish locale coverage added to the page-level integration tests:
+  `About.test.tsx` asserts the ES title, `Home.test.tsx` asserts the
+  ES hero headline, and `Navigation.test.tsx` flips the whole UI to
+  ES via the language toggle and asserts both the headline and the
+  About link translate. The Portuguese tests stay in place. (#49)
+- **all-contributors** specification adopted. `.all-contributorsrc` at
+  the repo root tracks every contributor and their kind of
+  contribution (code, doc, translation, design, review, test, infra,
+  maintenance). README gains a `## Contributors` section between
+  `## License` and `## If md-bridge helped you` that renders the
+  current list. `CONTRIBUTING.md` documents how to be credited: no bot
+  to install, no extra PR; the maintainer regenerates the README block
+  during release prep. (#48)
+- `@ko4lax` credited as a contributor with categories `code`, `doc`,
+  `test`, `infra`, `translation` per the diff classification in PR
+  #54. Avatar URL uses the numeric-ID form per the maintainer credit
+  rule. (#67)
+- `.github/workflows/pr-linked-issue.yml` posts a single one-line
+  comment on every issue closed via "Closes #N" naming the PR author,
+  so attribution survives in the casual reader's view. (#56, refined
+  in #57)
+
 ### Changed
 
 - All `docs/screenshots/*.png` refreshed at the current 2880x1800
@@ -23,7 +93,7 @@ If a section is empty in a release, the section is omitted entirely.
   The `pdf-to-md`, `pdf-to-md-batch`, `md-to-pdf`, `about`, and
   `swagger` captures now match the UI a contributor sees today.
   `demo.gif` was regenerated with eight frames covering the
-  trilingual home pages and the full conversion flow.
+  trilingual home pages and the full conversion flow. (#51)
 - `Validate PR title` is now a **required** status check on `main`.
   Previously the Conventional Commits validation ran on every PR but
   did not block the merge if it failed (caught when PR #49 merged
@@ -31,49 +101,29 @@ If a section is empty in a release, the section is omitted entirely.
   check). Branch protection now requires every PR title to parse
   cleanly as `<type>(<scope>)<!>: <description>` before the merge
   button enables. CONTRIBUTING.md's branch-protection list is updated
-  to include the sixth required check.
+  to include the sixth required check. (#50)
+- CONTRIBUTING.md regression test guidance promoted from a single
+  paragraph to a step-by-step checklist under "Writing a good
+  regression test". Documents the failing-diff format, tier choice,
+  fixture vs synthetic input, and the no-silent-skips rule with a
+  worked example from PR #20. (#52)
+- `@zhouzhou626`'s entry in `.all-contributorsrc` switched to the
+  numeric-ID avatar URL (was producing identicon fallback) and gained
+  the `doc` contribution credit for PR #52. CONTRIBUTING.md codifies
+  the post-merge maintainer credit rule as a five-step mechanical
+  checklist any future maintainer (or AI assistant) can apply without
+  judgement. (#53)
 
-### Added
+### Fixed
 
-- `docs/design/` design system catalogue. Self-contained HTML
-  (`design-thinking.html`) with hi-fi mockups and paste-ready issue
-  specs for eight features: F1 CSS theme picker, F2 theme library,
-  F3 per-conversion options panel, F4 format hub (DOCX/EPUB/HTML/RTF),
-  F5 language workshop, F6 conversion presets, F7 local history, and
-  F8 preferences page. The HTML reuses
-  `apps/web/src/styles/tokens.css` verbatim so visual changes to the
-  React app propagate to the catalogue. Published with the docs site
-  at
-  [/design/](https://vinicq.github.io/md-bridge/design/);
-  MkDocs nav now includes a Design system entry; CONTRIBUTING.md
-  routes contributors who pick up `design-required` issues at the
-  catalogue first; README gains a dedicated Design system section
-  above Limits.
-- `docs/design/screenshots/` retina captures (1440x900 at 2x device
-  scale) of every catalogue section: hero, principles, foundations,
-  roadmap, plus F1..F8 mockup spreads. The design landing page and
-  the GitHub-view README render the gallery so contributors preview
-  the catalogue before opening the HTML.
-- `docs/screenshots/home-es.png` Spanish home-page screenshot at the
-  same 2880x1800 retina resolution as the EN and PT companions.
-  README's screenshot section now shows the trilingual UI in a
-  3-column table (EN / PT / ES). `docs/screenshots/demo.gif` was
-  regenerated with the three locales at the start so the README hero
-  shows the trilingual capability before the conversion flow.
-- Spanish locale coverage added to the page-level integration tests:
-  `About.test.tsx` asserts the ES title, `Home.test.tsx` asserts the
-  ES hero headline, and `Navigation.test.tsx` flips the whole UI to
-  ES via the language toggle and asserts both the headline and the
-  About link translate. The Portuguese tests stay in place.
-- **all-contributors** specification adopted. `.all-contributorsrc`
-  at the repo root tracks every contributor and their kind of
-  contribution (code, doc, translation, design, review, test, infra,
-  maintenance). README gains a `## Contributors` section between
-  `## License` and `## If md-bridge helped you` that renders the
-  current list (Vinicius Queiroz + @zhouzhou626 for the Spanish
-  locale). `CONTRIBUTING.md` documents how to be credited: no bot to
-  install, no extra PR; the maintainer regenerates the README block
-  during release prep.
+- `MdToPdf.tsx` was passing `t.pdfToMd.ready` ("Ready" / "Pronto" /
+  "Listo") to the `ConvertButton`'s `success` label slot instead of
+  the page-owned `t.mdToPdf.success` ("PDF ready." / equivalents).
+  The branch was unreachable under the current
+  `status={batch.running ? 'loading' : 'idle'}` state machine, so no
+  user saw the wrong copy, but the dead path would have surfaced the
+  next time anyone wired the success state. Aligned to the correct
+  key. (#66)
 
 ## [0.2.2] — 2026-05-19
 
@@ -288,7 +338,8 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/vinicq/md-bridge/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/vinicq/md-bridge/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/vinicq/md-bridge/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/vinicq/md-bridge/compare/v0.1.1...v0.2.0
