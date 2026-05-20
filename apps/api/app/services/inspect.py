@@ -81,8 +81,10 @@ def inspect_pdf_bytes(pdf_bytes: bytes, filename: str) -> InspectPdfResponse:
         try:
             tmp_path.unlink(missing_ok=True)
         except OSError:
+            # Best-effort temp cleanup; the OS will reap stale files.
             pass
         try:
             tmp_dir.rmdir()
         except OSError:
+            # Best-effort temp cleanup; the OS will reap stale dirs.
             pass
