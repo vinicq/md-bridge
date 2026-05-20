@@ -174,7 +174,7 @@ jobs:
           1. Open a draft PR within the window — even an empty scaffold is fine. The draft signals progress and lets the maintainer pre-review your direction.
           2. If you cannot finish in time, comment to release the issue and the maintainer will reassign it.
 
-          See [CONTRIBUTOR-WALKTHROUGH.md](https://github.com/${REPO}/blob/main/CONTRIBUTOR-WALKTHROUGH.md) for the full fork → claim → PR flow.
+          See [CONTRIBUTING.md](https://github.com/${REPO}/blob/main/CONTRIBUTING.md#your-first-pull-request) for the full fork → claim → PR flow.
 
           <!-- claim-by:${COMMENTER} -->
           EOF
