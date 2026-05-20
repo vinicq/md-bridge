@@ -90,7 +90,7 @@ export function MdToPdf() {
               labels={{
                 idle: t.mdToPdf.generate,
                 loading: t.mdToPdf.generating,
-                success: t.pdfToMd.ready,
+                success: t.mdToPdf.success,
                 error: t.mdToPdf.generate,
               }}
             />
