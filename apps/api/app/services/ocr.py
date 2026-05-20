@@ -5,8 +5,6 @@ import io
 import os
 
 import pymupdf
-import pytesseract
-from PIL import Image
 
 DEFAULT_OCR_LANG = "eng+por"
 
@@ -16,6 +14,9 @@ def is_enabled() -> bool:
 
 
 def ocr_pdf_bytes(pdf_bytes: bytes, lang: str = DEFAULT_OCR_LANG) -> bytes:
+    import pytesseract
+    from PIL import Image
+
     src = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     out = pymupdf.open()
     try:

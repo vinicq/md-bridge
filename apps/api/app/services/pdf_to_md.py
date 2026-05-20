@@ -18,6 +18,9 @@ from app.schemas.convert import (
     PdfToMdOptions,
     PdfToMdResponse,
 )
+from app.services.inspect import inspect_pdf_bytes
+from app.services.ocr import is_enabled as ocr_enabled
+from app.services.ocr import ocr_pdf_bytes
 from app.services.packages_loader import pdf_to_md_module
 
 FRONT_MATTER_LINE = re.compile(r'^(\w[\w-]*):\s*(.*)$')
@@ -98,7 +101,12 @@ def convert_pdf_bytes(
 ) -> PdfToMdResponse:
     opts = options or PdfToMdOptions()
     mod = pdf_to_md_module()
-
+    ocr_applied = False
+    if ocr_enabled():
+        diagnostics = inspect_pdf_bytes(pdf_bytes, filename)
+        if diagnostics.needs_ocr:
+            pdf_bytes = ocr_pdf_bytes(pdf_bytes)
+            ocr_applied = True
     with _tempdir() as tmp:
         safe_stem = Path(filename).stem or "document"
         pdf_path = tmp / f"{safe_stem}.pdf"
@@ -132,4 +140,5 @@ def convert_pdf_bytes(
         front_matter=front,
         warnings=warnings,
         stats=stats,
+        ocr_applied=ocr_applied,
     )
