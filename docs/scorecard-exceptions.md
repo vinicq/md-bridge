@@ -37,6 +37,48 @@ encountered in the wild. The first such report opens an issue, gets a
 regression test in `apps/api/tests/`, and the conversation about adopting
 a fuzzer reopens with evidence.
 
+## Pinned-Dependencies (pip and npm install commands)
+
+**Current state:** 7 alerts across `ci.yml`, `pages.yml`, `credit-contributor.yml`,
+`apps/api/Dockerfile`, and `apps/web/Dockerfile` flagging `pip install` and
+`npm install` / `npm ci` lines as "not pinned by hash".
+
+**Reason:** The dependency surface is already pinned by other means:
+
+- `pip install -e ".[dev]"` and `pip install -r requirements.txt` resolve
+  against version constraints in `pyproject.toml` and `requirements.txt`.
+  Every package carries a minimum version chosen to clear known CVEs
+  (`pypdf>=6.10.2`, `markdown>=3.8.1`, `python-multipart>=0.0.27`).
+  Dependabot opens version-bump PRs as new patches drop.
+- `npm ci` consults `apps/web/package-lock.json` for exact hashes of every
+  transitive package. The lockfile is committed and is the source of truth.
+- `mkdocs-material` in `pages.yml` is a leaf install with no runtime input;
+  the cost of hash-pinning that one line is high relative to its blast radius
+  (build-time only, no app code reads it).
+
+Per-command hash pinning (`pip install --require-hashes` plus a generated
+`requirements.lock`, or `npm install --integrity` workflows) is on the
+roadmap once the project gains a regular co-maintainer who can carry the
+churn of refreshing those lockfiles on every Dependabot bump. Until then,
+the constraint-plus-lockfile model is the chosen trade-off.
+
+**What would change this:** A pip- or npm-level supply chain attack that
+the constraint resolver could not have caught (a malicious patch release
+inside a satisfied range). At that point the constraint-only model breaks
+and per-command hash pinning becomes worth the maintenance cost.
+
+## CIIBestPractices
+
+**Current state:** No OpenSSF Best Practices badge applied for.
+
+**Reason:** The badge is optional and self-attested. Applying for it does
+not improve the codebase by itself; it puts a maintainer's time into the
+application form and the ongoing attestation refresh.
+
+**What would change this:** A downstream user or sponsor citing the badge
+as a requirement for adopting md-bridge. At that point the application
+becomes worth it.
+
 ## How to revisit this list
 
 The exceptions above are not permanent. Re-check on every milestone close
