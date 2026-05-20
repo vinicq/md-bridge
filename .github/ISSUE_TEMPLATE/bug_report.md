@@ -6,6 +6,11 @@ labels: bug
 assignees: ""
 ---
 
+> First time here? If you plan to fix this yourself, comment **`/claim`**
+> on the issue after filing it. The bot will reserve the issue for you
+> for 7 days. See [CONTRIBUTOR-WALKTHROUGH.md](../../CONTRIBUTOR-WALKTHROUGH.md)
+> for the full fork → claim → PR flow.
+
 ## Summary
 
 A short description of what went wrong.

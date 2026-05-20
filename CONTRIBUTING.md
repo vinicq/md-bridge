@@ -197,22 +197,29 @@ If the change you want to make matches an existing open issue, please
 **claim the issue before you start coding**. This stops two
 contributors from racing on the same work without realising.
 
-The process is short:
+### The fast path: `/claim`
 
-1. Open the issue and skim the comments. Confirm the scope is still
-   what you expect; the maintainer may have narrowed or widened it
-   since the original write-up.
-2. Leave a comment saying you would like to take it. One sentence is
-   enough: *"I'd like to work on this — planning to start tomorrow."*
-3. Wait for the maintainer to assign you on GitHub (`assignee` field
-   on the right sidebar). The assignment typically happens within a
-   business day.
-4. Once assigned, the issue is yours for **seven days**. Open a draft
-   PR within that window, even if it is empty; the draft PR signals
-   progress and lets the maintainer pre-review your direction.
-5. If you cannot finish within seven days, leave a comment to release
-   the issue so someone else can pick it up. The maintainer will
-   reassign on request.
+Comment **`/claim`** (or the alias **`/take`**) on the issue. The
+`Issue claim` Action adds the `status: claimed` label, assigns you if
+you are a collaborator, posts a confirmation comment with the deadline,
+and moves the card to the Claimed column on the project board. No
+maintainer wait.
+
+External contributors cannot be set as GitHub assignees on this
+repository (the API rejects non-collaborators). The Action posts an
+attribution comment in that case so the claim is still anchored in the
+issue history. The label and the project board move work the same way.
+
+From the moment of confirmation, the issue is yours for **seven days**.
+
+### What to do once claimed
+
+1. Open a draft PR within the window, even if it is empty. The draft
+   signals progress and lets the maintainer pre-review your direction.
+2. If the scope changed since you read it, leave a comment naming the
+   change so the maintainer can confirm or narrow.
+3. If you cannot finish in time, comment to release the issue and the
+   maintainer will reassign it.
 
 The assignee always has first refusal. If you open a PR against an
 issue someone else is assigned to, the maintainer will close yours as
