@@ -1,0 +1,73 @@
+name: Auto-update stale auto-merge PRs
+
+# Branch protection on `main` runs with `strict: true` (the PR branch must
+# be up to date with `main` before merging). When several auto-merge PRs
+# are queued and one lands, the others fall to `mergeable_state: behind`
+# and auto-merge stalls until someone clicks "Update branch".
+#
+# This workflow does that click. After every push to `main`, it lists open
+# PRs that have auto-merge enabled, finds the ones behind `main`, and
+# updates each branch. The next CI run then unblocks auto-merge and the
+# PR lands.
+#
+# Caveats:
+# - For fork PRs, the PR author must have "Allow edits and access to
+#   secrets by maintainers" checked, or `gh pr update-branch` fails with
+#   "branch is read-only". The job logs the failure and moves on; the
+#   maintainer can update manually in those cases.
+# - The update commit is authored by github-actions[bot]. This is
+#   intentional: it keeps the maintainer's name off of mechanical
+#   merge-from-main commits.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-update-stale-prs
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Update branches behind main
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Find and update stale auto-merge PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # mergeStateStatus can lag a few seconds after a merge lands.
+          # Sleeping briefly lets GitHub propagate the new base SHA to
+          # the open PRs.
+          sleep 5
+
+          stale=$(gh pr list -R "$REPO" --state open \
+            --json number,autoMergeRequest,mergeStateStatus,title \
+            --jq '.[] | select(.autoMergeRequest != null and .mergeStateStatus == "BEHIND") | .number')
+
+          if [ -z "$stale" ]; then
+            echo "No stale auto-merge PRs."
+            exit 0
+          fi
+
+          echo "Stale auto-merge PRs to update:"
+          echo "$stale"
+          echo "---"
+
+          for pr in $stale; do
+            echo "Updating PR #$pr"
+            if gh pr update-branch "$pr" -R "$REPO" 2>&1; then
+              echo "  -> updated"
+            else
+              echo "  -> update failed (likely a fork without maintainer-edit access). Skipping."
+            fi
+          done
