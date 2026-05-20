@@ -51,10 +51,10 @@ jobs:
       - name: Add to project
         if: env.PROJECTS_TOKEN != ''
         env:
+          GH_TOKEN: ${{ env.PROJECTS_TOKEN }}
           CONTENT_NODE_ID: ${{ github.event.issue.node_id || github.event.pull_request.node_id }}
         run: |
           gh api graphql \
-            -H "Authorization: bearer ${PROJECTS_TOKEN}" \
             -f query='
               mutation($project: ID!, $content: ID!) {
                 addProjectV2ItemById(input: {projectId: $project, contentId: $content}) {
@@ -85,10 +85,10 @@ jobs:
         if: env.PROJECTS_TOKEN != ''
         id: lookup
         env:
+          GH_TOKEN: ${{ env.PROJECTS_TOKEN }}
           CONTENT_NODE_ID: ${{ github.event.issue.node_id || github.event.pull_request.node_id }}
         run: |
           ITEM_ID=$(gh api graphql \
-            -H "Authorization: bearer ${PROJECTS_TOKEN}" \
             -f query='
               query($content: ID!) {
                 node(id: $content) {
@@ -112,10 +112,10 @@ jobs:
       - name: Set status to Done
         if: env.PROJECTS_TOKEN != '' && steps.lookup.outputs.skip != 'true'
         env:
+          GH_TOKEN: ${{ env.PROJECTS_TOKEN }}
           ITEM_ID: ${{ steps.lookup.outputs.item_id }}
         run: |
           gh api graphql \
-            -H "Authorization: bearer ${PROJECTS_TOKEN}" \
             -f query='
               mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
                 updateProjectV2ItemFieldValue(input: {

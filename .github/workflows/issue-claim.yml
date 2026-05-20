@@ -52,7 +52,7 @@ jobs:
       issues: write
     steps:
       - name: Reject if issue is already claimed
-        if: contains(github.event.issue.labels.*.name, 'status: claimed')
+        if: "contains(github.event.issue.labels.*.name, 'status: claimed')"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -69,7 +69,7 @@ jobs:
 
       - name: Try to assign commenter (works for collaborators)
         id: assign
-        if: ${{ !contains(github.event.issue.labels.*.name, 'status: claimed') }}
+        if: "${{ !contains(github.event.issue.labels.*.name, 'status: claimed') }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -85,7 +85,7 @@ jobs:
           fi
 
       - name: Add status:claimed label
-        if: ${{ !contains(github.event.issue.labels.*.name, 'status: claimed') }}
+        if: "${{ !contains(github.event.issue.labels.*.name, 'status: claimed') }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -94,17 +94,17 @@ jobs:
           gh issue edit "$ISSUE_NUMBER" -R "$REPO" --add-label "${CLAIM_LABEL}"
 
       - name: Update Projects v2 board (skip when PROJECTS_TOKEN missing)
-        if: ${{ !contains(github.event.issue.labels.*.name, 'status: claimed') && env.PROJECTS_TOKEN == '' }}
+        if: "${{ !contains(github.event.issue.labels.*.name, 'status: claimed') && env.PROJECTS_TOKEN == '' }}"
         run: |
           echo "::warning::PROJECTS_TOKEN not set; board column not updated. Label and assignment still applied."
 
       - name: Move card to Claimed on Projects v2 board
-        if: ${{ !contains(github.event.issue.labels.*.name, 'status: claimed') && env.PROJECTS_TOKEN != '' }}
+        if: "${{ !contains(github.event.issue.labels.*.name, 'status: claimed') && env.PROJECTS_TOKEN != '' }}"
         env:
+          GH_TOKEN: ${{ env.PROJECTS_TOKEN }}
           CONTENT_NODE_ID: ${{ github.event.issue.node_id }}
         run: |
           ITEM_ID=$(gh api graphql \
-            -H "Authorization: bearer ${PROJECTS_TOKEN}" \
             -f query='
               query($content: ID!) {
                 node(id: $content) {
@@ -117,11 +117,10 @@ jobs:
             --jq ".data.node.projectItems.nodes[] | select(.project.id == \"${PROJECT_ID}\") | .id" | head -1)
 
           if [ -z "${ITEM_ID}" ]; then
-            # Issue not on the board yet — board-sync.yml adds new items on
+            # Issue not on the board yet. board-sync.yml adds new items on
             # `opened`, but an older issue claimed today may pre-date that
             # workflow. Add it now.
             ITEM_ID=$(gh api graphql \
-              -H "Authorization: bearer ${PROJECTS_TOKEN}" \
               -f query='
                 mutation($project: ID!, $content: ID!) {
                   addProjectV2ItemById(input: {projectId: $project, contentId: $content}) {
@@ -134,7 +133,6 @@ jobs:
           fi
 
           gh api graphql \
-            -H "Authorization: bearer ${PROJECTS_TOKEN}" \
             -f query='
               mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
                 updateProjectV2ItemFieldValue(input: {
@@ -150,7 +148,7 @@ jobs:
             -F option="${STATUS_CLAIMED_OPTION_ID}"
 
       - name: Post confirmation comment with deadline
-        if: ${{ !contains(github.event.issue.labels.*.name, 'status: claimed') }}
+        if: "${{ !contains(github.event.issue.labels.*.name, 'status: claimed') }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
