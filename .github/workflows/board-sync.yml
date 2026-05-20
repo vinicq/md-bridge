@@ -1,0 +1,133 @@
+name: Sync board
+
+# Mirrors what the Projects v2 built-in workflows would do, but as a regular
+# Actions workflow so the configuration is visible in git and reviewable in PR.
+#
+# What it does:
+# - Adds every new issue and new pull request to the project board.
+# - Moves the card to Status: Done when the issue is closed or the PR is merged.
+#
+# Requirements:
+# - User-level Projects v2 cannot be written to with GITHUB_TOKEN. The repo
+#   needs a secret PROJECTS_TOKEN holding a PAT (classic or fine-grained)
+#   with the `project` scope. Without that secret every job below no-ops.
+#
+# Board: https://github.com/users/vinicq/projects/4
+# Project ID: PVT_kwHOBKlnSs4BYOXg
+# Status field: PVTSSF_lAHOBKlnSs4BYOXgzhTVs1Q
+# Status option "Done": abd01daa
+
+on:
+  issues:
+    types: [opened, closed]
+  pull_request:
+    types: [opened, closed]
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_ID: PVT_kwHOBKlnSs4BYOXg
+  STATUS_FIELD_ID: PVTSSF_lAHOBKlnSs4BYOXgzhTVs1Q
+  STATUS_DONE_OPTION_ID: abd01daa
+
+jobs:
+  add-to-board:
+    name: Add new item to board
+    if: github.event.action == 'opened'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip when PROJECTS_TOKEN missing
+        if: env.PROJECTS_TOKEN == ''
+        env:
+          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+        run: |
+          echo "::warning::PROJECTS_TOKEN secret is not set. Board sync skipped."
+          echo "To enable: create a PAT with 'project' scope and add it as repo secret PROJECTS_TOKEN."
+
+      - name: Add to project
+        if: env.PROJECTS_TOKEN != ''
+        env:
+          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+          CONTENT_NODE_ID: ${{ github.event.issue.node_id || github.event.pull_request.node_id }}
+        run: |
+          gh api graphql \
+            -H "Authorization: bearer ${PROJECTS_TOKEN}" \
+            -f query='
+              mutation($project: ID!, $content: ID!) {
+                addProjectV2ItemById(input: {projectId: $project, contentId: $content}) {
+                  item { id }
+                }
+              }' \
+            -F project="${PROJECT_ID}" \
+            -F content="${CONTENT_NODE_ID}"
+
+  mark-done:
+    name: Move closed or merged items to Done
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip merged check for PRs that closed without merging
+        if: github.event.pull_request && github.event.pull_request.merged == false
+        run: |
+          echo "PR closed without merging; leaving the card alone."
+          exit 0
+
+      - name: Skip when PROJECTS_TOKEN missing
+        if: env.PROJECTS_TOKEN == ''
+        env:
+          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+        run: |
+          echo "::warning::PROJECTS_TOKEN secret is not set. Board sync skipped."
+          exit 0
+
+      - name: Resolve project item ID
+        if: env.PROJECTS_TOKEN != ''
+        id: lookup
+        env:
+          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+          CONTENT_NODE_ID: ${{ github.event.issue.node_id || github.event.pull_request.node_id }}
+        run: |
+          ITEM_ID=$(gh api graphql \
+            -H "Authorization: bearer ${PROJECTS_TOKEN}" \
+            -f query='
+              query($content: ID!) {
+                node(id: $content) {
+                  ... on Issue {
+                    projectItems(first: 10) { nodes { id project { id } } }
+                  }
+                  ... on PullRequest {
+                    projectItems(first: 10) { nodes { id project { id } } }
+                  }
+                }
+              }' \
+            -F content="${CONTENT_NODE_ID}" \
+            --jq ".data.node.projectItems.nodes[] | select(.project.id == \"${PROJECT_ID}\") | .id" | head -1)
+          if [ -z "${ITEM_ID}" ]; then
+            echo "::warning::Content ${CONTENT_NODE_ID} is not on project ${PROJECT_ID}; nothing to mark Done."
+            echo "skip=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "item_id=${ITEM_ID}" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Set status to Done
+        if: env.PROJECTS_TOKEN != '' && steps.lookup.outputs.skip != 'true'
+        env:
+          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+          ITEM_ID: ${{ steps.lookup.outputs.item_id }}
+        run: |
+          gh api graphql \
+            -H "Authorization: bearer ${PROJECTS_TOKEN}" \
+            -f query='
+              mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $project,
+                  itemId: $item,
+                  fieldId: $field,
+                  value: {singleSelectOptionId: $option}
+                }) { projectV2Item { id } }
+              }' \
+            -F project="${PROJECT_ID}" \
+            -F item="${ITEM_ID}" \
+            -F field="${STATUS_FIELD_ID}" \
+            -F option="${STATUS_DONE_OPTION_ID}"
