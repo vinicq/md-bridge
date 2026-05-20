@@ -419,6 +419,17 @@ review work on md-bridge ([emoji key](https://allcontributors.org/docs/en/emoji-
         <a href="#translation" title="Translation">🌍</a>
         <a href="#test" title="Tests">⚠️</a>
       </td>
+      <td align="center" valign="top" width="14.28%">
+        <a href="https://github.com/ko4lax">
+          <img src="https://avatars.githubusercontent.com/u/20627319?v=4?s=80" width="80px;" alt="koala"/>
+          <br /><sub><b>koala</b></sub>
+        </a><br />
+        <a href="#code" title="Code">💻</a>
+        <a href="#doc" title="Documentation">📖</a>
+        <a href="#test" title="Tests">⚠️</a>
+        <a href="#infra" title="Infrastructure">🚇</a>
+        <a href="#translation" title="Translation">🌍</a>
+      </td>
     </tr>
   </tbody>
 </table>

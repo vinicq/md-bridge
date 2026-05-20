@@ -40,6 +40,19 @@
         "translation",
         "test"
       ]
+    },
+    {
+      "login": "ko4lax",
+      "name": "koala",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20627319?v=4",
+      "profile": "https://github.com/ko4lax",
+      "contributions": [
+        "code",
+        "doc",
+        "test",
+        "infra",
+        "translation"
+      ]
     }
   ]
 }
