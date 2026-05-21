@@ -51,6 +51,7 @@ interface Dictionary {
     generating: string
     download: string
     previewEmpty: string
+    previewIframeTitle: string
     pastedFilename: string
     success: string
   }
@@ -159,6 +160,7 @@ const en: Dictionary = {
     generating: 'Converting',
     download: 'Download .pdf',
     previewEmpty: 'The preview will appear here after conversion.',
+    previewIframeTitle: 'Generated PDF preview',
     pastedFilename: 'pasted.md',
     success: 'PDF ready.',
   },
@@ -287,6 +289,7 @@ const pt: Dictionary = {
     generating: 'Convertendo',
     download: 'Baixar .pdf',
     previewEmpty: 'O preview aparece aqui depois da conversão.',
+    previewIframeTitle: 'Pré-visualização do PDF gerado',
     pastedFilename: 'colado.md',
     success: 'PDF pronto.',
   },
@@ -415,6 +418,7 @@ const es: Dictionary = {
     generating: 'Convirtiendo',
     download: 'Descargar .pdf',
     previewEmpty: 'La vista previa aparecerá aquí después de la conversión.',
+    previewIframeTitle: 'Vista previa del PDF generado',
     pastedFilename: 'pegado.md',
     success: 'PDF listo.',
   },
