@@ -116,7 +116,7 @@ export function MdToPdf() {
 
         <div>
           {previewUrl ? (
-            <iframe title={t.mdToPdf.title} src={previewUrl} className="pdf-preview" />
+            <iframe title={t.mdToPdf.previewIframeTitle} src={previewUrl} className="pdf-preview" />
           ) : (
             <MarkdownPreview markdown={previewMarkdown} empty={t.mdToPdf.previewEmpty} />
           )}

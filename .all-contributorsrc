@@ -38,7 +38,8 @@
         "code",
         "doc",
         "translation",
-        "test"
+        "test",
+        "a11y"
       ]
     },
     {
