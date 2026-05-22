@@ -25,6 +25,20 @@
   📝 <a href="CHANGELOG.md">Changelog</a>
 </p>
 
+<p align="center">
+  <sub>
+    <a href="https://vinicq.github.io/md-bridge/architecture/">Architecture</a>
+    &nbsp;·&nbsp;
+    <a href="https://vinicq.github.io/md-bridge/heuristics/">Heuristics</a>
+    &nbsp;·&nbsp;
+    <a href="https://vinicq.github.io/md-bridge/faq/">FAQ</a>
+    &nbsp;·&nbsp;
+    <a href="https://vinicq.github.io/md-bridge/api-recipes/">API recipes</a>
+    &nbsp;·&nbsp;
+    <a href="https://vinicq.github.io/md-bridge/deployment-other/">Deploy recipes</a>
+  </sub>
+</p>
+
 ---
 
 ![Demo of the conversion UI](docs/screenshots/demo.gif)
