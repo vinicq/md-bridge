@@ -24,6 +24,29 @@ Everything below is the longer version of those rules. If you have never
 opened a pull request on GitHub before, jump to
 [Your first pull request](#your-first-pull-request) for the step-by-step.
 
+## Repository secrets
+
+A few workflows need credentials that cannot live in the repo. Contributors
+do not have to set these up themselves; the maintainer creates them
+repo-side before the dependent feature lands on `main`. If you are reading
+this because a workflow you wrote needs a new secret, name the secret in
+your PR description so the maintainer can provision it before merge.
+
+| Secret | Purpose | Created by |
+|---|---|---|
+| `GITHUB_TOKEN` | Automatic per-job token issued by GitHub Actions; covers most workflow needs. | GitHub (automatic) |
+| `PROJECTS_TOKEN` | Fine-grained PAT scoped to user-level Projects v2 board (`Account: Projects: Read and write`). Required because the default `GITHUB_TOKEN` cannot mutate user-level projects. Workflows that touch the board (`issue-claim.yml`, `board-sync.yml`) fall back to a no-op with a warning when the secret is missing, so the rest of the workflow still completes. | Maintainer |
+| `CODECOV_TOKEN` | Codecov upload token for backend coverage reports. Provisioned at <https://codecov.io> after the repo is added; the value is set as a repo secret in **Settings → Secrets and variables → Actions**. | Maintainer |
+
+All secrets are stored in **Settings → Secrets and variables → Actions** at
+the repo level (not at the environment level, since md-bridge does not use
+deployment environments). Tokens that mutate state outside the repo (the
+Projects v2 board, third-party services) are issued as fine-grained PATs
+with a one-year expiry and a calendar reminder for rotation.
+
+If you spot a workflow that references a secret which is not listed above,
+that is a documentation bug. Open an issue.
+
 ## Quick links
 
 - New to the code? Read the [README](README.md) first, especially the
