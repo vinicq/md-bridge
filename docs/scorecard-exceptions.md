@@ -39,9 +39,11 @@ a fuzzer reopens with evidence.
 
 ## Pinned-Dependencies (pip and npm install commands)
 
-**Current state:** 7 alerts across `ci.yml`, `pages.yml`, `credit-contributor.yml`,
-`apps/api/Dockerfile`, and `apps/web/Dockerfile` flagging `pip install` and
-`npm install` / `npm ci` lines as "not pinned by hash".
+**Current state:** 10 alerts across `.github/workflows/ci.yml`,
+`.github/workflows/pages.yml`, `.github/workflows/credit-contributor.yml`,
+`apps/api/Dockerfile` (including the opt-in `runtime-ocr` stage at line 49 and
+the `test` stage at line 60), and `apps/web/Dockerfile` flagging `pip install`
+and `npm install` / `npm ci` lines as "not pinned by hash".
 
 **Reason:** The dependency surface is already pinned by other means:
 
@@ -66,6 +68,22 @@ the constraint-plus-lockfile model is the chosen trade-off.
 the constraint resolver could not have caught (a malicious patch release
 inside a satisfied range). At that point the constraint-only model breaks
 and per-command hash pinning becomes worth the maintenance cost.
+
+## Maintained
+
+**Current state:** Low score. The repository was created less than 90 days ago,
+so Scorecard cannot yet assess maintenance cadence.
+
+**Reason:** This is a time-based check. Scorecard awards full credit when the
+project has at least one commit per week over the previous 90 days, but it
+needs the project to be older than 90 days to evaluate at all. md-bridge is
+a new repository; the score is structural, not behavioural.
+
+The commit cadence on `main` is comfortably above one commit per week, so the
+score will rise on its own once the repository crosses the 90-day mark.
+
+**What would change this:** Time. The check auto-resolves when the repo ages
+past the 90-day floor, assuming the current commit cadence holds.
 
 ## CIIBestPractices
 
