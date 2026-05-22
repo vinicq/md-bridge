@@ -65,6 +65,18 @@
         "design",
         "test"
       ]
+    },
+    {
+      "login": "0exec",
+      "name": "0exec",
+      "avatar_url": "https://avatars.githubusercontent.com/u/68334134?v=4",
+      "profile": "https://github.com/0exec",
+      "contributions": [
+        "code",
+        "doc",
+        "test",
+        "infra"
+      ]
     }
   ]
 }
