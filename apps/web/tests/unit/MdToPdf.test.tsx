@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider, type Locale } from '../../src/i18n'
@@ -44,21 +44,27 @@ describe('MdToPdf', () => {
   })
 
   it.each([
-    ['en', 'Convert', 'Generated PDF preview'],
-    ['pt', 'Converter', 'Pré-visualização do PDF gerado'],
-    ['es', 'Convertir', 'Vista previa del PDF generado'],
+    ['en', 'Drop a Markdown file or click to choose', 'Convert all', 'Generated PDF preview'],
+    ['pt', 'Solte um arquivo Markdown ou clique para escolher', 'Converter todos', 'Pré-visualização do PDF gerado'],
+    ['es', 'Suelta un archivo Markdown o haz clic para elegirlo', 'Convertir todo', 'Vista previa del PDF generado'],
   ] as const)(
     'uses the localized PDF preview iframe title for %s',
-    async (locale, convertLabel, iframeTitle) => {
+    async (locale, dropLabel, convertAllLabel, iframeTitle) => {
       const user = userEvent.setup()
       render(wrap(<MdToPdf />, locale))
 
-      await user.type(screen.getByRole('textbox'), '# Hello')
-      await user.click(screen.getByRole('button', { name: convertLabel }))
+      const file = new File(['# Hello'], 'sample.md', { type: 'text/markdown' })
+      fireEvent.drop(screen.getByLabelText(dropLabel), {
+        dataTransfer: { files: [file], items: [] as unknown as DataTransferItemList },
+      })
+      await screen.findByTitle('sample.md')
+      await user.click(screen.getByRole('button', { name: convertAllLabel }))
 
-      const iframe = await screen.findByTitle(iframeTitle)
+      await waitFor(() => expect(convertMdToPdf).toHaveBeenCalledTimes(1), { timeout: 5000 })
+      const iframe = await screen.findByTitle(iframeTitle, undefined, { timeout: 5000 })
       expect(iframe).toHaveAttribute('src', 'blob:generated-preview')
       expect(convertMdToPdf).toHaveBeenCalledTimes(1)
     },
+    10000,
   )
 })
