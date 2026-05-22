@@ -27,7 +27,7 @@ COPY packages /app/packages
 # Application source.
 COPY apps/api/app /app/apps/api/app
 
-# ---- Stage 2: runtime (default) -------------------------------------------
+# ---- Stage 2: runtime (default) --------------------------------------------
 # Lean production image: only runtime dependencies, no tests.
 FROM base AS runtime
 
@@ -38,12 +38,26 @@ CMD ["python", "-m", "uvicorn", "app.main:app", \
      "--host", "0.0.0.0", "--port", "8000", \
      "--app-dir", "/app/apps/api"]
 
-# ---- Stage 3: test ---------------------------------------------------------
+# ---- Stage 3: runtime-ocr (optional) ---------------------------------------
+# Opt-in production image with Tesseract available for scanned PDFs.
+FROM runtime AS runtime-ocr
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-por \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install -e "/app/apps/api[ocr]"
+
+# ---- Stage 4: test ---------------------------------------------------------
 # Adds dev dependencies (pytest, httpx, ruff) and the test trees so the suite
 # can run inside Docker via the compose `test` profile.
 FROM base AS test
 
-RUN pip install -e "/app/apps/api[dev]"
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-por \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install -e "/app/apps/api[dev,ocr]"
 
 COPY apps/api/tests /app/apps/api/tests
 COPY tests /app/tests

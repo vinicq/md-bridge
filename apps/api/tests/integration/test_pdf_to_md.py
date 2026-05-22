@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import shutil
 import tempfile
 from pathlib import Path
+
+import pytest
 
 
 def test_pdf_to_md_returns_markdown(client, istqb_pdf: Path):
@@ -69,3 +72,60 @@ def test_pdf_to_md_cleans_up_tempdirs(client, istqb_pdf: Path):
     after = {p.name for p in tmp_root.glob("md-bridge-pdf2md-*")}
     leaked = after - before
     assert not leaked, f"pdf-to-md leaked tempdirs: {leaked}"
+
+def test_pdf_to_md_scanned_pdf_preserves_warning_when_ocr_disabled(
+    client,
+    scanned_pdf_bytes: bytes,
+    monkeypatch,
+):
+    monkeypatch.delenv("MD_BRIDGE_OCR_ENABLED", raising=False)
+
+    resp = client.post(
+        "/api/pdf-to-md",
+        files={"file": ("scanned.pdf", scanned_pdf_bytes, "application/pdf")},
+    )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["ocr_applied"] is False
+    assert "needs_ocr" in body["warnings"]
+
+
+def test_pdf_to_md_applies_ocr_when_enabled(client, scanned_pdf_bytes: bytes, monkeypatch):
+    pytest.importorskip("pytesseract")
+    if shutil.which("tesseract") is None:
+        pytest.skip("tesseract binary is not installed")
+
+    monkeypatch.setenv("MD_BRIDGE_OCR_ENABLED", "1")
+    monkeypatch.setenv("MD_BRIDGE_OCR_LANG", "eng")
+
+    resp = client.post(
+        "/api/pdf-to-md",
+        files={"file": ("scanned.pdf", scanned_pdf_bytes, "application/pdf")},
+    )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["ocr_applied"] is True
+    assert body["md"].strip()
+    assert "OCR" in body["md"].upper()
+
+
+def test_pdf_to_md_skips_ocr_for_textual_pdf_when_enabled(
+    client,
+    istqb_pdf: Path,
+    monkeypatch,
+):
+    monkeypatch.setenv("MD_BRIDGE_OCR_ENABLED", "1")
+    monkeypatch.setenv("MD_BRIDGE_OCR_LANG", "eng")
+
+    with istqb_pdf.open("rb") as fh:
+        resp = client.post(
+            "/api/pdf-to-md",
+            files={"file": (istqb_pdf.name, fh, "application/pdf")},
+        )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["ocr_applied"] is False
+    assert body["md"].strip()

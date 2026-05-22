@@ -42,6 +42,7 @@ class PdfToMdResponse(BaseModel):
     front_matter: FrontMatter = Field(default_factory=FrontMatter)
     warnings: list[str] = Field(default_factory=list)
     stats: ConvertStats = Field(default_factory=ConvertStats)
+    ocr_applied: bool = False
 
 
 class FontUsage(BaseModel):
