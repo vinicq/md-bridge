@@ -15,6 +15,76 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Added
+
+- **Optional Tesseract OCR pre-pass for scanned PDFs** by @0exec
+  (first external contribution from this account). New
+  `apps/api/app/services/ocr.py` runs when `MD_BRIDGE_OCR_ENABLED=1`
+  and the inspect diagnostics report `needs_ocr: true`. PDFs that
+  already carry a text layer skip OCR entirely. Response payload
+  gained `ocr_applied: bool`. New Docker stage `runtime-ocr` (lean
+  default `runtime` stage unchanged), `[ocr]` extras in
+  `pyproject.toml`, and CI installs `tesseract-ocr` for the
+  integration tests. (#86, closes #5)
+- **Descriptive iframe title on the PDF preview** by @zhouzhou626
+  (third PR landed by this contributor). New
+  `mdToPdf.previewIframeTitle` dictionary key across EN, PT-BR, ES,
+  bound at `apps/web/src/pages/MdToPdf.tsx:119`. Screen readers
+  now announce "Generated PDF preview, frame" instead of inheriting
+  the page heading. WCAG 4.1.2 (Name, Role, Value). (#87, closes #72)
+- **Heuristics documentation page** at `docs/heuristics.md`:
+  document profile, heading detection, TOC normalization, list
+  recovery, table cleanup, inline formatting, paragraph stitching,
+  header/footer suppression, front matter, and the deliberately
+  out-of-scope items. Each section names the function in
+  `packages/pdf-to-markdown/scripts/convert.py`. (#92)
+- **FAQ page** at `docs/faq.md`: why OCR is opt-in, why the
+  converter persists nothing, how to add a new locale, heuristics
+  vs language model, Playwright + headless Chromium trade-off,
+  server-side vs client-side conversion, offline operation. (#93)
+- **API recipes page** at `docs/api-recipes.md`: copy-paste recipes
+  for the four HTTP endpoints from curl, Python requests, and
+  JavaScript fetch (browser + Node), plus error-envelope reading,
+  CORS configuration, and rate-limit guidance. (#97, closes #26)
+- **Deployment recipes page** at `docs/deployment-other.md`:
+  Render, Fly.io, and Railway walkthroughs with blueprints, free-tier
+  caveats, and a consolidated common-gotchas section
+  (`VITE_API_URL` build-time, CORS, cold-start timeouts, 500 MB
+  upload cap). (#98, partial fix for #7)
+
+### Changed
+
+- **Contribution-guide section in every open issue body.** All 27
+  open issues now carry a standardized "How to contribute" block
+  covering claim workflow, branch naming, Conventional Commits,
+  test pyramid, no AI co-authors, squash merge, and reversibility
+  declaration. The section is idempotent: re-running the batch
+  skips issues that already carry it.
+- **Scorecard exceptions doc** (`docs/scorecard-exceptions.md`)
+  updated to cover the three new Pinned-Dependencies paths
+  introduced by the OCR pipeline (`apps/api/Dockerfile:49,60` and
+  `.github/workflows/ci.yml:28`) plus a new Maintained section
+  documenting the time-based auto-resolution. (#90)
+- **Contributors recognition**: @zhouzhou626 gains the `a11y`
+  type (#88); @0exec joins the contributors block with `code`,
+  `doc`, `test`, `infra` types (#89). Avatar URLs use numeric ID
+  form so username changes do not break the links.
+
+### Removed
+
+- **Orphan `useConvert.ts` hook** at `apps/web/src/hooks/`.
+  Declared `usePdfToMd()` and `useMdToPdf()` but had zero
+  callsites. Pages call the API functions directly from
+  `src/lib/api.ts`; the batch flow uses `useBatchConvert`. The
+  hook was superseded during early development. (#91)
+- **Unused `docs/brand/social-preview.png` asset**. Not referenced
+  from `mkdocs.yml`, README, any markdown, or any HTML meta tag.
+  No `og:image` is wired in the docs site or the React app. (#91)
+- **Dead `mkdocs.yml` nav entry** that pointed at
+  `docs/deployment/oracle-cloud.md`, which never existed in repo
+  history. Replaced with the new `Deploy: deployment-other.md`
+  entry so MkDocs builds without the orphan-page warning. (#98)
+
 ## [0.2.3] — 2026-05-20
 
 Minor release. Headline change is the **first external contribution**:
