@@ -1,8 +1,10 @@
 """Shared fixtures for API tests."""
 from __future__ import annotations
 
+import io
 from pathlib import Path
 
+import pymupdf
 import pytest
 from app.main import create_app
 from fastapi.testclient import TestClient
@@ -21,3 +23,25 @@ def istqb_pdf() -> Path:
     p = here / "fixtures" / "istqb-ctal-ta-syllabus-en.pdf"
     assert p.exists(), f"committed fixture missing: {p}"
     return p
+
+@pytest.fixture
+def scanned_pdf_bytes() -> bytes:
+    Image = pytest.importorskip("PIL.Image")
+    ImageDraw = pytest.importorskip("PIL.ImageDraw")
+    ImageFont = pytest.importorskip("PIL.ImageFont")
+
+    image = Image.new("RGB", (1200, 400), "white")
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default(size=72)
+    draw.text((80, 140), "OCR BRIDGE SAMPLE", fill="black", font=font)
+
+    png = io.BytesIO()
+    image.save(png, format="PNG")
+
+    doc = pymupdf.open()
+    try:
+        page = doc.new_page(width=612, height=252)
+        page.insert_image(page.rect, stream=png.getvalue())
+        return doc.tobytes()
+    finally:
+        doc.close()

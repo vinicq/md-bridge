@@ -25,7 +25,10 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: apps/api
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev,ocr]"
+
+      - name: Install Tesseract
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-por
 
       - name: Lint backend (ruff)
         run: python -m ruff check apps/api tests packages --config apps/api/pyproject.toml

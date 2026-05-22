@@ -25,7 +25,6 @@ ocr = [
     "Pillow>=11.0",
 ]
 
-
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",

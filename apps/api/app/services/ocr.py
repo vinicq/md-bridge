@@ -9,11 +9,21 @@ import pymupdf
 DEFAULT_OCR_LANG = "eng+por"
 
 
+def get_lang() -> str:
+    return os.getenv("MD_BRIDGE_OCR_LANG", DEFAULT_OCR_LANG)
+
+
 def is_enabled() -> bool:
     return os.getenv("MD_BRIDGE_OCR_ENABLED") == "1"
 
 
 def ocr_pdf_bytes(pdf_bytes: bytes, lang: str = DEFAULT_OCR_LANG) -> bytes:
+    """Return a new PDF with a searchable text layer over each rasterized page.
+
+    This rasterizes every page at 300 DPI and can be memory/time heavy; callers
+    should enforce upload or page-count limits before enabling OCR in production.
+    """
+
     import pytesseract
     from PIL import Image
 

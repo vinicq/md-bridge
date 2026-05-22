@@ -124,6 +124,15 @@ source .venv/bin/activate                   # macOS / Linux / Git Bash
 python -m pip install -e ".[dev]"
 python -m playwright install chromium
 
+# Optional OCR for scanned PDFs (Linux example):
+sudo apt install tesseract-ocr tesseract-ocr-por
+python -m pip install -e ".[dev,ocr]"
+export MD_BRIDGE_OCR_ENABLED=1
+# Optional: export MD_BRIDGE_OCR_LANG=eng
+
+# Docker: build the OCR-enabled API image target.
+docker build -f apps/api/Dockerfile --target runtime-ocr -t md-bridge-api:ocr
+
 # 2. Frontend
 cd ../web
 npm install

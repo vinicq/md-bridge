@@ -44,6 +44,7 @@ class PdfToMdResponse(BaseModel):
     stats: ConvertStats = Field(default_factory=ConvertStats)
     ocr_applied: bool = False
 
+
 class FontUsage(BaseModel):
     name: str
     size: float
