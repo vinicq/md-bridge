@@ -48,6 +48,7 @@ nav:
   - Getting started: getting-started.md
   - Architecture: architecture.md
   - Heuristics: heuristics.md
+  - FAQ: faq.md
   - Deploy:
       - Oracle Cloud Always Free: deployment/oracle-cloud.md
   - API reference: API.md
