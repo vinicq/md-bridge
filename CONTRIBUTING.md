@@ -450,6 +450,20 @@ Pick the lowest tier that actually exercises the behaviour. A heuristic
 that parses a heading does not need a Playwright test; a button that
 triggers a download does.
 
+### Updating Lighthouse budgets
+
+The Lighthouse CI workflow protects the web app from accidental bundle and
+runtime regressions on pull requests. Budget changes should be rare and
+intentional:
+
+1. Run the web build and Lighthouse workflow against the current `main`
+   branch to capture a baseline.
+2. Explain the reason for the budget change in the pull request body.
+3. Keep the route list in `.github/workflows/lighthouse.yml` aligned with
+   user-facing routes in `apps/web/src/main.tsx`.
+4. Do not raise the JavaScript raw or gzip budget just to make an unrelated
+   feature pass; split the performance work or reduce the bundle first.
+
 The suite runs against a committed real-world fixture
 (`apps/api/tests/fixtures/istqb-ctal-ta-syllabus-en.pdf`) so every clone
 can reproduce the green build with no extra data and no silent skips.
