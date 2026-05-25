@@ -82,9 +82,13 @@ jobs:
         run: npm run test
 
   e2e:
-    name: End-to-end (Playwright)
+    name: End-to-end (${{ matrix.browser }})
     runs-on: ubuntu-latest
     needs: [backend, web]
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
@@ -114,18 +118,18 @@ jobs:
         working-directory: apps/web
         run: npm ci || npm install
 
-      - name: Install Chromium for the web tests
+      - name: Install ${{ matrix.browser }} for the web tests
         working-directory: apps/web
-        run: npx playwright install chromium --with-deps
+        run: npx playwright install ${{ matrix.browser }} --with-deps
 
-      - name: Run Playwright end-to-end tests
+      - name: Run Playwright end-to-end tests (${{ matrix.browser }})
         working-directory: apps/web
-        run: npx playwright test
+        run: npx playwright test --project=${{ matrix.browser }}
 
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.browser }}
           path: apps/web/playwright-report/
           retention-days: 14
