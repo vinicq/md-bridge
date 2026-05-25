@@ -49,7 +49,9 @@ nav:
   - Architecture: architecture.md
   - Heuristics: heuristics.md
   - FAQ: faq.md
-  - Deploy: deployment-other.md
+  - Deploy:
+    - Render (free tier): deployment/render.md
+    - Fly.io and Railway: deployment-other.md
   - API reference: API.md
   - API recipes: api-recipes.md
   - Design system: design/index.md
