@@ -15,6 +15,7 @@
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-22%2B-43853d.svg" alt="Node 22+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"></a>
   <a href="#testing"><img src="https://img.shields.io/badge/tests-124%20total-brightgreen.svg" alt="Tests"></a>
+  <a href="https://codecov.io/gh/vinicq/md-bridge"><img src="https://codecov.io/gh/vinicq/md-bridge/graph/badge.svg" alt="Coverage"></a>
 </p>
 
 <p align="center">

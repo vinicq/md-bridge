@@ -36,8 +36,17 @@ jobs:
       - name: Install Chromium for Playwright
         run: python -m playwright install chromium --with-deps
 
-      - name: Run backend unit tests
-        run: python -m pytest apps/api/tests
+      - name: Run backend unit tests with coverage
+        run: python -m pytest apps/api/tests --cov=apps/api/app --cov-report=xml
+
+      - name: Upload backend coverage to Codecov
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe  # v5.5.4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: backend
+          name: backend-pytest
+          fail_ci_if_error: false
 
       - name: Run root-level integration tests
         run: python -m pytest tests
