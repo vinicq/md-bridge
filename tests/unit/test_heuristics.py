@@ -117,3 +117,101 @@ def test_build_profile_on_real_pdf(mod):
     assert profile.body_size > 0
     assert profile.heading_thresholds[1] > profile.heading_thresholds[2] >= profile.heading_thresholds[3]
     assert profile.small_size < profile.body_size
+
+
+# Code-block detection
+
+
+FLAG_MONO_BIT = 1 << 3
+
+
+def _span(mod, text: str, *, font: str = "Body", flags: int = 0, size: float = 11.0):
+    return mod.Span(text=text, size=size, font=font, flags=flags, bbox=(72.0, 0.0, 200.0, size + 2))
+
+
+def _multi_block(mod, spans_per_line, x0=72.0):
+    lines = []
+    for line_spans in spans_per_line:
+        lines.append(mod.Line(spans=list(line_spans), bbox=(x0, 0.0, x0 + 200, 12.0)))
+    return mod.Block(lines=lines, bbox=(x0, 0.0, x0 + 200, 12.0 * max(1, len(lines))))
+
+
+def test_is_mono_span_detects_flag(mod):
+    assert mod.is_mono_span(_span(mod, "x", flags=FLAG_MONO_BIT))
+
+
+def test_is_mono_span_detects_courier_name(mod):
+    assert mod.is_mono_span(_span(mod, "x", font="Courier"))
+    assert mod.is_mono_span(_span(mod, "x", font="Consolas-Bold"))
+    assert mod.is_mono_span(_span(mod, "x", font="JetBrainsMono-Regular"))
+
+
+def test_is_mono_span_rejects_serif(mod):
+    assert not mod.is_mono_span(_span(mod, "x", font="TimesNewRoman"))
+
+
+def test_mono_ratio_full_mono(mod):
+    block = _multi_block(mod, [[_span(mod, "print('hi')", font="Courier")]])
+    assert mod.mono_ratio(block) == 1.0
+
+
+def test_mono_ratio_below_threshold_when_prose_dominates(mod):
+    spans = [_span(mod, "a", font="Courier"), _span(mod, "bcdefghij", font="Body")]
+    block = _multi_block(mod, [spans])
+    # 1 mono / 10 total = 0.1
+    assert mod.mono_ratio(block) == 0.1
+
+
+def test_mono_ratio_zero_for_no_mono(mod):
+    block = _multi_block(mod, [[_span(mod, "plain prose", font="Body")]])
+    assert mod.mono_ratio(block) == 0.0
+
+
+def test_classify_block_code_when_mono_dominant(mod):
+    profile = _profile(mod)
+    block = _multi_block(mod, [[_span(mod, "def foo():", font="Courier")]])
+    assert mod.classify_block(block, profile) == "code"
+
+
+def test_classify_block_paragraph_when_mono_below_threshold(mod):
+    profile = _profile(mod)
+    spans = [_span(mod, "x", font="Courier"), _span(mod, "y" * 9, font="Body")]
+    block = _multi_block(mod, [spans])
+    # 1/10 mono < 0.7 threshold
+    assert mod.classify_block(block, profile) == "paragraph"
+
+
+def test_classify_block_heading_wins_over_mono(mod):
+    profile = _profile(mod)
+    span = _span(mod, "Title in Mono", font="Courier", flags=FLAG_MONO_BIT, size=24.0)
+    block = _multi_block(mod, [[span]])
+    assert mod.classify_block(block, profile) == "heading1"
+
+
+def test_detect_language_python(mod):
+    assert mod.detect_language("def foo():\n    return 1") == "python"
+    assert mod.detect_language("from pathlib import Path") == "python"
+
+
+def test_detect_language_javascript(mod):
+    assert mod.detect_language("function foo() { return 1 }") == "javascript"
+    assert mod.detect_language("const x = 42") == "javascript"
+
+
+def test_detect_language_sql(mod):
+    assert mod.detect_language("SELECT id, name FROM users WHERE active = 1") == "sql"
+    assert mod.detect_language("select * from accounts;") == "sql"
+
+
+def test_detect_language_html(mod):
+    assert mod.detect_language("<!DOCTYPE html>\n<html>") == "html"
+    assert mod.detect_language("<html lang='en'>") == "html"
+
+
+def test_detect_language_json(mod):
+    assert mod.detect_language('{"name": "ok", "value": 1}') == "json"
+
+
+def test_detect_language_empty_when_no_match(mod):
+    assert mod.detect_language("just some prose here") == ""
+    assert mod.detect_language("") == ""
