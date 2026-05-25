@@ -427,6 +427,9 @@ review work on md-bridge ([emoji key](https://allcontributors.org/docs/en/emoji-
       <td align="center" valign="top" width="16.66%"><a href="https://github.com/0exec"><img src="https://avatars.githubusercontent.com/u/68334134?v=4?s=80" width="80px;" alt="0exec"/><br /><sub><b>0exec</b></sub></a><br /><a href="https://github.com/vinicq/md-bridge/commits?author=0exec" title="Code">💻</a> <a href="https://github.com/vinicq/md-bridge/commits?author=0exec" title="Documentation">📖</a> <a href="https://github.com/vinicq/md-bridge/commits?author=0exec" title="Tests">⚠️</a> <a href="#infra-0exec" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
       <td align="center" valign="top" width="16.66%"><a href="https://github.com/alucard210319"><img src="https://avatars.githubusercontent.com/u/7868450?v=4?s=80" width="80px;" alt="alucard210319"/><br /><sub><b>alucard210319</b></sub></a><br /><a href="https://github.com/vinicq/md-bridge/commits?author=alucard210319" title="Documentation">📖</a> <a href="#infra-alucard210319" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="16.66%"><a href="https://github.com/pink"><img src="https://avatars.githubusercontent.com/u/7690638?v=4?s=80" width="80px;" alt="Sean Kallungal"/><br /><sub><b>Sean Kallungal</b></sub></a><br /><a href="https://github.com/vinicq/md-bridge/commits?author=pink" title="Code">💻</a></td>
+    </tr>
   </tbody>
 </table>
 
