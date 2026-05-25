@@ -82,7 +82,7 @@ After running `convert.py <pdf> -o <md>`, open the `.md` and walk through this l
 - [ ] "See page 12" style references rewritten to "see section X" (Markdown has no pages).
 
 ## 8. Code and quotes
-- [ ] Monospaced excerpts as `` `inline` `` or fenced blocks with language tag.
+- [x] Monospaced excerpts as `` `inline` `` or fenced blocks with language tag.
 - [ ] Block quotes (`> `) restored where the original used Quote style.
 - [ ] Formulas legible: use LaTeX inline (`$x^2$`) or block (`$$ ... $$`) if needed.
 
@@ -106,7 +106,7 @@ After running `convert.py <pdf> -o <md>`, open the `.md` and walk through this l
 
 ## What `convert.py` already handles automatically
 
-The current converter (`scripts/convert.py`) already covers items 1, 2, 3 (most), 4, 5, 6, 7 (hyperlinks), 9 (header/footer filtering, paragraph merge, dot-leader stripping), 10 (front matter from PDF metadata). Items 8 (code/quote restoration) and the more nuanced parts of 11 require manual review per document.
+The current converter (`scripts/convert.py`) already covers items 1, 2, 3 (most), 4, 5, 6, 7 (hyperlinks), 8 (monospace-flagged spans wrapped as `` `inline` `` and blocks ≥70% mono fenced with language inference for python/javascript/sql/html/json), 9 (header/footer filtering, paragraph merge, dot-leader stripping), 10 (front matter from PDF metadata). The remaining parts of 8 (block quotes, formulas) and the more nuanced parts of 11 require manual review per document.
 
 ## What this package does NOT do
 

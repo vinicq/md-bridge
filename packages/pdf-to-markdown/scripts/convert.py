@@ -9,6 +9,7 @@ Detects:
   - Bold/italic inline by font flags + font name
   - Bulleted lists (▪, •, -, *, o, ●) and numbered lists (1., 1), a))
   - Tables (PyMuPDF page.find_tables)
+  - Code blocks and inline code (monospace font flag / deep indent)
   - Paragraph breaks (block boundaries)
   - Page breaks (--- between pages, optional)
 """
@@ -35,6 +36,11 @@ FLAG_BOLD = 1 << 4
 BULLET_CHARS = {"▪", "•", "●", "◦", "‣", "⁃", "∙"}
 NUMBERED_RE = re.compile(r"^\s*(\d{1,3}|[a-zA-Z])[.)]\s+")
 HEADING_DOTS_RE = re.compile(r"\s*\.{3,}\s*\d+\s*$")  # "Title ........ 8" (TOC dot leaders)
+
+# Code-block detection
+MONO_FONT_HINTS = ("Mono", "Courier", "Consolas", "Menlo", "Inconsolata", "Hack")
+MONO_RATIO_THRESHOLD = 0.7
+SQL_RE = re.compile(r"\bSELECT\b.*?\bFROM\b", re.IGNORECASE | re.DOTALL)
 
 
 @dataclass
@@ -270,10 +276,13 @@ def render_span(span: Span) -> str:
     bold = span.is_bold
     italic = span.is_italic
     sup = span.is_superscript
+    mono = is_mono_span(span)
     leading = len(out) - len(out.lstrip())
     trailing = len(out) - len(out.rstrip())
     core = out[leading: len(out) - trailing] if trailing else out[leading:]
     if core:
+        if mono and "`" not in core:
+            core = f"`{core}`"
         if sup:
             core = f"<sup>{core}</sup>"
         if bold and italic:
@@ -291,7 +300,12 @@ def render_line(line: Line) -> str:
     # Merge adjacent spans with same style to avoid `**a****b**` artifacts
     merged: list[Span] = []
     for s in line.spans:
-        if merged and merged[-1].is_bold == s.is_bold and merged[-1].is_italic == s.is_italic:
+        if (
+            merged
+            and merged[-1].is_bold == s.is_bold
+            and merged[-1].is_italic == s.is_italic
+            and is_mono_span(merged[-1]) == is_mono_span(s)
+        ):
             merged[-1] = Span(
                 text=merged[-1].text + s.text,
                 size=merged[-1].size,
@@ -311,6 +325,50 @@ def dominant_font(block: Block) -> str:
     return fonts.most_common(1)[0][0] if fonts else ""
 
 
+def is_mono_span(span: Span) -> bool:
+    if span.flags & FLAG_MONO:
+        return True
+    return any(hint in span.font for hint in MONO_FONT_HINTS)
+
+
+def mono_ratio(block: Block) -> float:
+    mono_chars = 0
+    total_chars = 0
+    for line in block.lines:
+        for s in line.spans:
+            stripped = len(s.text.strip())
+            if not stripped:
+                continue
+            total_chars += stripped
+            if is_mono_span(s):
+                mono_chars += stripped
+    if total_chars == 0:
+        return 0.0
+    return mono_chars / total_chars
+
+
+def detect_language(text: str) -> str:
+    """Best-effort language hint for a fenced code block.
+
+    Conservative: returns '' when no rule matches so the fence is languageless
+    rather than mislabelled.
+    """
+    if not text:
+        return ""
+    head = text.lstrip()
+    if head.startswith(("<!DOCTYPE", "<html")):
+        return "html"
+    if head.startswith("{") and '":' in head:
+        return "json"
+    if SQL_RE.search(text):
+        return "sql"
+    if re.search(r"^\s*(def |class |import |from \S+ import )", text, re.MULTILINE):
+        return "python"
+    if re.search(r"^\s*(function\s|const\s|let\s|var\s|=>\s)", text, re.MULTILINE):
+        return "javascript"
+    return ""
+
+
 def is_all_bold(block: Block) -> bool:
     has_any = False
     for line in block.lines:
@@ -323,7 +381,7 @@ def is_all_bold(block: Block) -> bool:
 
 
 def classify_block(block: Block, profile: DocProfile) -> str:
-    """Return one of: heading1, heading2, heading3, bullet, numbered, paragraph, small."""
+    """Return one of: heading1, heading2, heading3, bullet, numbered, code, paragraph, small."""
     size = block.dominant_size
     text = block.text.strip()
 
@@ -340,6 +398,9 @@ def classify_block(block: Block, profile: DocProfile) -> str:
     level = profile.heading_level(size)
     if level:
         return f"heading{level}"
+
+    if mono_ratio(block) >= MONO_RATIO_THRESHOLD:
+        return "code"
 
     # Section-label heuristic: short block (<= 2 lines, <= 80 chars), at body size,
     # using a font different from the body font → likely a styled section label (H3).
@@ -517,6 +578,16 @@ def convert_page(
 
         block: Block = payload
         cls = classify_block(block, profile)
+
+        if cls == "code":
+            code_lines = [line.text.rstrip() for line in block.lines if line.text.strip()]
+            if not code_lines:
+                continue
+            code_body = "\n".join(code_lines)
+            lang = detect_language(code_body)
+            out_parts.append(f"```{lang}\n{code_body}\n```")
+            continue
+
         text_rendered = " ".join(render_line(line).strip() for line in block.lines if line.text.strip()).strip()
         if not text_rendered:
             continue
@@ -785,6 +856,8 @@ def is_block_paragraph(block: str) -> bool:
     if s.startswith("- ") or s.startswith("* ") or s.startswith("+ "):
         return False
     if s.startswith("<small>") or s.startswith("---"):
+        return False
+    if s.startswith("```"):
         return False
     if NUMBERED_RE.match(s):
         return False
