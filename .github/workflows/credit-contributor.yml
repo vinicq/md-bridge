@@ -108,9 +108,18 @@ jobs:
           TYPES: ${{ steps.types.outputs.types }}
         run: |
           set -euo pipefail
-          # all-contributors-cli `add` is idempotent: if the user already has
-          # an entry, the new categories are merged with the existing ones.
-          npx --no all-contributors-cli add "$AUTHOR" "$TYPES"
+          # all-contributors-cli `add` is *declarative*, not additive: passing
+          # `add user X,Y` when the user already has `X,Y,Z,W` makes the cli
+          # narrow the entry to just `X,Y`. So we read existing categories,
+          # union with the inferred ones, and pass the full set. See #112.
+          existing=$(jq -r --arg user "$AUTHOR" \
+            '[.contributors[] | select(.login | ascii_downcase == ($user | ascii_downcase)) | .contributions[]?] | join(",")' \
+            .all-contributorsrc)
+          combined=$(printf '%s,%s' "$existing" "$TYPES" \
+            | tr ',' '\n' | sed '/^$/d' | sort -u | paste -sd, -)
+          echo "Existing: ${existing:-<none>}"
+          echo "Combined: $combined"
+          npx --no all-contributors-cli add "$AUTHOR" "$combined"
           npx --no all-contributors-cli generate
 
       - name: Check whether anything changed
@@ -144,7 +153,12 @@ jobs:
             git fetch origin "$branch"
             git checkout "$branch"
             git checkout main -- .
-            npx --no all-contributors-cli add "$AUTHOR" "$TYPES"
+            existing=$(jq -r --arg user "$AUTHOR" \
+              '[.contributors[] | select(.login | ascii_downcase == ($user | ascii_downcase)) | .contributions[]?] | join(",")' \
+              .all-contributorsrc)
+            combined=$(printf '%s,%s' "$existing" "$TYPES" \
+              | tr ',' '\n' | sed '/^$/d' | sort -u | paste -sd, -)
+            npx --no all-contributors-cli add "$AUTHOR" "$combined"
             npx --no all-contributors-cli generate
           else
             git checkout -b "$branch"

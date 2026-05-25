@@ -668,9 +668,13 @@ workflow runs:
    `docs/` → `doc`; tests → `test`; `i18n` or `dictionaries.ts` →
    `translation`; workflows, Dockerfiles, `deployment/` → `infra`;
    `docs/design/`, `tokens.css`, `theme.css` → `design`.
-2. Runs `npx all-contributors-cli add` (idempotent, merges new
-   categories with any existing entry) and `generate` to rewrite the
-   README block.
+2. Reads any existing categories the contributor already has in
+   `.all-contributorsrc`, unions them with the inferred ones, and
+   passes the full set to `npx all-contributors-cli add` before
+   running `generate` to rewrite the README block. The union step
+   matters because `add` is declarative, not additive: a bare
+   `add user X,Y` against an entry already at `X,Y,Z,W` would narrow
+   the entry to just `X,Y` (see #112).
 3. Opens a `chore(docs): credit @<author>` PR with the changes,
    assigned to vinicq. The maintainer reviews the inferred categories
    and merges.
