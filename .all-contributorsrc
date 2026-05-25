@@ -77,6 +77,16 @@
         "test",
         "infra"
       ]
+    },
+    {
+      "login": "alucard210319",
+      "name": "alucard210319",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7868450?v=4",
+      "profile": "https://github.com/alucard210319",
+      "contributions": [
+        "doc",
+        "infra"
+      ]
     }
   ]
 }
