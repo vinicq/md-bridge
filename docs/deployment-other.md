@@ -1,13 +1,12 @@
 # Deployment recipes
 
 md-bridge ships a Docker Compose stack that runs anywhere Docker
-runs. This page collects walkthroughs for the three platform-as-a-service
-hosts contributors ask about most often: Render, Fly.io, and
-Railway. Each has its own sweet spot.
+runs. This page collects walkthroughs for Fly.io and Railway. Render
+has its own dedicated page: see [Deploy to Render](deployment/render.md).
 
 | Host | Sweet spot | Trade-off |
 |---|---|---|
-| **Render** | Cheapest path from zero to a live URL; free tier accepts Docker Compose verbatim | Services sleep after 15 min idle, 30-second cold start, 750 free hours/month |
+| **[Render](deployment/render.md)** | Cheapest path from zero to a live URL; free tier accepts the existing blueprint | Services sleep after 15 min idle, 30-second cold start, 750 free hours/month |
 | **Fly.io** | Global edge presence, fly.toml is the manifest | No free tier today; pay-as-you-go from the first machine-hour |
 | **Railway** | Fastest "click and deploy" once you have the GitHub repo connected | $5/month minimum after 30-day trial |
 
@@ -17,80 +16,6 @@ All three use the public images on GHCR
 or push your own. The images are multi-arch (linux/amd64 and
 linux/arm64) and self-contained: no external runtime dependencies,
 no telemetry, no outbound network calls after start.
-
-## Render
-
-Render reads `render.yaml` from the repo root. The free plan accepts
-two services per blueprint, which matches md-bridge's `api + web`
-split.
-
-### Steps
-
-1. **Fork or clone the repo** to your own GitHub account.
-2. **Create a Render account** at <https://render.com> and connect
-   the GitHub account holding your fork.
-3. **New Blueprint** from the dashboard. Pick the fork; Render
-   detects `render.yaml` if present (see "Blueprint" section below
-   for the file to commit). If you do not want to fork, you can
-   define two services manually:
-   - Service 1: `api` — Docker image
-     `ghcr.io/vinicq/md-bridge-api:latest`, port `8000`,
-     health check path `/api/health`.
-   - Service 2: `web` — Docker image
-     `ghcr.io/vinicq/md-bridge-web:latest`, port `80`, health
-     check path `/`.
-4. **Set the env var** on the `web` service:
-   `VITE_API_URL=https://<your-api-service>.onrender.com`. The
-   frontend reads this at build time, so the value has to be
-   present before the first deploy.
-5. **Deploy**. The first deploy takes 5-10 minutes per service
-   because Render pulls the multi-arch image cold.
-6. **Verify** with `curl https://<your-api-service>.onrender.com/api/health`.
-   Expect `{"status":"ok"}` after the cold start finishes.
-
-### Blueprint (`render.yaml` at repo root)
-
-```yaml
-services:
-  - type: web
-    name: md-bridge-api
-    runtime: image
-    image:
-      url: ghcr.io/vinicq/md-bridge-api:latest
-    healthCheckPath: /api/health
-    plan: free
-    envVars:
-      - key: PORT
-        value: "8000"
-
-  - type: web
-    name: md-bridge-web
-    runtime: image
-    image:
-      url: ghcr.io/vinicq/md-bridge-web:latest
-    healthCheckPath: /
-    plan: free
-    envVars:
-      - key: VITE_API_URL
-        sync: false  # set in the dashboard to the api service URL
-```
-
-### Free-tier caveats to write down up front
-
-- Services sleep after **15 minutes idle**. The next request takes
-  about 30 seconds to wake the container.
-- The free quota is **750 service-hours/month**, shared across all
-  free services on your account. Two services running 24/7
-  consume the full quota by day 16. Sleep counts in your favor.
-- Render does not honor `Content-Length` requests larger than 100
-  MB on the free plan by default. Large PDF uploads need a paid
-  plan or a chunked-upload workaround.
-
-### Reversibility
-
-Delete the services from the Render dashboard. The GHCR images
-remain untouched. Your data is gone because md-bridge stores
-nothing (see the [FAQ](faq.md) on persistence).
 
 ## Fly.io
 

@@ -61,6 +61,7 @@ jobs:
           cp CODE_OF_CONDUCT.md docs/code-of-conduct.md
           mkdir -p docs/deployment
           cp deployment/oracle-cloud/README.md docs/deployment/oracle-cloud.md
+          cp deployment/render/README.md       docs/deployment/render.md
 
       - name: Build MkDocs site
         # `--strict` would fail the build on every cross-link to files that
