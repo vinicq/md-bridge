@@ -69,3 +69,16 @@
     transform: rotate(360deg);
   }
 }
+
+/*
+ * Fallback estatico para reduced-motion: o anel com um lado transparente
+ * + rotacao infinita perde o sentido quando a animacao e zerada (parece
+ * um arco quebrado, congelado). Aqui trocamos para um anel pontilhado
+ * completo, que comunica "carregando" sem depender de movimento.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .btn__spinner {
+    border-style: dotted;
+    border-right-color: currentColor;
+  }
+}

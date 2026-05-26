@@ -80,6 +80,76 @@ test.describe('WCAG 2.1 AA Accessibility Audit', () => {
   }
 })
 
+type Locale = 'en' | 'pt' | 'es'
+type Theme = 'light' | 'dark'
+
+interface ContrastScenario {
+  route: string
+  name: string
+  locale: Locale
+  theme: Theme
+}
+
+// Matrix is intentionally reduced (10 instead of 24): routes do not change
+// color tokens and locales only swap text, so `{light,dark} x 4 routes` in EN
+// is the meaningful surface, plus a smoke run per non-EN locale on home.
+const CONTRAST_SCENARIOS: ContrastScenario[] = [
+  ...ROUTES.flatMap((r): ContrastScenario[] => [
+    { route: r.path, name: r.name, locale: 'en', theme: 'light' },
+    { route: r.path, name: r.name, locale: 'en', theme: 'dark' },
+  ]),
+  { route: '/', name: 'Home', locale: 'pt', theme: 'light' },
+  { route: '/', name: 'Home', locale: 'es', theme: 'light' },
+]
+
+test.describe('color-contrast sweep (WCAG 1.4.3)', () => {
+  for (const sc of CONTRAST_SCENARIOS) {
+    const label = `${sc.name} ${sc.route} [${sc.locale}/${sc.theme}]`
+    test(`no color-contrast violations on ${label}`, async ({ page }) => {
+      // Seed locale + theme via localStorage on the origin BEFORE the SPA boots
+      // so the providers pick up the desired state on first render. Using the
+      // visible controls would still work, but a few routes (e.g. /about) hide
+      // the language switcher, and toggling after hydration adds flake. The
+      // storage keys mirror what the live providers write.
+      await page.goto('/', { waitUntil: 'domcontentloaded' })
+      await page.evaluate(
+        ({ locale, theme }) => {
+          window.localStorage.setItem('md-bridge:locale', locale)
+          window.localStorage.setItem('md-bridge:theme', theme)
+        },
+        { locale: sc.locale, theme: sc.theme },
+      )
+
+      await page.goto(sc.route, { waitUntil: 'networkidle' })
+
+      // Sanity check that the theme attribute landed on <html>.
+      const appliedTheme = await page.evaluate(() =>
+        document.documentElement.getAttribute('data-theme'),
+      )
+      expect(appliedTheme, `expected data-theme=${sc.theme} on ${label}`).toBe(sc.theme)
+
+      const results = await new AxeBuilder({ page })
+        .withRules(['color-contrast'])
+        .analyze()
+
+      if (results.violations.length > 0) {
+        // Surface the full violation payload to make CI failures actionable.
+        console.log(
+          `\ncolor-contrast violations on ${label}:\n` +
+            JSON.stringify(results.violations, null, 2),
+        )
+      }
+
+      expect(
+        results.violations,
+        `color-contrast violations on ${label}: ${results.violations
+          .map((v) => v.id)
+          .join(', ')}`,
+      ).toHaveLength(0)
+    })
+  }
+})
+
 test.describe('focus-visible coverage', () => {
   for (const route of ROUTES) {
     test(`every keyboard-reachable element on ${route.name} shows a focus ring`, async ({ page }) => {
