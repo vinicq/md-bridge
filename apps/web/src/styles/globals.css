@@ -7,6 +7,17 @@
   box-sizing: border-box;
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--c-focus-ring);
+  outline-offset: 2px;
+}
+
 html,
 body,
 #root {
@@ -180,4 +191,27 @@ pre {
 
 .toast--warn {
   border-left-color: var(--c-warn);
+}
+
+/*
+ * Reduced-motion accommodation (WCAG 2.3.3 / 2.2.2).
+ *
+ * The `0.01ms` value (em vez de `0ms`) e proposital: alguns navegadores
+ * pulam o evento `transitionend` quando a duracao e exatamente zero,
+ * o que pode quebrar transicoes que dependem do callback. 0.01ms e
+ * imperceptivel pro usuario e mantem o evento disparando.
+ *
+ * Componentes que dependem visualmente de animacao continua (Spinner,
+ * .btn__spinner) tem fallback estatico declarado dentro do escopo de
+ * seu proprio CSS.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
