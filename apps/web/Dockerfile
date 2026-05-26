@@ -26,7 +26,7 @@ FROM source AS test
 CMD ["npm", "run", "test"]
 
 # ---- Stage 5: serve the static bundle via nginx (default runtime) ---------
-FROM nginx:1.31-alpine@sha256:2f07d83bf561b506400dc183b1b2003803e39efbd22451f848adaba14d28c7c7 AS runtime
+FROM nginx:1.31-alpine@sha256:8b1e78743a03dbb2c95171cc58639fef29abc8816598e27fb910ed2e621e589a AS runtime
 COPY --from=build /web/dist /usr/share/nginx/html
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
