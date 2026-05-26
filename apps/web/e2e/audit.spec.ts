@@ -79,3 +79,65 @@ test.describe('WCAG 2.1 AA Accessibility Audit', () => {
     })
   }
 })
+
+test.describe('focus-visible coverage', () => {
+  for (const route of ROUTES) {
+    test(`every keyboard-reachable element on ${route.name} shows a focus ring`, async ({ page }) => {
+      await page.goto(route.path, { waitUntil: 'networkidle' })
+
+      // Start focus from the document body so the first Tab lands on the first
+      // tabbable element (skip link, header brand, etc).
+      await page.evaluate(() => {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
+      })
+
+      const MAX_TABS = 12
+      const seenSelectors = new Set<string>()
+
+      for (let i = 0; i < MAX_TABS; i++) {
+        await page.keyboard.press('Tab')
+
+        const focused = await page.evaluate(() => {
+          const el = document.activeElement as HTMLElement | null
+          if (!el || el === document.body) return null
+          const styles = getComputedStyle(el)
+          return {
+            tag: el.tagName.toLowerCase(),
+            id: el.id || null,
+            classes: el.className && typeof el.className === 'string' ? el.className : null,
+            text: (el.textContent || '').trim().slice(0, 60),
+            outlineWidth: styles.outlineWidth,
+            outlineStyle: styles.outlineStyle,
+            boxShadow: styles.boxShadow,
+          }
+        })
+
+        if (!focused) {
+          // Focus left the document (or wrapped past the last tabbable). Stop.
+          break
+        }
+
+        const signature = `${focused.tag}#${focused.id ?? ''}.${focused.classes ?? ''}|${focused.text}`
+        if (seenSelectors.has(signature)) {
+          // Tab cycled back to a previously-seen element. Stop.
+          break
+        }
+        seenSelectors.add(signature)
+
+        const hasOutline =
+          focused.outlineStyle !== 'none' && focused.outlineWidth !== '0px'
+        const hasBoxShadow = focused.boxShadow !== 'none'
+
+        expect(
+          hasOutline || hasBoxShadow,
+          `Focused element on ${route.path} has no visible focus indicator: ${signature} (outline=${focused.outlineWidth} ${focused.outlineStyle}, box-shadow=${focused.boxShadow})`,
+        ).toBe(true)
+      }
+
+      // Sanity check: at least one element must have been tabbed to per route.
+      expect(seenSelectors.size, `No tabbable elements found on ${route.path}`).toBeGreaterThan(0)
+    })
+  }
+})
