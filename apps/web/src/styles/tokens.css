@@ -22,6 +22,7 @@
   --c-accent-soft: var(--theme-accent-soft);
   --c-ok: var(--theme-ok);
   --c-warn: var(--theme-warn);
+  --c-focus-ring: var(--theme-accent);
 
   /* Shadows */
   --shadow-1: var(--theme-shadow-1);
