@@ -20,11 +20,6 @@
   opacity: 0.55;
 }
 
-.btn:focus-visible {
-  outline: 2px solid var(--c-accent);
-  outline-offset: 2px;
-}
-
 .btn--primary {
   background: var(--c-ink);
   color: var(--c-bg);
