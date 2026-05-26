@@ -10,7 +10,7 @@ updates:
       - dependencies
       - backend
     commit-message:
-      prefix: "deps(api)"
+      prefix: "chore(deps-api)"
 
   - package-ecosystem: npm
     directory: /apps/web
@@ -22,7 +22,7 @@ updates:
       - dependencies
       - frontend
     commit-message:
-      prefix: "deps(web)"
+      prefix: "chore(deps-web)"
 
   - package-ecosystem: npm
     directory: /
@@ -34,7 +34,7 @@ updates:
       - dependencies
       - tooling
     commit-message:
-      prefix: "deps(root)"
+      prefix: "chore(deps-root)"
 
   - package-ecosystem: github-actions
     directory: /
@@ -46,7 +46,7 @@ updates:
       - dependencies
       - ci
     commit-message:
-      prefix: "deps(ci)"
+      prefix: "chore(deps-ci)"
 
   - package-ecosystem: docker
     directory: /apps/api
