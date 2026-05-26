@@ -13,3 +13,21 @@
     transform: rotate(360deg);
   }
 }
+
+/*
+ * Fallback estatico: a regra global em globals.css zera a duracao da
+ * animacao, o que faria o anel rotativo "congelar" numa posicao qualquer.
+ * Aqui escondemos o SVG e desenhamos um anel pontilhado via border, que
+ * comunica "carregando" sem depender de movimento.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    border: 2px dotted currentColor;
+    border-radius: 50%;
+    box-sizing: border-box;
+  }
+
+  .spinner svg {
+    display: none;
+  }
+}
