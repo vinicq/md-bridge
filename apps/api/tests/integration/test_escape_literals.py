@@ -42,6 +42,7 @@ def test_literal_punctuation_survives_round_trip():
 
     # The punctuation would otherwise have become emphasis or a link.
     assert "<em>" not in html
+    assert "<a " not in html  # the brackets did not get synthesized into a link
     assert "*stars*" in html
     assert "_unders_" in html
     assert "[brackets]" in html

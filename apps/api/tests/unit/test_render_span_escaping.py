@@ -39,3 +39,11 @@ def test_render_span_does_not_escape_inside_a_code_span():
     # A mono font is wrapped in backticks; code content is literal, so the
     # underscore must NOT be escaped inside it.
     assert mod.render_span(span("a_b", font="Courier")) == "`a_b`"
+
+
+def test_render_span_mono_with_backtick_falls_back_to_escaped_prose():
+    # A single-backtick code span cannot contain a literal backtick, so a mono
+    # span whose text already has one degrades to escaped prose instead of
+    # emitting a broken code span.
+    out = mod.render_span(span("a`b", font="Courier"))
+    assert out == r"a\`b"

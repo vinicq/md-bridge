@@ -40,7 +40,7 @@ BULLET_CHARS = {"▪", "•", "●", "◦", "‣", "⁃", "∙"}
 # these keeps literal prose (`5 * 3`, `my_file.txt`, `[NOTE]`) from being parsed
 # as emphasis, code, or a link downstream. Line-start-only specials (`#`, `-`,
 # `>`, ordered-list `.`) are intentionally not handled here: a span has no line
-# position, so those belong to line-level assembly, not span rendering.
+# position, so those belong to line-level assembly, not span rendering (#192).
 _MD_INLINE_ESCAPE = re.compile(r"([\\`*_\[\]])")
 
 
