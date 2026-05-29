@@ -204,6 +204,81 @@ test.describe('batch Skip button a11y', () => {
   })
 })
 
+test.describe('needs_ocr alerts a11y (#139)', () => {
+  test('Path B: needs_ocr warning renders a clean role=alert region', async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem('md-bridge:locale', 'en'))
+    await page.route('**/api/pdf-to-md', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          md: '# almost empty',
+          front_matter: {},
+          warnings: ['needs_ocr'],
+          stats: { headings: 0, tables: 0, bullets: 0 },
+        }),
+      }),
+    )
+    await page.goto('/convert/pdf-to-md')
+    await page.locator('input[type="file"]').setInputFiles(ISTQB)
+    await page.getByRole('button', { name: /convert all/i }).click()
+
+    await expect(page.getByRole('alert')).toBeVisible({ timeout: 30_000 })
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze()
+    const criticalSerious = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    )
+    expect(
+      criticalSerious,
+      `critical/serious with needs_ocr alert: ${criticalSerious.map((v) => v.id).join(', ')}`,
+    ).toHaveLength(0)
+  })
+
+  test('Path A: 422 ocr_required renders a focusable error with a reachable CTA', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => window.localStorage.setItem('md-bridge:locale', 'en'))
+    await page.route('**/api/pdf-to-md', (route) =>
+      route.fulfill({
+        status: 422,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: {
+            code: 'ocr_required',
+            message: 'This PDF has no extractable text layer.',
+            detail: { docs: 'https://vinicq.github.io/md-bridge/getting-started/' },
+          },
+        }),
+      }),
+    )
+    await page.goto('/convert/pdf-to-md')
+    await page.locator('input[type="file"]').setInputFiles(ISTQB)
+    await page.getByRole('button', { name: /convert all/i }).click()
+
+    const heading = page.getByRole('heading', { name: /OCR required/i })
+    await expect(heading).toBeVisible({ timeout: 30_000 })
+    // Focus moves to the error heading so a keyboard user is not stranded.
+    await expect(heading).toBeFocused()
+    const cta = page.getByRole('link', { name: /How to enable OCR/i })
+    await expect(cta).toHaveAttribute('href', /getting-started/)
+    // The "opens in a new tab" affordance is part of the accessible name.
+    await expect(page.getByRole('link', { name: /new tab/i })).toBeVisible()
+
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze()
+    const criticalSerious = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    )
+    expect(
+      criticalSerious,
+      `critical/serious with ocr_required banner: ${criticalSerious.map((v) => v.id).join(', ')}`,
+    ).toHaveLength(0)
+  })
+})
+
 test.describe('focus-visible coverage', () => {
   for (const route of ROUTES) {
     test(`every keyboard-reachable element on ${route.name} shows a focus ring`, async ({ page }) => {

@@ -50,11 +50,81 @@
   margin: 0;
 }
 
-.warnings {
+/* Accessible alert region. Colour is carried by the left band and the icon
+   (graphic, 3:1 target), never by the body text, so contrast holds without new
+   tokens: the text is always --c-ink. Mirrors the DiagnosticPanel band pattern. */
+.alert {
+  display: flex;
+  gap: var(--s-3);
   margin: var(--s-4) 0 0;
-  padding-left: var(--s-6);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--c-rule);
+  border-left-width: 4px;
+  border-radius: var(--r-sm);
+  background: var(--c-bg-elev);
+  color: var(--c-ink);
+}
+
+.alert--warn {
+  border-left-color: var(--c-warn);
+}
+
+.alert--error {
+  /* Reuses the brand accent, which is red in both themes. If a non-red accent
+     is ever introduced, add a dedicated --c-error alias rather than relying on
+     this coincidence. */
+  border-left-color: var(--c-accent);
+}
+
+.alert__icon {
+  flex: none;
+  font-size: var(--fs-md);
+  line-height: 1.2;
+}
+
+.alert--warn .alert__icon {
   color: var(--c-warn);
+}
+
+.alert--error .alert__icon {
+  color: var(--c-accent);
+}
+
+.alert__body {
+  min-width: 0;
+}
+
+.alert__title {
+  margin: 0 0 var(--s-1);
+  font-size: var(--fs-sm);
+}
+
+.alert__body p,
+.alert__list {
+  margin: 0;
   font-size: var(--fs-xs);
+}
+
+.alert__list {
+  padding-left: var(--s-4);
+}
+
+.alert__cta {
+  display: inline-block;
+  margin-top: var(--s-2);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .prose {

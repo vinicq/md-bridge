@@ -19,6 +19,11 @@ interface BatchPanelProps<TResult> {
   selectedId?: string | null
   /** Label of the per-item download button (e.g. ".md" or ".pdf"). */
   downloadLabel: string
+  /** When it returns true for a done item, the download is reframed as an
+   *  explicit "download anyway" escape (e.g. a near-empty needs_ocr result). */
+  downloadBlocked?: (item: BatchItem<TResult>) => boolean
+  /** Label used in place of downloadLabel when downloadBlocked returns true. */
+  downloadAnywayLabel?: string
 }
 
 function formatSize(bytes: number): string {
@@ -38,6 +43,8 @@ export function BatchPanel<TResult>({
   onSelect,
   selectedId,
   downloadLabel,
+  downloadBlocked,
+  downloadAnywayLabel,
 }: BatchPanelProps<TResult>) {
   const { t } = useTranslation()
   if (items.length === 0) return null
@@ -90,7 +97,7 @@ export function BatchPanel<TResult>({
               <div className="batch__actions">
                 {item.status === 'done' && (
                   <Button variant="ghost" onClick={() => onDownload(item)}>
-                    {downloadLabel}
+                    {downloadBlocked?.(item) ? (downloadAnywayLabel ?? downloadLabel) : downloadLabel}
                   </Button>
                 )}
                 {item.status === 'converting' && onSkip && (

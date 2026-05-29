@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BatchPanel } from '../components/BatchPanel'
 import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
@@ -8,6 +8,12 @@ import { useInspect } from '../hooks/useInspect'
 import { useTranslation } from '../i18n'
 import { convertPdfToMd, type PdfToMdResponse } from '../lib/api'
 import { DiagnosticPanel } from '../components/DiagnosticPanel'
+
+// The API blocks a scanned PDF with 422 ocr_required (it also returns this in
+// the error detail, but the hook keeps only code+message, so the CTA target is
+// a stable constant here).
+const OCR_DOCS_URL =
+  'https://vinicq.github.io/md-bridge/getting-started/#limits-worth-knowing-about'
 
 function downloadText(filename: string, text: string) {
   const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' })
@@ -54,6 +60,22 @@ export function PdfToMd() {
 
   const selected = batch.items.find((it) => it.id === effectiveSelectedId) ?? null
 
+  // Path A (issue #139): a pure scan comes back as a 422 ocr_required error.
+  // Surface it as a prominent, focusable banner with a "how to enable OCR" CTA
+  // rather than a quiet per-row line the user can miss.
+  const ocrRequiredItem = batch.items.find(
+    (it) => it.status === 'error' && it.error?.code === 'ocr_required',
+  )
+  const ocrErrorRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    if (ocrRequiredItem) ocrErrorRef.current?.focus()
+    // Re-focus only when the offending item changes, not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ocrRequiredItem?.id])
+
+  // Path B: a borderline result still converts but extracted little text.
+  const selectedWarnings = selected?.result?.warnings ?? []
+
   const handleFiles = (files: File[]) => batch.add(files)
 
   const onConvertAll = async () => {
@@ -99,27 +121,57 @@ export function PdfToMd() {
             onSelect={(it) => setSelectedId(it.id)}
             selectedId={effectiveSelectedId}
             downloadLabel={t.pdfToMd.download}
+            downloadBlocked={(it) => !!it.result?.warnings.includes('needs_ocr')}
+            downloadAnywayLabel={t.pdfToMd.warnings.downloadAnyway}
           />
         </div>
 
         <div>
+          {ocrRequiredItem ? (
+            <section className="alert alert--error" role="alert" aria-labelledby="ocr-required-h">
+              <span className="alert__icon" aria-hidden="true">⚠</span>
+              <div className="alert__body">
+                <h2 id="ocr-required-h" className="alert__title" tabIndex={-1} ref={ocrErrorRef}>
+                  {t.errors.ocrRequired.title}
+                </h2>
+                <p>{t.errors.ocrRequired.message}</p>
+                <a
+                  className="alert__cta"
+                  href={OCR_DOCS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t.errors.ocrRequired.cta}
+                  <span className="visually-hidden"> {t.errors.ocrRequired.ctaNewTab}</span>
+                </a>
+              </div>
+            </section>
+          ) : null}
+
           <MarkdownPreview
             markdown={selected?.result?.md ?? ''}
             empty={t.pdfToMd.previewEmpty}
           />
-          {selected?.result?.warnings.length ? (
-            <ul className="warnings" aria-label={t.pdfToMd.warnings.title}>
-              {selected.result.warnings.map((w, i) => {
-                // Backend emits short codes (`needs_ocr`,
-                // `images_not_persisted`). The dictionary translates the
-                // known codes per locale; unknown codes fall back to the
-                // raw string so the UI is forward-compatible with future
-                // warnings the backend may add.
-                const message =
-                  (t.pdfToMd.warnings as Record<string, string>)[w] ?? w
-                return <li key={i}>{message}</li>
-              })}
-            </ul>
+
+          {!ocrRequiredItem && selectedWarnings.length ? (
+            <section className="alert alert--warn" role="alert" aria-labelledby="warnings-h">
+              <span className="alert__icon" aria-hidden="true">⚠</span>
+              <div className="alert__body">
+                <h2 id="warnings-h" className="alert__title">{t.pdfToMd.warnings.title}</h2>
+                <ul className="alert__list">
+                  {selectedWarnings.map((w, i) => {
+                    // Backend emits short codes (`needs_ocr`,
+                    // `images_not_persisted`); the dictionary translates the
+                    // known ones and unknown codes fall back to the raw string.
+                    const message = (t.pdfToMd.warnings as Record<string, string>)[w] ?? w
+                    return <li key={i}>{message}</li>
+                  })}
+                </ul>
+                {selectedWarnings.includes('needs_ocr') ? (
+                  <p>{t.pdfToMd.warnings.downloadBlocked}</p>
+                ) : null}
+              </div>
+            </section>
           ) : null}
         </div>
       </div>
