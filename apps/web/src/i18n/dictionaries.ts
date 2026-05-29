@@ -82,6 +82,10 @@ interface Dictionary {
     convertAll: string
     downloadAll: string
     clear: string
+    skip: string
+    skipLabel: (name: string) => string
+    errorTimeout: string
+    errorSkipped: string
     pdfBundleName: string
     mdBundleName: string
   }
@@ -210,6 +214,10 @@ const en: Dictionary = {
     convertAll: 'Convert all',
     downloadAll: 'Download all (.zip)',
     clear: 'Clear list',
+    skip: 'Skip',
+    skipLabel: (name) => `skip ${name}`,
+    errorTimeout: 'Timed out',
+    errorSkipped: 'Skipped',
     pdfBundleName: 'pdfs.zip',
     mdBundleName: 'markdown.zip',
   },
@@ -339,6 +347,10 @@ const pt: Dictionary = {
     convertAll: 'Converter todos',
     downloadAll: 'Baixar todos (.zip)',
     clear: 'Limpar lista',
+    skip: 'Pular',
+    skipLabel: (name) => `pular ${name}`,
+    errorTimeout: 'Tempo esgotado',
+    errorSkipped: 'Pulado',
     pdfBundleName: 'pdfs.zip',
     mdBundleName: 'markdown.zip',
   },
@@ -468,6 +480,10 @@ const es: Dictionary = {
     convertAll: 'Convertir todo',
     downloadAll: 'Descargar todo (.zip)',
     clear: 'Limpiar lista',
+    skip: 'Omitir',
+    skipLabel: (name) => `omitir ${name}`,
+    errorTimeout: 'Tiempo agotado',
+    errorSkipped: 'Omitido',
     pdfBundleName: 'pdfs.zip',
     mdBundleName: 'markdown.zip',
   },
