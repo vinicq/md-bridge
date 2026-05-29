@@ -6,7 +6,7 @@ import json
 import logging
 import time
 
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, File, Form, Query, UploadFile
 from fastapi.responses import Response
 from pydantic import ValidationError
 
@@ -209,12 +209,24 @@ async def pdf_to_md(
         default=None,
         description='Optional JSON string. Example: `{"page_break": false, "with_images": false, "front_matter": true, "lang": "en"}`.',
     ),
+    force: bool = Query(
+        default=False,
+        description=(
+            "Convert even when the PDF has no extractable text layer. Without "
+            "this, a scanned PDF returns 422 `ocr_required` instead of empty "
+            "markdown. Use it to bypass a false positive (e.g. an image-only cover)."
+        ),
+    ),
 ) -> PdfToMdResponse:
     opts = _read_options(options, PdfToMdOptions)
     pdf_bytes = await _read_upload(file, ".pdf", "PDF")
     started = time.perf_counter()
     result = await asyncio.to_thread(
-        convert_pdf_bytes, pdf_bytes, filename=file.filename or "document.pdf", options=opts
+        convert_pdf_bytes,
+        pdf_bytes,
+        filename=file.filename or "document.pdf",
+        options=opts,
+        force=force,
     )
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     log.info(

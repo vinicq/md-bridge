@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
@@ -73,11 +74,15 @@ def test_pdf_to_md_cleans_up_tempdirs(client, istqb_pdf: Path):
     leaked = after - before
     assert not leaked, f"pdf-to-md leaked tempdirs: {leaked}"
 
-def test_pdf_to_md_scanned_pdf_preserves_warning_when_ocr_disabled(
+def test_pdf_to_md_scanned_pdf_returns_422_when_ocr_disabled(
     client,
     scanned_pdf_bytes: bytes,
     monkeypatch,
 ):
+    # A pure scan with OCR off used to return 200 with near-empty markdown and a
+    # discreet warning (#139). It now blocks with 422 ocr_required so the user
+    # gets an actionable error instead of an empty file. The 422 fires right
+    # after inspection, before any conversion, so no tempdir is created.
     monkeypatch.delenv("MD_BRIDGE_OCR_ENABLED", raising=False)
 
     resp = client.post(
@@ -85,10 +90,35 @@ def test_pdf_to_md_scanned_pdf_preserves_warning_when_ocr_disabled(
         files={"file": ("scanned.pdf", scanned_pdf_bytes, "application/pdf")},
     )
 
-    assert resp.status_code == 200, resp.text
+    assert resp.status_code == 422, resp.text
     body = resp.json()
-    assert body["ocr_applied"] is False
-    assert "needs_ocr" in body["warnings"]
+    assert body["error"]["code"] == "ocr_required"
+    assert body["error"]["detail"]["docs"]
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason=(
+        "force converts the scanned PDF, and the vendored converter holds the "
+        "PyMuPDF handle open while repairing the text-less page, which locks the "
+        "per-request tempdir on Windows. POSIX unlinks open files, so CI runs it."
+    ),
+)
+def test_pdf_to_md_force_bypasses_ocr_gate(
+    client,
+    scanned_pdf_bytes: bytes,
+    monkeypatch,
+):
+    monkeypatch.delenv("MD_BRIDGE_OCR_ENABLED", raising=False)
+
+    resp = client.post(
+        "/api/pdf-to-md?force=true",
+        files={"file": ("scanned.pdf", scanned_pdf_bytes, "application/pdf")},
+    )
+
+    # With force, the gate is bypassed and the (near-empty) conversion succeeds.
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["ocr_applied"] is False
 
 
 def test_pdf_to_md_applies_ocr_when_enabled(client, scanned_pdf_bytes: bytes, monkeypatch):
