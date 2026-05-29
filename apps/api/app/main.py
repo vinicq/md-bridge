@@ -15,6 +15,7 @@ from app.errors import (
     http_exception_handler,
     validation_exception_handler,
 )
+from app.logging_filters import install_health_access_filter
 from app.routes import convert, health, inspect
 
 API_DESCRIPTION = """
@@ -52,6 +53,10 @@ def create_app() -> FastAPI:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s :: %(message)s",
     )
+
+    # Drop the ~1/s healthcheck probes from the uvicorn access log so real
+    # requests stay visible (opt out with MD_BRIDGE_LOG_HEALTH=true).
+    install_health_access_filter()
 
     app = FastAPI(
         title="md-bridge API",
