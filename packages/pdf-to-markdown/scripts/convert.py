@@ -49,6 +49,25 @@ def escape_markdown_inline(text: str) -> str:
     return _MD_INLINE_ESCAPE.sub(r"\\\1", text)
 
 
+def normalize_ordered_marker(text: str, *, first: bool) -> tuple[str, str]:
+    """Map a source list marker (`1.`, `a)`, `i.`, `7)`) to a canonical `1.`.
+
+    CommonMark renumbers an ordered list from its first marker, so only the
+    first item carries a non-1 start (preserved when the source marker is a
+    digit); the rest emit `1.` and the renderer increments. Returns
+    `(marker, content)`; when no marker is recognized, marker is `""` and the
+    text is returned unchanged.
+    """
+    m = NUMBERED_RE.match(text)
+    if not m:
+        return "", text
+    token = m.group(1)
+    content = text[m.end():].strip()
+    if first and token.isdigit():
+        return f"{int(token)}.", content
+    return "1.", content
+
+
 NUMBERED_RE = re.compile(r"^\s*(\d{1,3}|[a-zA-Z])[.)]\s+")
 HEADING_DOTS_RE = re.compile(r"\s*\.{3,}\s*\d+\s*$")  # "Title ........ 8" (TOC dot leaders)
 
@@ -586,13 +605,27 @@ def convert_page(
 
     items.sort(key=lambda it: it[0])
 
+    # Consecutive numbered blocks are buffered so they emit as one contiguous
+    # list (items joined by a single newline). The outer "\n\n".join then only
+    # puts a blank line around the whole list, not between items, which is what
+    # CommonMark needs to keep an ordered list from collapsing into one
+    # single-item list per line (#144).
+    numbered_run: list[str] = []
+
+    def flush_numbered() -> None:
+        if numbered_run:
+            out_parts.append("\n".join(numbered_run))
+            numbered_run.clear()
+
     for _, kind, payload in items:
         if kind == "table":
+            flush_numbered()
             md = rendered_tables[tuple(payload.bbox)]
             if md:
                 out_parts.append(md)
             continue
         if kind == "image":
+            flush_numbered()
             out_parts.append(payload)
             continue
 
@@ -600,6 +633,7 @@ def convert_page(
         cls = classify_block(block, profile)
 
         if cls == "code":
+            flush_numbered()
             code_lines = [line.text.rstrip() for line in block.lines if line.text.strip()]
             if not code_lines:
                 continue
@@ -613,6 +647,10 @@ def convert_page(
             continue
 
         text_clean = HEADING_DOTS_RE.sub("", text_rendered)
+
+        # Any non-numbered block ends the current ordered-list run.
+        if cls != "numbered":
+            flush_numbered()
 
         if cls.startswith("heading"):
             level = int(cls[-1])
@@ -628,12 +666,18 @@ def convert_page(
             out_parts.append(f"{'  ' * nesting}- {stripped}")
         elif cls == "numbered":
             nesting = profile.nesting_level(block.bbox[0])
-            out_parts.append(f"{'  ' * nesting}{text_clean}")
+            marker, content = normalize_ordered_marker(text_clean, first=not numbered_run)
+            if marker:
+                numbered_run.append(f"{'  ' * nesting}{marker} {content}")
+            else:
+                # Classified numbered but no recognizable marker: keep as-is.
+                numbered_run.append(f"{'  ' * nesting}{text_clean}")
         elif cls == "small":
             out_parts.append(f"<small>{text_clean}</small>")
         else:
             out_parts.append(text_clean)
 
+    flush_numbered()
     return "\n\n".join(out_parts)
 
 
