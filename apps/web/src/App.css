@@ -70,6 +70,9 @@
 }
 
 .alert--error {
+  /* Reuses the brand accent, which is red in both themes. If a non-red accent
+     is ever introduced, add a dedicated --c-error alias rather than relying on
+     this coincidence. */
   border-left-color: var(--c-accent);
 }
 

@@ -153,7 +153,7 @@ export function PdfToMd() {
             empty={t.pdfToMd.previewEmpty}
           />
 
-          {selectedWarnings.length ? (
+          {!ocrRequiredItem && selectedWarnings.length ? (
             <section className="alert alert--warn" role="alert" aria-labelledby="warnings-h">
               <span className="alert__icon" aria-hidden="true">⚠</span>
               <div className="alert__body">

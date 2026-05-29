@@ -263,6 +263,8 @@ test.describe('needs_ocr alerts a11y (#139)', () => {
     await expect(heading).toBeFocused()
     const cta = page.getByRole('link', { name: /How to enable OCR/i })
     await expect(cta).toHaveAttribute('href', /getting-started/)
+    // The "opens in a new tab" affordance is part of the accessible name.
+    await expect(page.getByRole('link', { name: /new tab/i })).toBeVisible()
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
