@@ -10,6 +10,11 @@
  *
  * Format: APPNOTE.TXT, local file headers + central directory + EOCD, all
  * little-endian. Method 0 (store), general-purpose flag bit 11 (UTF-8 names).
+ *
+ * Scope: sizes and the entry count are 32-bit, so this is correct up to 4 GiB
+ * per file and 65535 entries. That is far beyond any realistic batch download;
+ * there is no ZIP64 support. Entry names are reduced to their basename so a
+ * stray path separator cannot write outside the archive root on extraction.
  */
 
 export interface ZipEntry {
@@ -43,8 +48,10 @@ const VERSION = 20 // 2.0, the minimum for store
 
 export function createStoreZip(entries: ZipEntry[]): Uint8Array<ArrayBuffer> {
   const enc = new TextEncoder()
-  // Sort by name so archive bytes do not depend on input order.
-  const items = [...entries]
+  // Reduce to basename so a path separator (e.g. "../x.md") cannot escape the
+  // archive root, then sort by name so the bytes do not depend on input order.
+  const items = entries
+    .map((e) => ({ name: e.name.split(/[/\\]/).pop() || e.name, data: e.data }))
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
     .map((e) => ({ nameBytes: enc.encode(e.name), data: e.data, crc: crc32(e.data) }))
 

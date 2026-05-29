@@ -52,6 +52,44 @@ describe('createStoreZip', () => {
     expect(dv(zip).getUint32(14, true)).toBe(0x3610a686)
   })
 
+  it('records correct per-entry local-header offsets in the central directory', () => {
+    // The most error-prone field in a hand-rolled encoder. Walk the central
+    // directory of a multi-entry archive and confirm each recorded offset points
+    // at a real local header whose name matches.
+    const zip = createStoreZip([
+      { name: 'a.md', data: enc.encode('alpha') },
+      { name: 'b.md', data: enc.encode('beta beta') },
+    ])
+    const view = dv(zip)
+    const eocd = zip.length - 22
+    const count = view.getUint16(eocd + 10, true)
+    let cd = view.getUint32(eocd + 16, true) // central directory start
+    expect(count).toBe(2)
+
+    const names: string[] = []
+    for (let i = 0; i < count; i++) {
+      expect(view.getUint32(cd, true)).toBe(0x02014b50) // central dir signature
+      const nameLen = view.getUint16(cd + 28, true)
+      const localOffset = view.getUint32(cd + 42, true)
+      // The recorded offset must point at a real local file header.
+      expect(view.getUint32(localOffset, true)).toBe(LOCAL_SIG)
+      // And the name in the local header must match the central directory name.
+      const cdName = new TextDecoder().decode(zip.slice(cd + 46, cd + 46 + nameLen))
+      const localName = new TextDecoder().decode(zip.slice(localOffset + 30, localOffset + 30 + nameLen))
+      expect(localName).toBe(cdName)
+      names.push(cdName)
+      cd += 46 + nameLen
+    }
+    expect(names).toEqual(['a.md', 'b.md'])
+  })
+
+  it('reduces a path-bearing name to its basename (no zip-slip)', () => {
+    const zip = createStoreZip([{ name: '../../etc/x.md', data: enc.encode('x') }])
+    const nameLen = dv(zip).getUint16(26, true)
+    const name = new TextDecoder().decode(zip.slice(30, 30 + nameLen))
+    expect(name).toBe('x.md')
+  })
+
   it('stores the file bytes verbatim (no compression)', () => {
     const data = enc.encode('verbatim payload')
     const zip = createStoreZip([{ name: 'p.txt', data }])
