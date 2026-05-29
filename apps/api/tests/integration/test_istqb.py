@@ -4,6 +4,7 @@ structurally rich syllabus the way the project's target users would submit it.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 
@@ -40,3 +41,21 @@ def test_istqb_pdf_to_md_extracts_structure(client, istqb_pdf: Path):
     fm = body["front_matter"]
     assert fm["source"] == istqb_pdf.name
     assert fm["pages"] and fm["pages"] >= 10
+
+
+def test_istqb_ordered_lists_stay_contiguous(client, istqb_pdf: Path):
+    # Regression for #144: numbered items used to be emitted one paragraph apart,
+    # so CommonMark read each as its own single-item list. They must now sit on
+    # consecutive lines with no blank line between them.
+    with istqb_pdf.open("rb") as fh:
+        resp = client.post(
+            "/api/pdf-to-md",
+            files={"file": (istqb_pdf.name, fh, "application/pdf")},
+        )
+    assert resp.status_code == 200, resp.text
+    md = resp.json()["md"]
+
+    collapsed = re.findall(r"(?m)^\s*\d+\..*\n\n\s*\d+\.\s", md)
+    assert not collapsed, f"ordered-list items separated by a blank line: {collapsed}"
+    contiguous = re.findall(r"(?m)^\s*\d+\..*\n\s*\d+\.\s", md)
+    assert contiguous, "expected at least one contiguous ordered list in the ISTQB output"
