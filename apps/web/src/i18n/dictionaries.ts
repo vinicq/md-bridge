@@ -34,12 +34,16 @@ interface Dictionary {
     previewEmpty: string
     success: string
     warnings: {
-      // Heading on the warnings list (aria-label of the <ul>).
+      // Heading on the warnings alert.
       title: string
       // Translations indexed by the backend's warning codes. Unknown
       // codes fall back to the raw string at render time.
       needs_ocr: string
       images_not_persisted: string
+      // Visible reason shown when a needs_ocr result blocks its download.
+      downloadBlocked: string
+      // Label of the escape-hatch button that downloads the near-empty file anyway.
+      downloadAnyway: string
     }
   }
   mdToPdf: {
@@ -105,6 +109,13 @@ interface Dictionary {
   }
   errors: {
     unknown: string
+    // Shown when the API blocks a scanned PDF with 422 ocr_required.
+    ocrRequired: {
+      title: string
+      message: string
+      cta: string
+      ctaNewTab: string
+    }
   }
   languageSwitcher: {
     label: string
@@ -153,6 +164,9 @@ const en: Dictionary = {
         'Very little text was extracted. The PDF may be scanned; run OCR (e.g. Tesseract) before converting.',
       images_not_persisted:
         'Image extraction is enabled but images are not persisted by the API; the markdown references images that are not served back.',
+      downloadBlocked:
+        'Too little text was extracted, so the download is held back. Enable OCR, or download anyway.',
+      downloadAnyway: 'Download anyway',
     },
   },
   mdToPdf: {
@@ -238,6 +252,13 @@ const en: Dictionary = {
   },
   errors: {
     unknown: 'Unknown failure',
+    ocrRequired: {
+      title: 'OCR required',
+      message:
+        'This PDF has no extractable text layer, so it looks scanned. Enable OCR to convert it.',
+      cta: 'How to enable OCR',
+      ctaNewTab: '(opens in a new tab)',
+    },
   },
   languageSwitcher: {
     label: 'Language',
@@ -286,6 +307,9 @@ const pt: Dictionary = {
         'Pouco texto foi extraído. O PDF pode estar escaneado; rode OCR (por exemplo Tesseract) antes de converter.',
       images_not_persisted:
         'A extração de imagens está habilitada, mas as imagens não são persistidas pela API; o markdown referencia imagens que não são servidas de volta.',
+      downloadBlocked:
+        'Pouco texto foi extraído, então o download está retido. Ative o OCR, ou baixe mesmo assim.',
+      downloadAnyway: 'Baixar mesmo assim',
     },
   },
   mdToPdf: {
@@ -371,6 +395,13 @@ const pt: Dictionary = {
   },
   errors: {
     unknown: 'Falha desconhecida',
+    ocrRequired: {
+      title: 'OCR necessário',
+      message:
+        'Este PDF não tem camada de texto extraível, então parece escaneado. Ative o OCR para convertê-lo.',
+      cta: 'Como ativar o OCR',
+      ctaNewTab: '(abre em uma nova aba)',
+    },
   },
   languageSwitcher: {
     label: 'Idioma',
@@ -419,6 +450,9 @@ const es: Dictionary = {
         'Se extrajo muy poco texto. El PDF puede estar escaneado; ejecuta OCR (por ejemplo Tesseract) antes de convertir.',
       images_not_persisted:
         'La extracción de imágenes está activa, pero las imágenes no se persisten en la API; el markdown referencia imágenes que no se sirven de vuelta.',
+      downloadBlocked:
+        'Se extrajo muy poco texto, así que la descarga queda retenida. Activa el OCR, o descarga de todos modos.',
+      downloadAnyway: 'Descargar de todos modos',
     },
   },
   mdToPdf: {
@@ -504,6 +538,13 @@ const es: Dictionary = {
   },
   errors: {
     unknown: 'Fallo desconocido',
+    ocrRequired: {
+      title: 'OCR requerido',
+      message:
+        'Este PDF no tiene una capa de texto extraíble, así que parece escaneado. Activa el OCR para convertirlo.',
+      cta: 'Cómo activar el OCR',
+      ctaNewTab: '(se abre en una pestaña nueva)',
+    },
   },
   languageSwitcher: {
     label: 'Idioma',
