@@ -2,6 +2,18 @@ import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'node:url'
+
+const here = path.dirname(fileURLToPath(import.meta.url))
+const ISTQB = path.resolve(
+  here,
+  '..',
+  '..',
+  'api',
+  'tests',
+  'fixtures',
+  'istqb-ctal-ta-syllabus-en.pdf',
+)
 
 const ROUTES = [
   { path: '/', name: 'Home' },
@@ -148,6 +160,48 @@ test.describe('color-contrast sweep (WCAG 1.4.3)', () => {
       ).toHaveLength(0)
     })
   }
+})
+
+test.describe('batch Skip button a11y', () => {
+  // The Skip button only renders while an item is `converting` (issue #138),
+  // so the static route audit above never sees it. Hold one conversion in
+  // flight and run axe with the button on screen.
+  test('Skip button has no critical/serious axe violations while converting', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem('md-bridge:locale', 'en')
+    })
+    // Never settle the conversion request: the item stays in `converting`.
+    await page.route('**/api/pdf-to-md', () => {})
+
+    await page.goto('/convert/pdf-to-md')
+    await page.locator('input[type="file"]').setInputFiles(ISTQB)
+    await page.getByRole('button', { name: /convert all/i }).click()
+
+    const skip = page.getByRole('button', { name: /skip/i })
+    await expect(skip).toBeVisible({ timeout: 30_000 })
+
+    // The `Converting` status label has a pre-existing color-contrast miss
+    // (accent text on the accent-soft row tint) that this PR did not introduce
+    // and that the static route audit never exercised. It is tracked in #178
+    // and fixed separately under the design-token lens; excluding the node here
+    // keeps this test focused on the Skip control #138 adds.
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .exclude('.batch__status--converting')
+      .analyze()
+
+    const criticalSerious = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    )
+    expect(
+      criticalSerious,
+      `Found ${criticalSerious.length} critical/serious violations with Skip visible: ${criticalSerious
+        .map((v) => v.id)
+        .join(', ')}`,
+    ).toHaveLength(0)
+  })
 })
 
 test.describe('focus-visible coverage', () => {
