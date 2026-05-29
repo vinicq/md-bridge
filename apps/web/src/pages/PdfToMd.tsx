@@ -4,6 +4,7 @@ import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
 import { Toast } from '../components/Toast'
 import { useBatchConvert, type BatchItem } from '../hooks/useBatchConvert'
+import { useBatchZip } from '../hooks/useBatchZip'
 import { useInspect } from '../hooks/useInspect'
 import { useTranslation } from '../i18n'
 import { convertPdfToMd, type PdfToMdResponse } from '../lib/api'
@@ -40,6 +41,12 @@ export function PdfToMd() {
     convertTimeoutMs: 10 * 60 * 1000,
   })
   const inspect = useInspect()
+  const zip = useBatchZip<PdfToMdResponse>({
+    toEntry: (it) => ({
+      name: it.file.name.replace(/\.pdf$/i, '.md'),
+      data: new TextEncoder().encode(it.result?.md ?? ''),
+    }),
+  })
 
   // Auto-select the most recently finished item so the preview follows the
   // run. Derived during render so the user's explicit selection wins when it
@@ -118,6 +125,7 @@ export function PdfToMd() {
             onRemove={batch.remove}
             onSkip={batch.skip}
             onDownload={onDownload}
+            onDownloadAll={() => void zip.downloadZip(batch.items, t.batch.mdBundleName)}
             onSelect={(it) => setSelectedId(it.id)}
             selectedId={effectiveSelectedId}
             downloadLabel={t.pdfToMd.download}

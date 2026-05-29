@@ -6,6 +6,7 @@ import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
 import { Toast } from '../components/Toast'
 import { useBatchConvert, type BatchItem } from '../hooks/useBatchConvert'
+import { useBatchZip } from '../hooks/useBatchZip'
 import { useTranslation } from '../i18n'
 import { convertMdToPdf } from '../lib/api'
 
@@ -22,6 +23,12 @@ export function MdToPdf() {
     // flight forever (issue #138). Removing this line restores the old
     // no-timeout behavior.
     convertTimeoutMs: 10 * 60 * 1000,
+  })
+  const zip = useBatchZip<Blob>({
+    toEntry: async (it) => ({
+      name: it.file.name.replace(/\.md$/i, '') + '.pdf',
+      data: new Uint8Array(await (it.result as Blob).arrayBuffer()),
+    }),
   })
 
   // Pick up the latest completed item so the preview follows the run. Derived
@@ -113,6 +120,7 @@ export function MdToPdf() {
             onRemove={batch.remove}
             onSkip={batch.skip}
             onDownload={onDownload}
+            onDownloadAll={() => void zip.downloadZip(batch.items, t.batch.pdfBundleName)}
             onSelect={(it) => setSelectedId(it.id)}
             selectedId={effectiveSelectedId}
             downloadLabel={t.mdToPdf.download}

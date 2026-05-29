@@ -14,6 +14,8 @@ interface BatchPanelProps<TResult> {
   onSkip?: (id: string) => void
   /** Called when the user clicks the per-item download button. */
   onDownload: (item: BatchItem<TResult>) => void
+  /** Called when the user clicks "Download all"; only rendered when provided. */
+  onDownloadAll?: () => void
   /** Optional: select an item to drive the right-side preview panel. */
   onSelect?: (item: BatchItem<TResult>) => void
   selectedId?: string | null
@@ -40,6 +42,7 @@ export function BatchPanel<TResult>({
   onRemove,
   onSkip,
   onDownload,
+  onDownloadAll,
   onSelect,
   selectedId,
   downloadLabel,
@@ -132,6 +135,11 @@ export function BatchPanel<TResult>({
         <Button onClick={onConvertAll} disabled={!hasQueued || running} loading={running}>
           {t.batch.convertAll}
         </Button>
+        {hasDone && onDownloadAll && (
+          <Button variant="ghost" onClick={onDownloadAll} disabled={running}>
+            {t.batch.downloadAll(done)}
+          </Button>
+        )}
         <Button variant="ghost" onClick={onClear} disabled={running}>
           {t.batch.clear}
         </Button>

@@ -84,7 +84,7 @@ interface Dictionary {
     statusError: string
     progress: (done: number, total: number) => string
     convertAll: string
-    downloadAll: string
+    downloadAll: (count: number) => string
     clear: string
     skip: string
     skipLabel: (name: string) => string
@@ -226,7 +226,7 @@ const en: Dictionary = {
     statusError: 'Error',
     progress: (done, total) => `${done} of ${total} complete`,
     convertAll: 'Convert all',
-    downloadAll: 'Download all (.zip)',
+    downloadAll: (count) => `Download all (${count})`,
     clear: 'Clear list',
     skip: 'Skip',
     skipLabel: (name) => `skip ${name}`,
@@ -369,7 +369,7 @@ const pt: Dictionary = {
     statusError: 'Erro',
     progress: (done, total) => `${done} de ${total} concluído${total === 1 ? '' : 's'}`,
     convertAll: 'Converter todos',
-    downloadAll: 'Baixar todos (.zip)',
+    downloadAll: (count) => `Baixar todos (${count})`,
     clear: 'Limpar lista',
     skip: 'Pular',
     skipLabel: (name) => `pular ${name}`,
@@ -512,7 +512,7 @@ const es: Dictionary = {
     statusError: 'Error',
     progress: (done, total) => `${done} de ${total} completado${total === 1 ? '' : 's'}`,
     convertAll: 'Convertir todo',
-    downloadAll: 'Descargar todo (.zip)',
+    downloadAll: (count) => `Descargar todo (${count})`,
     clear: 'Limpiar lista',
     skip: 'Omitir',
     skipLabel: (name) => `omitir ${name}`,
