@@ -6,6 +6,7 @@ working without modification. Cleans up tempfiles in `finally`.
 """
 from __future__ import annotations
 
+import logging
 import re
 import tempfile
 from collections.abc import Iterator
@@ -19,10 +20,13 @@ from app.schemas.convert import (
     PdfToMdResponse,
 )
 from app.services.inspect import inspect_pdf_bytes
+from app.services.mupdf_log import capture_mupdf_warnings
 from app.services.ocr import get_lang as ocr_lang
 from app.services.ocr import is_enabled as ocr_enabled
 from app.services.ocr import ocr_pdf_bytes
 from app.services.packages_loader import pdf_to_md_module
+
+log = logging.getLogger(__name__)
 
 FRONT_MATTER_LINE = re.compile(r'^(\w[\w-]*):\s*(.*)$')
 HEADING_RE = re.compile(r"^(#{1,6})\s+\S", re.MULTILINE)
@@ -117,14 +121,17 @@ def convert_pdf_bytes(
 
         # `extract_images=False` is forced. With_images=True would write to a
         # neighbour directory; we never want side effects outside the tempdir.
-        mod.convert_document(
-            pdf_path,
-            md_path,
-            page_break=opts.page_break,
-            debug=False,
-            extract_images=False,
-            front_matter=opts.front_matter,
-        )
+        # The MuPDF C runtime logs non-fatal resource warnings while parsing
+        # malformed PDFs; capture them onto the logger instead of bare stderr.
+        with capture_mupdf_warnings(log, filename=filename):
+            mod.convert_document(
+                pdf_path,
+                md_path,
+                page_break=opts.page_break,
+                debug=False,
+                extract_images=False,
+                front_matter=opts.front_matter,
+            )
 
         md_text = md_path.read_text(encoding="utf-8")
 

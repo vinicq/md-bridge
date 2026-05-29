@@ -6,6 +6,7 @@ shape stable.
 """
 from __future__ import annotations
 
+import logging
 import tempfile
 from collections import Counter
 from pathlib import Path
@@ -13,7 +14,10 @@ from pathlib import Path
 import fitz
 
 from app.schemas.convert import FontUsage, InspectPdfResponse
+from app.services.mupdf_log import capture_mupdf_warnings
 from app.services.packages_loader import pdf_inspect_module
+
+log = logging.getLogger(__name__)
 
 
 def inspect_pdf_bytes(pdf_bytes: bytes, filename: str) -> InspectPdfResponse:
@@ -21,7 +25,7 @@ def inspect_pdf_bytes(pdf_bytes: bytes, filename: str) -> InspectPdfResponse:
     tmp_path = tmp_dir / "input.pdf"
     tmp_path.write_bytes(pdf_bytes)
     try:
-        with fitz.open(tmp_path) as doc:
+        with capture_mupdf_warnings(log, filename=filename), fitz.open(tmp_path) as doc:
             size_counter: Counter[float] = Counter()
             font_counter: Counter[tuple[float, str]] = Counter()
             samples: dict[tuple[float, str], str] = {}
