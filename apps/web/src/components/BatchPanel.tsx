@@ -10,6 +10,8 @@ interface BatchPanelProps<TResult> {
   onConvertAll: () => void
   onClear: () => void
   onRemove: (id: string) => void
+  /** Called when the user skips an item that is still converting. */
+  onSkip?: (id: string) => void
   /** Called when the user clicks the per-item download button. */
   onDownload: (item: BatchItem<TResult>) => void
   /** Optional: select an item to drive the right-side preview panel. */
@@ -31,6 +33,7 @@ export function BatchPanel<TResult>({
   onConvertAll,
   onClear,
   onRemove,
+  onSkip,
   onDownload,
   onSelect,
   selectedId,
@@ -38,6 +41,14 @@ export function BatchPanel<TResult>({
 }: BatchPanelProps<TResult>) {
   const { t } = useTranslation()
   if (items.length === 0) return null
+
+  // The hook leaves timeout/skip errors with an empty message and only a code,
+  // so the localized text lives here rather than in the hook.
+  const errorText = (error: { code: string; message: string }): string => {
+    if (error.code === 'timeout') return t.batch.errorTimeout
+    if (error.code === 'skipped') return t.batch.errorSkipped
+    return error.message
+  }
 
   const done = items.filter((it) => it.status === 'done').length
   const hasQueued = items.some((it) => it.status === 'queued')
@@ -82,6 +93,15 @@ export function BatchPanel<TResult>({
                     {downloadLabel}
                   </Button>
                 )}
+                {item.status === 'converting' && onSkip && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => onSkip(item.id)}
+                    aria-label={t.batch.skipLabel(item.file.name)}
+                  >
+                    {t.batch.skip}
+                  </Button>
+                )}
                 <Button
                   variant="icon"
                   onClick={() => onRemove(item.id)}
@@ -93,7 +113,7 @@ export function BatchPanel<TResult>({
 
               {item.error && (
                 <p className="batch__error" role="alert">
-                  {item.error.message}
+                  {errorText(item.error)}
                 </p>
               )}
             </li>
