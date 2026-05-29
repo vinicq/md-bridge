@@ -18,6 +18,10 @@ export function MdToPdf() {
   const batch = useBatchConvert<Blob>({
     convert: (file, signal) => convertMdToPdf(file, {}, signal),
     toBlobUrl: (blob) => URL.createObjectURL(blob),
+    // 10-minute ceiling so a backgrounded tab cannot leave an item stuck in
+    // flight forever (issue #138). Removing this line restores the old
+    // no-timeout behavior.
+    convertTimeoutMs: 10 * 60 * 1000,
   })
 
   // Pick up the latest completed item so the preview follows the run. Derived
@@ -107,6 +111,7 @@ export function MdToPdf() {
             onConvertAll={onConvertAll}
             onClear={batch.clear}
             onRemove={batch.remove}
+            onSkip={batch.skip}
             onDownload={onDownload}
             onSelect={(it) => setSelectedId(it.id)}
             selectedId={effectiveSelectedId}

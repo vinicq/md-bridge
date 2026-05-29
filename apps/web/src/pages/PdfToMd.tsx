@@ -28,6 +28,10 @@ export function PdfToMd() {
 
   const batch = useBatchConvert<PdfToMdResponse>({
     convert: (file, signal) => convertPdfToMd(file, {}, signal),
+    // 10-minute ceiling so a backgrounded tab cannot leave an item stuck in
+    // flight forever (issue #138). Removing this line restores the old
+    // no-timeout behavior.
+    convertTimeoutMs: 10 * 60 * 1000,
   })
   const inspect = useInspect()
 
@@ -90,6 +94,7 @@ export function PdfToMd() {
             onConvertAll={onConvertAll}
             onClear={batch.clear}
             onRemove={batch.remove}
+            onSkip={batch.skip}
             onDownload={onDownload}
             onSelect={(it) => setSelectedId(it.id)}
             selectedId={effectiveSelectedId}
