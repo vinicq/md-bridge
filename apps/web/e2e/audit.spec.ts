@@ -279,6 +279,45 @@ test.describe('needs_ocr alerts a11y (#139)', () => {
   })
 })
 
+test.describe('batch Download all a11y (#137)', () => {
+  test('Download all button has no critical/serious axe violations and a count-aware name', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => window.localStorage.setItem('md-bridge:locale', 'en'))
+    await page.route('**/api/pdf-to-md', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          md: '# hello\n\ncontent',
+          front_matter: {},
+          warnings: [],
+          stats: { headings: 1, tables: 0, bullets: 0 },
+        }),
+      }),
+    )
+    await page.goto('/convert/pdf-to-md')
+    await page.locator('input[type="file"]').setInputFiles(ISTQB)
+    await page.getByRole('button', { name: /convert all/i }).click()
+
+    // The count is part of the accessible name (locks WCAG 4.1.2).
+    await expect(page.getByRole('button', { name: /download all \(1\)/i })).toBeVisible({
+      timeout: 30_000,
+    })
+
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze()
+    const criticalSerious = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    )
+    expect(
+      criticalSerious,
+      `critical/serious with Download all visible: ${criticalSerious.map((v) => v.id).join(', ')}`,
+    ).toHaveLength(0)
+  })
+})
+
 test.describe('focus-visible coverage', () => {
   for (const route of ROUTES) {
     test(`every keyboard-reachable element on ${route.name} shows a focus ring`, async ({ page }) => {

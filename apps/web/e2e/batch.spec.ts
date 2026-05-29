@@ -76,6 +76,30 @@ test('Batch: skipping a stuck item lets the rest finish', async ({ page }) => {
   await expect(page.getByRole('button', { name: /clear list/i })).toBeEnabled()
 })
 
+test('Batch: Download all bundles the done items into a single .zip', async ({ page }) => {
+  await page.route('**/api/pdf-to-md', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        md: '# hello\n\ncontent',
+        front_matter: {},
+        warnings: [],
+        stats: { headings: 1, tables: 0, bullets: 0 },
+      }),
+    }),
+  )
+  await page.goto('/convert/pdf-to-md')
+  await page.locator('input[type="file"]').setInputFiles([ISTQB, ISTQB])
+  await page.getByRole('button', { name: /convert all/i }).click()
+  await expect(page.locator('.batch__row--done')).toHaveCount(2, { timeout: 30_000 })
+
+  const dl = page.waitForEvent('download')
+  await page.getByRole('button', { name: /download all \(2\)/i }).click()
+  const file = await dl
+  expect(file.suggestedFilename()).toBe('markdown.zip')
+})
+
 test('Batch: clearing the list cancels and empties the queue', async ({ page }) => {
   await page.goto('/convert/pdf-to-md')
   await page.locator('input[type="file"]').setInputFiles([ISTQB, ISTQB])
