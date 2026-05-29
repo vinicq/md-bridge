@@ -34,6 +34,7 @@ FLAG_MONO = 1 << 3
 FLAG_BOLD = 1 << 4
 
 BULLET_CHARS = {"▪", "•", "●", "◦", "‣", "⁃", "∙"}
+NUMBERED_RE = re.compile(r"^\s*(\d{1,3}|[a-zA-Z])[.)]\s+")
 
 # CommonMark inline punctuation that changes meaning anywhere in body text:
 # a backslash, code backticks, emphasis markers, and link brackets. Escaping
@@ -68,7 +69,6 @@ def normalize_ordered_marker(text: str, *, first: bool) -> tuple[str, str]:
     return "1.", content
 
 
-NUMBERED_RE = re.compile(r"^\s*(\d{1,3}|[a-zA-Z])[.)]\s+")
 HEADING_DOTS_RE = re.compile(r"\s*\.{3,}\s*\d+\s*$")  # "Title ........ 8" (TOC dot leaders)
 
 # Code-block detection
