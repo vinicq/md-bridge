@@ -6,6 +6,8 @@ __pycache__/
 .coverage
 htmlcov/
 apps/api/.venv/
+# The project standardizes on pip + pyproject; a stray uv lockfile would drift.
+uv.lock
 
 # Node
 node_modules/
