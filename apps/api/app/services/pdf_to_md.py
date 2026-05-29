@@ -12,6 +12,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+from app.errors import ApiError
 from app.schemas.convert import (
     ConvertStats,
     FrontMatter,
@@ -23,6 +24,10 @@ from app.services.ocr import get_lang as ocr_lang
 from app.services.ocr import is_enabled as ocr_enabled
 from app.services.ocr import ocr_pdf_bytes
 from app.services.packages_loader import pdf_to_md_module
+
+# Linked from the 422 ocr_required payload so the UI can point the user at the
+# OCR setup instructions instead of handing back near-empty markdown.
+OCR_DOCS_URL = "https://vinicq.github.io/md-bridge/getting-started/#limits-worth-knowing-about"
 
 FRONT_MATTER_LINE = re.compile(r'^(\w[\w-]*):\s*(.*)$')
 HEADING_RE = re.compile(r"^(#{1,6})\s+\S", re.MULTILINE)
@@ -99,16 +104,31 @@ def convert_pdf_bytes(
     *,
     filename: str,
     options: PdfToMdOptions | None = None,
+    force: bool = False,
 ) -> PdfToMdResponse:
     opts = options or PdfToMdOptions()
     mod = pdf_to_md_module()
 
+    # Always inspect first: a pure scan (no text layer) cannot be converted by
+    # the heuristic pipeline and would return near-empty markdown with a 200,
+    # which reads as "the tool is broken". When OCR is available we apply it;
+    # when it is not, we block with a 422 so the user gets an actionable error
+    # instead of an empty file. `force=True` is the explicit escape hatch for
+    # the false positive (e.g. an image-only cover that the user wants anyway).
     ocr_applied = False
-    if ocr_enabled():
-        diagnostics = inspect_pdf_bytes(pdf_bytes, filename)
-        if diagnostics.needs_ocr:
+    diagnostics = inspect_pdf_bytes(pdf_bytes, filename)
+    if diagnostics.needs_ocr:
+        if ocr_enabled():
             pdf_bytes = ocr_pdf_bytes(pdf_bytes, lang=ocr_lang())
             ocr_applied = True
+        elif not force:
+            raise ApiError(
+                422,
+                "ocr_required",
+                "This PDF has no extractable text layer (it looks scanned). "
+                "Enable OCR to convert it, or retry with force to convert anyway.",
+                detail={"docs": OCR_DOCS_URL},
+            )
     with _tempdir() as tmp:
         safe_stem = Path(filename).stem or "document"
         pdf_path = tmp / f"{safe_stem}.pdf"
