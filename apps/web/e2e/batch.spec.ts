@@ -47,6 +47,35 @@ test('Batch: two PDFs queue up, run sequentially, each downloadable', async ({ p
   expect(file.suggestedFilename()).toMatch(/\.md$/)
 })
 
+test('Batch: skipping a stuck item lets the rest finish', async ({ page }) => {
+  // Hold the first conversion request open forever (simulates the backgrounded
+  // tab hang from issue #138); let every later request reach the real API.
+  let seen = 0
+  await page.route('**/api/pdf-to-md', (route) => {
+    seen += 1
+    if (seen === 1) return // never settle: this item is stuck in `converting`
+    return route.continue()
+  })
+
+  await page.goto('/convert/pdf-to-md')
+  await page.locator('input[type="file"]').setInputFiles([ISTQB, ISTQB])
+  await page.getByRole('button', { name: /convert all/i }).click()
+
+  // First row is stuck converting and exposes the Skip button.
+  const firstRow = page.locator('.batch__row').first()
+  const skip = firstRow.getByRole('button', { name: /skip/i })
+  await expect(skip).toBeVisible({ timeout: 30_000 })
+  await skip.click()
+
+  // The skipped item errors out and the second item still completes: the loop
+  // is not blocked behind the stuck request.
+  await expect(firstRow).toHaveClass(/batch__row--error/, { timeout: 30_000 })
+  await expect(page.locator('.batch__row--done')).toHaveCount(1, { timeout: 120_000 })
+  await expect(page.locator('.batch__row--converting')).toHaveCount(0)
+  // The batch finished, so Clear is enabled again (it is disabled while running).
+  await expect(page.getByRole('button', { name: /clear list/i })).toBeEnabled()
+})
+
 test('Batch: clearing the list cancels and empties the queue', async ({ page }) => {
   await page.goto('/convert/pdf-to-md')
   await page.locator('input[type="file"]').setInputFiles([ISTQB, ISTQB])
