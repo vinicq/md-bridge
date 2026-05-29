@@ -57,5 +57,13 @@ def test_istqb_ordered_lists_stay_contiguous(client, istqb_pdf: Path):
 
     collapsed = re.findall(r"(?m)^\s*\d+\..*\n\n\s*\d+\.\s", md)
     assert not collapsed, f"ordered-list items separated by a blank line: {collapsed}"
-    contiguous = re.findall(r"(?m)^\s*\d+\..*\n\s*\d+\.\s", md)
-    assert contiguous, "expected at least one contiguous ordered list in the ISTQB output"
+
+    # A genuine contiguous list is a run of 2+ numbered lines with no blank line
+    # between them; unrelated paragraphs that happen to start with "N." are
+    # separated by a blank line and so never form a run.
+    marker = re.compile(r"^\s*\d+\.\s")
+    longest_run = run = 0
+    for line in md.splitlines():
+        run = run + 1 if marker.match(line) else 0
+        longest_run = max(longest_run, run)
+    assert longest_run >= 2, "expected at least one contiguous ordered list (2+ consecutive items)"
