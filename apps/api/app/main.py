@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 
+import pymupdf
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +16,7 @@ from app.errors import (
     http_exception_handler,
     validation_exception_handler,
 )
+from app.logging_filters import install_health_access_filter
 from app.routes import convert, health, inspect
 
 API_DESCRIPTION = """
@@ -52,6 +54,17 @@ def create_app() -> FastAPI:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s :: %(message)s",
     )
+
+    # Silence MuPDF's native stderr once for the whole process. The C runtime
+    # otherwise writes non-fatal warnings (missing Shading/XObject resources in
+    # malformed PDFs) straight to fd 2, unstructured and level-less. The flag is
+    # process-global by design in PyMuPDF; services drain the captured buffer
+    # through `app.services.mupdf_log` and re-emit it on the Python logger.
+    pymupdf.TOOLS.mupdf_display_errors(False)
+
+    # Drop the ~1/s healthcheck probes from the uvicorn access log so real
+    # requests stay visible (opt out with MD_BRIDGE_LOG_HEALTH=true).
+    install_health_access_filter()
 
     app = FastAPI(
         title="md-bridge API",

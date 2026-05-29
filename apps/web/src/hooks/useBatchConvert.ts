@@ -16,16 +16,30 @@ interface UseBatchConvertOptions<TResult> {
   convert: (file: File, signal: AbortSignal) => Promise<TResult>
   /** Optionally turn the result into an object URL the UI can preview or download. */
   toBlobUrl?: (result: TResult) => string | null
+  /**
+   * Per-item ceiling in milliseconds. When set, an item that stays in flight
+   * longer than this is aborted, marked `error` with code `timeout`, and the
+   * loop moves on. Default `undefined` keeps the previous behavior (no ceiling),
+   * so the feature is opt-in and a plain revert removes it.
+   */
+  convertTimeoutMs?: number
 }
 
 function makeId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-export function useBatchConvert<TResult>({ convert, toBlobUrl }: UseBatchConvertOptions<TResult>) {
+export function useBatchConvert<TResult>({
+  convert,
+  toBlobUrl,
+  convertTimeoutMs,
+}: UseBatchConvertOptions<TResult>) {
   const [items, setItems] = useState<BatchItem<TResult>[]>([])
   const [running, setRunning] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
+  // One controller per in-flight item, so the user can skip a single stuck
+  // item without aborting the whole batch.
+  const itemCtrlsRef = useRef<Map<string, AbortController>>(new Map())
   const blobUrlsRef = useRef<string[]>([])
 
   useEffect(() => {
@@ -66,10 +80,17 @@ export function useBatchConvert<TResult>({ convert, toBlobUrl }: UseBatchConvert
 
   const clear = useCallback(() => {
     abortRef.current?.abort()
+    itemCtrlsRef.current.clear()
     for (const url of blobUrlsRef.current) URL.revokeObjectURL(url)
     blobUrlsRef.current = []
     setItems([])
     setRunning(false)
+  }, [])
+
+  // Abort a single in-flight item without touching the rest of the batch. The
+  // loop classifies this abort as `skipped` and proceeds to the next item.
+  const skip = useCallback((id: string) => {
+    itemCtrlsRef.current.get(id)?.abort()
   }, [])
 
   // Snapshot the current queue and process each `queued` item in order. New
@@ -93,17 +114,44 @@ export function useBatchConvert<TResult>({ convert, toBlobUrl }: UseBatchConvert
 
     for (const id of targets) {
       if (ctrl.signal.aborted) break
-      patch(id, { status: 'converting' })
       const file = snapshot.find((it) => it.id === id)?.file
       if (!file) continue
+      patch(id, { status: 'converting' })
+
+      // Each item gets its own controller (for skip) and an optional timeout
+      // controller. The effective signal aborts if the batch is cleared, the
+      // item is skipped, or the ceiling is reached. We discriminate the three
+      // sources by checking each controller, never the combined signal: the
+      // combined signal is aborted for all three, so reading it would turn a
+      // skip or timeout into a full-batch break.
+      const itemCtrl = new AbortController()
+      itemCtrlsRef.current.set(id, itemCtrl)
+      const timeoutCtrl = convertTimeoutMs ? new AbortController() : null
+      const timeoutId = timeoutCtrl
+        ? setTimeout(() => timeoutCtrl.abort(), convertTimeoutMs)
+        : undefined
+      const signals = [ctrl.signal, itemCtrl.signal]
+      if (timeoutCtrl) signals.push(timeoutCtrl.signal)
+      const signal = AbortSignal.any(signals)
+
       try {
-        const result = await convert(file, ctrl.signal)
+        const result = await convert(file, signal)
         if (ctrl.signal.aborted) break
         const blobUrl = toBlobUrl ? toBlobUrl(result) : null
         if (blobUrl) blobUrlsRef.current.push(blobUrl)
         patch(id, { status: 'done', result, blobUrl, error: null })
       } catch (err) {
         if (ctrl.signal.aborted) break
+        if (timeoutCtrl?.signal.aborted) {
+          // Message stays empty: BatchPanel maps the code to a localized
+          // string so i18n lives in the component, not the hook.
+          patch(id, { status: 'error', error: { code: 'timeout', message: '' } })
+          continue
+        }
+        if (itemCtrl.signal.aborted) {
+          patch(id, { status: 'error', error: { code: 'skipped', message: '' } })
+          continue
+        }
         const message =
           err && typeof err === 'object' && 'message' in err
             ? String((err as Error).message)
@@ -113,11 +161,14 @@ export function useBatchConvert<TResult>({ convert, toBlobUrl }: UseBatchConvert
             ? String((err as { code: unknown }).code)
             : 'unknown'
         patch(id, { status: 'error', error: { code, message } })
+      } finally {
+        if (timeoutId !== undefined) clearTimeout(timeoutId)
+        itemCtrlsRef.current.delete(id)
       }
     }
 
     setRunning(false)
-  }, [convert, patch, running, toBlobUrl])
+  }, [convert, convertTimeoutMs, patch, running, toBlobUrl])
 
-  return { items, running, add, remove, clear, runAll }
+  return { items, running, add, remove, clear, skip, runAll }
 }

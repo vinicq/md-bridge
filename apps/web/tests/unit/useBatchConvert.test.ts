@@ -1,0 +1,132 @@
+import { act, renderHook } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useBatchConvert } from '../../src/hooks/useBatchConvert'
+
+interface Res {
+  md: string
+}
+
+/**
+ * Flush enough microtasks for the loop to enter the first item's `converting`
+ * state. `waitFor` is avoided because it polls on timers, which are faked here.
+ */
+async function settle() {
+  await act(async () => {
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+}
+
+function pdf(name: string): File {
+  return new File(['%PDF-1.4'], name, { type: 'application/pdf' })
+}
+
+/**
+ * Convert mock: a file marked `resolve` completes immediately; anything else
+ * hangs until its signal aborts and then rejects, the way a real `fetch`
+ * rejects with an AbortError when the request is cancelled.
+ */
+function makeConvert(behavior: Record<string, 'resolve'>) {
+  return vi.fn((file: File, signal: AbortSignal): Promise<Res> => {
+    if (behavior[file.name] === 'resolve') return Promise.resolve({ md: `# ${file.name}` })
+    return new Promise<Res>((_resolve, reject) => {
+      signal.addEventListener('abort', () =>
+        reject(new DOMException('Aborted', 'AbortError')),
+      )
+    })
+  })
+}
+
+describe('useBatchConvert', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  it('times out a stuck item and still runs the next one', async () => {
+    const convert = makeConvert({ 'ok.pdf': 'resolve' })
+    const { result } = renderHook(() =>
+      useBatchConvert<Res>({ convert, convertTimeoutMs: 1000 }),
+    )
+
+    act(() => result.current.add([pdf('stuck.pdf'), pdf('ok.pdf')]))
+
+    let run!: Promise<void>
+    act(() => {
+      run = result.current.runAll()
+    })
+
+    // The ceiling fires for the stuck item; the loop must move on to ok.pdf.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000)
+      await run
+    })
+
+    expect(result.current.items[0].status).toBe('error')
+    expect(result.current.items[0].error?.code).toBe('timeout')
+    // The regression guard: the second item is not stranded behind the first.
+    expect(result.current.items[1].status).toBe('done')
+    expect(result.current.running).toBe(false)
+  })
+
+  it('skips a single in-flight item without blocking the batch', async () => {
+    const convert = makeConvert({ 'ok.pdf': 'resolve' })
+    const { result } = renderHook(() => useBatchConvert<Res>({ convert }))
+
+    act(() => result.current.add([pdf('stuck.pdf'), pdf('ok.pdf')]))
+
+    let run!: Promise<void>
+    act(() => {
+      run = result.current.runAll()
+    })
+
+    // Let the first item enter `converting`, then skip it by id.
+    await settle()
+    expect(result.current.items[0].status).toBe('converting')
+    const stuckId = result.current.items[0].id
+    await act(async () => {
+      result.current.skip(stuckId)
+      await run
+    })
+
+    expect(result.current.items[0].status).toBe('error')
+    expect(result.current.items[0].error?.code).toBe('skipped')
+    expect(result.current.items[1].status).toBe('done')
+    expect(result.current.running).toBe(false)
+  })
+
+  it('without a ceiling, an item is never timed out', async () => {
+    const convert = makeConvert({})
+    const { result } = renderHook(() => useBatchConvert<Res>({ convert }))
+
+    act(() => result.current.add([pdf('stuck.pdf')]))
+    act(() => {
+      void result.current.runAll()
+    })
+
+    await settle()
+    expect(result.current.items[0].status).toBe('converting')
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
+    })
+
+    // Still converting after an hour: default behavior is preserved.
+    expect(result.current.items[0].status).toBe('converting')
+  })
+
+  it('clear aborts the run and empties the queue', async () => {
+    const convert = makeConvert({})
+    const { result } = renderHook(() => useBatchConvert<Res>({ convert }))
+
+    act(() => result.current.add([pdf('stuck.pdf'), pdf('ok.pdf')]))
+    act(() => {
+      void result.current.runAll()
+    })
+    await settle()
+    expect(result.current.items[0].status).toBe('converting')
+
+    act(() => result.current.clear())
+
+    expect(result.current.items).toHaveLength(0)
+    expect(result.current.running).toBe(false)
+  })
+})

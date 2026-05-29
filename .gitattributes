@@ -1,0 +1,3 @@
+# Treat PDF fixtures as binary so Git never applies end-of-line normalization,
+# which would corrupt byte offsets (xref tables) and break PyMuPDF parsing.
+*.pdf binary
