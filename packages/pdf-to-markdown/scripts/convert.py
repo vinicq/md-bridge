@@ -34,6 +34,21 @@ FLAG_MONO = 1 << 3
 FLAG_BOLD = 1 << 4
 
 BULLET_CHARS = {"▪", "•", "●", "◦", "‣", "⁃", "∙"}
+
+# CommonMark inline punctuation that changes meaning anywhere in body text:
+# a backslash, code backticks, emphasis markers, and link brackets. Escaping
+# these keeps literal prose (`5 * 3`, `my_file.txt`, `[NOTE]`) from being parsed
+# as emphasis, code, or a link downstream. Line-start-only specials (`#`, `-`,
+# `>`, ordered-list `.`) are intentionally not handled here: a span has no line
+# position, so those belong to line-level assembly, not span rendering.
+_MD_INLINE_ESCAPE = re.compile(r"([\\`*_\[\]])")
+
+
+def escape_markdown_inline(text: str) -> str:
+    """Backslash-escape inline Markdown punctuation in literal body text."""
+    return _MD_INLINE_ESCAPE.sub(r"\\\1", text)
+
+
 NUMBERED_RE = re.compile(r"^\s*(\d{1,3}|[a-zA-Z])[.)]\s+")
 HEADING_DOTS_RE = re.compile(r"\s*\.{3,}\s*\d+\s*$")  # "Title ........ 8" (TOC dot leaders)
 
@@ -282,7 +297,12 @@ def render_span(span: Span) -> str:
     core = out[leading: len(out) - trailing] if trailing else out[leading:]
     if core:
         if mono and "`" not in core:
+            # Code spans render their content literally, so do not escape inside
+            # the backticks. Every other case is literal prose that must be
+            # escaped before we add our own emphasis/link markers.
             core = f"`{core}`"
+        else:
+            core = escape_markdown_inline(core)
         if sup:
             core = f"<sup>{core}</sup>"
         if bold and italic:
