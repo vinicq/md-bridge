@@ -84,6 +84,19 @@ def test_merge_continued_paragraphs_repairs_hyphenation(mod):
     assert out == "selfconfident author"
 
 
+def test_merge_does_not_fuse_a_page_footer_into_prose(mod):
+    # #141: small-font footers now render as plain text. A running footer like
+    # "v4.0 GA Page 3 of 77 2025/05/02" starts lowercase and would otherwise be
+    # fused onto preceding prose that lacks terminal punctuation. The page-
+    # furniture guard keeps it as its own block.
+    md = "a paragraph that wraps without a period\n\nv4.0 GA Page 3 of 77 2025/05/02"
+    out = mod.merge_continued_paragraphs(md)
+    assert out == md  # untouched: the footer stays on its own line
+    assert mod.is_block_paragraph("v4.0 GA Page 3 of 77 2025/05/02") is False
+    assert mod.looks_like_page_furniture("Page 12 of 40") is True
+    assert mod.looks_like_page_furniture("a normal sentence about a page") is False
+
+
 def test_normalize_headings_from_toc_relevels(mod):
     md = "### 1 Motivation\n\nbody text"
     toc = [(1, "1 Motivation", 1)]

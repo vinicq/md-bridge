@@ -73,7 +73,9 @@ ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 [**2**](#page-24) [**The Tasks of the Test Analyst in Risk-Based Testing – 90 minutes**](#page-24) **24** Introduction to the Tasks of the Test Analyst in Risk-Based Testing . . . . . . . . . . . . . . . . . . 25 [2.1](#page-25) Risk Analysis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25 [2.2](#page-26) Risk Control . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26
 
-[**3**](#page-28) [**Test Analysis and Test Design – 615 minutes**](#page-28) **28** Introduction to Test Analysis and Test Design . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 [3.1](#page-29) [Data-Based Test Techniques](#page-29) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 [3.1.1](#page-29) Domain Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 [3.1.2](#page-30) Combinatorial Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 30 [3.1.3](#page-31) [Random Testing](#page-31) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31 v4.0 GA Page 4 of 77 2025/05/02
+[**3**](#page-28) [**Test Analysis and Test Design – 615 minutes**](#page-28) **28** Introduction to Test Analysis and Test Design . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 [3.1](#page-29) [Data-Based Test Techniques](#page-29) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 [3.1.1](#page-29) Domain Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 [3.1.2](#page-30) Combinatorial Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 30 [3.1.3](#page-31) [Random Testing](#page-31) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31
+
+v4.0 GA Page 4 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -101,7 +103,9 @@ ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 **13 Appendix G – Trademarks** **74**
 
-**14 Index** **75** v4.0 GA Page 5 of 77 2025/05/02
+**14 Index** **75**
+
+v4.0 GA Page 5 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -125,7 +129,9 @@ Subsequently, Tal Pe’er, Stuart Reid, Marc-Florian Wendland, and Matthias Hamb
 
 Edition 2019 (v3.0): Laura Albert, Markus Beck, Henriett Braunné Bokor, Francisca Cano Ortiz, Guo Chaonian, Wim Decoutere, Milena Donato, Klaudia Dussa-Zieger, Melinda Eckrich-Brajer, Péter Földházi Jr, David Frei, Chen Geng, Matthias Hamburg, Zsolt Hargitai, Zhai Hongbao, Tobias Horn, Ágota Horváth, Beata Karpinska, Attila Kovács, József Kreisz, Dietrich Leimsner, Ren Liang, Claire Lohr, Ramit Manohar Kaul, Rik Marselis, Marton Matyas, Don Mills, Blair Mo, Gary Mogyorodi, Ingvar Nordström, Tal Peer, Pálma Polyák, Meile Posthuma, Lloyd Roden, Adam Roman, Abhishek Sharma, Péter Sótér, Lucjan Stapp, Andrea Szabó, Jan te Kock, Benjamin Timmermans, Chris Van Bael, Erik van Veenendaal, Jan Versmissen, Carsten Weise, Robert Werkhoven, Paul Weymouth.
 
-Edition 2012 (v2.0): Graham Bath, Arne Becher, Rex Black, Piet de Roo, Frans Dijkman, Mats Grindal, Kobi Halperin, Bernard Homès, Maria Jönsson, Junfei Ma, Eli Margolin, Rik Marselis, Don Mills, Gary Mogyorodi, Stefan Mohacsi, Reto Mueller, Thomas Mueller, Ingvar Nordstrom, Tal Pe’er, Raluca Madalina v4.0 GA Page 6 of 77 2025/05/02
+Edition 2012 (v2.0): Graham Bath, Arne Becher, Rex Black, Piet de Roo, Frans Dijkman, Mats Grindal, Kobi Halperin, Bernard Homès, Maria Jönsson, Junfei Ma, Eli Margolin, Rik Marselis, Don Mills, Gary Mogyorodi, Stefan Mohacsi, Reto Mueller, Thomas Mueller, Ingvar Nordstrom, Tal Pe’er, Raluca Madalina
+
+v4.0 GA Page 6 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -351,7 +357,9 @@ TA-1.3.5 (K2) Give examples of test data requirements
 
 TA-1.3.6 (K3) Use keyword-driven testing to develop test scripts
 
-TA-1.3.7 (K2) Summarize the types of tools to manage the testware v4.0 GA Page 13 of 77 2025/05/02
+TA-1.3.7 (K2) Summarize the types of tools to manage the testware
+
+v4.0 GA Page 13 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -445,7 +453,9 @@ The level of detail and the associated complexity of work carried out during tes
 
 Test execution is carried out according to the test execution schedule. The typical tasks performed by the TA are executing tests, comparing actual results to expected results, analyzing anomalies, reporting defects, and logging the test results.
 
-The TA executes tests manually. This includes exploratory testing, executing test procedures, regression testing, and confirmation testing. For exploratory testing, the TA can use session-based testing with v4.0 GA Page 16 of 77 2025/05/02
+The TA executes tests manually. This includes exploratory testing, executing test procedures, regression testing, and confirmation testing. For exploratory testing, the TA can use session-based testing with
+
+v4.0 GA Page 16 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -715,7 +725,9 @@ impact analysis, product risk, regression testing, risk analysis, risk assessmen
 
 TA-2.1.1 (K2) Summarize the test analyst’s contribution to product risk analysis
 
-**2.2 Risk Control** TA-2.2.1 (K4) Analyze the impact of changes to determine the scope of regression testing v4.0 GA Page 24 of 77 2025/05/02
+**2.2 Risk Control** TA-2.2.1 (K4) Analyze the impact of changes to determine the scope of regression testing
+
+v4.0 GA Page 24 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -847,7 +859,9 @@ TA-3.4.3 (K2) Give examples of the benefits and limitations of crowd testing
 
 TA-3.5.1 (K4) Select appropriate test techniques to mitigate product risks for a given situation
 
-TA-3.5.2 (K2) Explain the benefits and risks of automating the test design v4.0 GA Page 28 of 77 2025/05/02
+TA-3.5.2 (K2) Explain the benefits and risks of automating the test design
+
+v4.0 GA Page 28 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -961,7 +975,9 @@ Random testing can be guided or unguided. In unguided random testing, the probab
 
 Random testing lacks recognized coverage criteria. Therefore, the exit criteria can only rely on the number of tests executed, testing time, or similar measures of completion.
 
-Random testing is especially valuable when domain knowledge is limited or there is a need for a large volume of test data. It is cost-effective and provides, in probabilistic terms, insights into test object reliability. Random testing helps to avoid biases such as overlooking defects in manual testing due to misplaced trust in some code or functionality. However, random testing also has several challenges and limitations, including neglecting data semantics, potentially missing defects related to data meaning, overlooking certain defects, generating redundant tests, dependency on an automated test oracle, and v4.0 GA Page 31 of 77 2025/05/02
+Random testing is especially valuable when domain knowledge is limited or there is a need for a large volume of test data. It is cost-effective and provides, in probabilistic terms, insights into test object reliability. Random testing helps to avoid biases such as overlooking defects in manual testing due to misplaced trust in some code or functionality. However, random testing also has several challenges and limitations, including neglecting data semantics, potentially missing defects related to data meaning, overlooking certain defects, generating redundant tests, dependency on an automated test oracle, and
+
+v4.0 GA Page 31 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -1025,7 +1041,9 @@ Further state transition coverage criteria are discussed in (Rechtberger et al.,
 
 3.2.3 Scenario-Based Testing
 
-Scenario-based testing evaluates the test item’s behavior in realistic scenarios. Techniques such as user research, user stories, personas, and user journey maps (see [*Section 11*](#page-71)) may help to identify valuable scenarios. In scenario-based testing, the TA creates a scenario model based on sequences of actions that constitute workflows through the test item (cf. [*ISO/IEC/IEEE 29119-4*](#page-55), 2021). This syllabus discusses the following two models: activity diagrams and use cases. Other models include flowcharts, business process model and notation diagrams (*OMG® BPMN*, 2013), sequence diagrams, or collaboration v4.0 GA Page 33 of 77 2025/05/02
+Scenario-based testing evaluates the test item’s behavior in realistic scenarios. Techniques such as user research, user stories, personas, and user journey maps (see [*Section 11*](#page-71)) may help to identify valuable scenarios. In scenario-based testing, the TA creates a scenario model based on sequences of actions that constitute workflows through the test item (cf. [*ISO/IEC/IEEE 29119-4*](#page-55), 2021). This syllabus discusses the following two models: activity diagrams and use cases. Other models include flowcharts, business process model and notation diagrams (*OMG® BPMN*, 2013), sequence diagrams, or collaboration
+
+v4.0 GA Page 33 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -1085,7 +1103,9 @@ In addition, it is advisable that rules do not overlap (i.e., for any combinatio
 
 The *checksum procedure* uses the number of rules in a minimized decision table to indicate overlaps and gaps. For each rule in the minimized table, the number of rules it represents in the original decision table is calculated. A rule without a ’–’ in the conditions (i.e., with individual values for all conditions) scores 1. Each ’–’ value multiplies the rule’s score by the number of individual values for the respective condition. The sum of the rule scores is the checksum of the minimized decision table. If the checksum is less than the checksum of the original decision table, the minimized decision table is incomplete. If the checksum is higher, some rules overlap, or additional rules exist (e.g., infeasible combinations of conditions). If minimization was performed correctly, the checksums are equal. Equal checksums alone do not guarantee that the minimized decision table is equivalent to the original one.
 
-**Decision table coverage** is measured by dividing the number of columns exercised by the total number of feasible columns in the decision table. When implementing test cases resulting from a decision table rule, the TA must implement the conditions and actions. The TA has to decide how to implement the ‘–’ condition values for a given rule because ‘–’ represents at least two values. However, if the risk level v4.0 GA Page 35 of 77 2025/05/02
+**Decision table coverage** is measured by dividing the number of columns exercised by the total number of feasible columns in the decision table. When implementing test cases resulting from a decision table rule, the TA must implement the conditions and actions. The TA has to decide how to implement the ‘–’ condition values for a given rule because ‘–’ represents at least two values. However, if the risk level
+
+v4.0 GA Page 35 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -1113,7 +1133,9 @@ For more details, see also the standard ([*ISO/IEC/IEEE 29119-4*](#page-55), 202
 
 3.4 Experience-Based Testing
 
-A TA employs experience-based test approaches and test techniques, leveraging their expertise and past encounters to guide testing. This chapter details the TA’s use of documentation in session-based testing v4.0 GA Page 36 of 77 2025/05/02
+A TA employs experience-based test approaches and test techniques, leveraging their expertise and past encounters to guide testing. This chapter details the TA’s use of documentation in session-based testing
+
+v4.0 GA Page 36 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -1343,7 +1365,9 @@ TA-4.3.1 (K2) Explain how the test analyst contributes to adaptability and insta
 
 ## 4.4 Compatibility Testing
 
-TA-4.4.1 (K2) Explain how the test analyst contributes to interoperability testing v4.0 GA Page 43 of 77 2025/05/02
+TA-4.4.1 (K2) Explain how the test analyst contributes to interoperability testing
+
+v4.0 GA Page 43 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -1509,7 +1533,9 @@ TA-5.2.2 (K3) Apply a review technique to a test basis to find defects
 
 TA-5.3.1 (K4) Analyze test results to identify potential improvements to defect detection
 
-TA-5.3.2 (K2) Explain how defect classification supports root cause analysis v4.0 GA Page 48 of 77 2025/05/02
+TA-5.3.2 (K2) Explain how defect classification supports root cause analysis
+
+v4.0 GA Page 48 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -1613,7 +1639,9 @@ Below, this syllabus discusses five review techniques commonly used by the TA.
 
 **Checklist-based reviewing** involves evaluating the test basis against a predefined checklist. Checklists remind reviewers to check specific points and can de-personalize the review. Checklists can be generic or specific to quality characteristics, test objectives, or test basis type. The TA tailors the checklist to the test basis type, risk level, or test condition. This ensures that the review will focus on the most relevant aspects of the test basis. Checklists should be regularly updated with previously missed defects. Keeping checklists current prevents overlooking newly identified anomalies. Checklists are not all-inclusive. Therefore, the TA is not limited to checking the listed items. This maximizes defect detection and allows the TA to capture anomalies that checklists may not explicitly cover.
 
-**Scenario-based reviewing** involves simulating a process or activity to identify anomalies and refine the v4.0 GA Page 51 of 77 2025/05/02
+**Scenario-based reviewing** involves simulating a process or activity to identify anomalies and refine the
+
+v4.0 GA Page 51 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -1785,7 +1813,9 @@ Articles
 
 ALYAHYA, Sultan, 2020. Crowdsourced Software Testing: A Systematic Literature Review. *Information and* *Software Technology*. Vol. 127, p. 106363. Available from doi: 10.1016/j.infsof.2020.106363.
 
-ANTONIOL, Giuliano; BRIAND, Lionel; DI PENTA, Massimiliano; LABICHE, Yvan, 2002. A case study using the round-trip strategy for state-based class testing. *Proceedings 13th International Symposium* v4.0 GA Page 56 of 77 2025/05/02
+ANTONIOL, Giuliano; BRIAND, Lionel; DI PENTA, Massimiliano; LABICHE, Yvan, 2002. A case study using the round-trip strategy for state-based class testing. *Proceedings 13th International Symposium*
+
+v4.0 GA Page 56 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -1873,7 +1903,9 @@ WAMMI, 1999. *Website Analysis and Measurement Inventory: Professional service f
 
 WCAG, 2023. *Web Content Accessibility Guidelines 2.2: W3C Recommendation* \[online\]. \[visited on 2024- 09-15\]. Available from: www.w3.org/TR/WCAG22/.
 
-*The previous references point to information available on the Internet and elsewhere. Even though those* *references were checked at the time of publication of this syllabus, the ISTQB® cannot be held responsible* *if the references are unavailable anymore.* v4.0 GA Page 59 of 77 2025/05/02
+*The previous references point to information available on the Internet and elsewhere. Even though those* *references were checked at the time of publication of this syllabus, the ISTQB® cannot be held responsible* *if the references are unavailable anymore.*
+
+v4.0 GA Page 59 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -1939,7 +1971,9 @@ The candidate can separate information related to a procedure or technique into 
 
 (For the cognitive levels of learning objectives)
 
-Anderson, L. W. and Krathwohl, D. R. (eds) (2001) A Taxonomy for Learning, Teaching, and Assessing: A Revision of Bloom’s Taxonomy of Educational Objectives, Allyn & Bacon v4.0 GA Page 61 of 77 2025/05/02
+Anderson, L. W. and Krathwohl, D. R. (eds) (2001) A Taxonomy for Learning, Teaching, and Assessing: A Revision of Bloom’s Taxonomy of Educational Objectives, Allyn & Bacon
+
+v4.0 GA Page 61 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
@@ -2302,18 +2336,24 @@ ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 14 Index
 
-defect arrival pattern, 53 defect classification, 54 defect cluster, 52 defect detection effectiveness, 52 defect detection percentage, 52 defect prevention, 48, 49 defect removal efficiency, 49 defect taxonomy, 54 do-confirm checklist, 38 domain, 29 domain testing, 28, 29 dry run, 52 end-to-end testing, 34 equivalence partition, 28 equivalence partitioning, 29 exit criteria, 31, 36 experience-based testing, 28, 38 exploratory testing, 37 five whys technique, 53, 71 flexibility, 43, 46 flexibility testing, 46 follow-up test case, 36 full decision table, 35 functional appropriateness, 43, 44 functional completeness, 43, 44 functional correctness, 43, 44 functional suitability, 43, 44 functional testing, 43, 44 fuzz testing, 32 guard conditions, 33 guided random testing, 31 high-level test case, 13, 17 history-based testing, 26 human oracle, 20 impact analysis, 24, 26 in point, 30 incremental development model, 14 individual review, 51 installability, 43, 46 interaction capability, 43, 45 interoperability, 43, 47 interoperability testing, 47 iterative development model, 14 keyword, 13 keyword-driven testing, 13, 21 accessibility, 45 accessibility testing, 45 activity diagram, 33, 51 ad hoc reviewing, 48, 51 adaptability, 43, 46 adaptability testing, 46 agile software development, 14, 26, 44, 50 anonymized data, 20 automated test script, 17 base choice coverage, 31 behavior-based test technique, 28, 32 border, 29 boundary value analysis, 29 branch coverage, 53 cause-effect diagram, 53 chaos engineering, 32 checklist, 38, 51 checklist item, 38 checklist-based reviewing, 48, 51 checklist-based testing, 28, 38 checksum procedure, 35 classification tree, 31 closed border, 29 coexistence, 47 combinatorial testing, 28, 30 compatibility, 43, 47 completeness testing, 32 configuration items, 26 configuration management, 26 consistency testing, 32 cost of quality, 50 [coverage, 15, 26, 40, 51, 53](#page-26) [coverage criteria, 20, 29, 31, 33, 34, 41](#page-20) [coverage item, 18, 29, 31, 32, 34](#page-18) coverage-based testing, 26 crowd testing, 28, 39 crud, 32 crud coverage, 32 crud matrix, 32, 71 crud testing, 28, 32 data semantics, 31, 71 data-based test technique, 28, 29 decision table, 35, 51 decision table coverage, 35 decision table testing, 28, 35 v4.0 GA Page 75 of 77 2025/05/02
+defect arrival pattern, 53 defect classification, 54 defect cluster, 52 defect detection effectiveness, 52 defect detection percentage, 52 defect prevention, 48, 49 defect removal efficiency, 49 defect taxonomy, 54 do-confirm checklist, 38 domain, 29 domain testing, 28, 29 dry run, 52 end-to-end testing, 34 equivalence partition, 28 equivalence partitioning, 29 exit criteria, 31, 36 experience-based testing, 28, 38 exploratory testing, 37 five whys technique, 53, 71 flexibility, 43, 46 flexibility testing, 46 follow-up test case, 36 full decision table, 35 functional appropriateness, 43, 44 functional completeness, 43, 44 functional correctness, 43, 44 functional suitability, 43, 44 functional testing, 43, 44 fuzz testing, 32 guard conditions, 33 guided random testing, 31 high-level test case, 13, 17 history-based testing, 26 human oracle, 20 impact analysis, 24, 26 in point, 30 incremental development model, 14 individual review, 51 installability, 43, 46 interaction capability, 43, 45 interoperability, 43, 47 interoperability testing, 47 iterative development model, 14 keyword, 13 keyword-driven testing, 13, 21 accessibility, 45 accessibility testing, 45 activity diagram, 33, 51 ad hoc reviewing, 48, 51 adaptability, 43, 46 adaptability testing, 46 agile software development, 14, 26, 44, 50 anonymized data, 20 automated test script, 17 base choice coverage, 31 behavior-based test technique, 28, 32 border, 29 boundary value analysis, 29 branch coverage, 53 cause-effect diagram, 53 chaos engineering, 32 checklist, 38, 51 checklist item, 38 checklist-based reviewing, 48, 51 checklist-based testing, 28, 38 checksum procedure, 35 classification tree, 31 closed border, 29 coexistence, 47 combinatorial testing, 28, 30 compatibility, 43, 47 completeness testing, 32 configuration items, 26 configuration management, 26 consistency testing, 32 cost of quality, 50 [coverage, 15, 26, 40, 51, 53](#page-26) [coverage criteria, 20, 29, 31, 33, 34, 41](#page-20) [coverage item, 18, 29, 31, 32, 34](#page-18) coverage-based testing, 26 crowd testing, 28, 39 crud, 32 crud coverage, 32 crud matrix, 32, 71 crud testing, 28, 32 data semantics, 31, 71 data-based test technique, 28, 29 decision table, 35, 51 decision table coverage, 35 decision table testing, 28, 35
+
+v4.0 GA Page 75 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
 ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
-risk-based test selection, 26 risk-based testing, 24, 25 role-based reviewing, 48, 52 root cause analysis, 48, 53 round trip, 33 round-trip coverage, 33 rule-based test technique, 28, 34 scalability, 46 scenario model, 33 scenario-based coverage, 34 scenario-based reviewing, 48, 51 scenario-based testing, 28, 33 sequential development model, 14 session sheet, 38 session-based testing, 28, 37 simplified domain coverage, 30 software development lifecycle, 13, 14 source test case, 36 specification, 50 [stakeholder, 15, 16, 18, 19, 21, 25, 50](#page-16) state, 33 state transition, 33 state transition diagram, 51 state transition testing, 28, 33 state-based model, 33 stateful, 33 statement coverage, 53 structural coverage, 53 survey, 45 synthetic data, 20 test analysis, 13, 15, 29 test analyst, 13, 14 [test basis, 15, 19, 49–51](#page-15) [test case, 13, 15, 18](#page-13) test charter, 28, 37 [test condition, 13, 15, 29, 50](#page-13) [test data, 13, 20, 31](#page-13) [test design, 13, 15, 29, 41](#page-13) test environment, 13, 16, 19 test execution, 13, 16 test gap, 53 test implementation, 13, 16 test log, 38 test model, 41 test objective, 40 test oracle, 13, 19, 31, 40, 44 test oracle problem, 19, 36 test procedure, 16, 36 low-level test case, 13, 17 mbt model, 51 mbt tool, 51 metamorphic relation, 28, 36 metamorphic testing, 28, 36 minimized decision table, 35 model-based testing, 20, 33, 41, 48, 51 modeling, 50 n-switch, 33 n-switch coverage, 33 neuron coverage, 53 off point, 29 on point, 29 open border, 29 operational profile, 27, 31 orthogonal defect classification, 54 out point, 30 pairwise coverage, 31 parameter-value pair, 30 pareto analysis, 53, 71 persona, 33 perspective-based reading, 48, 52 phase containment, 50 phase containment effectiveness, 49 portability testing, 46 product risk, 24, 40 production data, 20 property-based testing, 20 pseudo-oracle, 20 pseudonymized data, 20 random testing, 28, 31 read-do checklist, 38 recurrence of defects, 52 regression test selection, 26 regression testing, 24, 26 reliable domain coverage, 30 replaceability, 46 requirement traceability matrix, 26 retrospective, 49 review technique, 48, 51 reviewer, 51 risk analysis, 24, 25 risk assessment, 24, 25 risk control, 24, 25 risk identification, 24, 25 risk level, 25 risk mitigation, 24, 26, 40 risk monitoring, 24, 26 v4.0 GA Page 76 of 77 2025/05/02
+risk-based test selection, 26 risk-based testing, 24, 25 role-based reviewing, 48, 52 root cause analysis, 48, 53 round trip, 33 round-trip coverage, 33 rule-based test technique, 28, 34 scalability, 46 scenario model, 33 scenario-based coverage, 34 scenario-based reviewing, 48, 51 scenario-based testing, 28, 33 sequential development model, 14 session sheet, 38 session-based testing, 28, 37 simplified domain coverage, 30 software development lifecycle, 13, 14 source test case, 36 specification, 50 [stakeholder, 15, 16, 18, 19, 21, 25, 50](#page-16) state, 33 state transition, 33 state transition diagram, 51 state transition testing, 28, 33 state-based model, 33 stateful, 33 statement coverage, 53 structural coverage, 53 survey, 45 synthetic data, 20 test analysis, 13, 15, 29 test analyst, 13, 14 [test basis, 15, 19, 49–51](#page-15) [test case, 13, 15, 18](#page-13) test charter, 28, 37 [test condition, 13, 15, 29, 50](#page-13) [test data, 13, 20, 31](#page-13) [test design, 13, 15, 29, 41](#page-13) test environment, 13, 16, 19 test execution, 13, 16 test gap, 53 test implementation, 13, 16 test log, 38 test model, 41 test objective, 40 test oracle, 13, 19, 31, 40, 44 test oracle problem, 19, 36 test procedure, 16, 36 low-level test case, 13, 17 mbt model, 51 mbt tool, 51 metamorphic relation, 28, 36 metamorphic testing, 28, 36 minimized decision table, 35 model-based testing, 20, 33, 41, 48, 51 modeling, 50 n-switch, 33 n-switch coverage, 33 neuron coverage, 53 off point, 29 on point, 29 open border, 29 operational profile, 27, 31 orthogonal defect classification, 54 out point, 30 pairwise coverage, 31 parameter-value pair, 30 pareto analysis, 53, 71 persona, 33 perspective-based reading, 48, 52 phase containment, 50 phase containment effectiveness, 49 portability testing, 46 product risk, 24, 40 production data, 20 property-based testing, 20 pseudo-oracle, 20 pseudonymized data, 20 random testing, 28, 31 read-do checklist, 38 recurrence of defects, 52 regression test selection, 26 regression testing, 24, 26 reliable domain coverage, 30 replaceability, 46 requirement traceability matrix, 26 retrospective, 49 review technique, 48, 51 reviewer, 51 risk analysis, 24, 25 risk assessment, 24, 25 risk control, 24, 25 risk identification, 24, 25 risk level, 25 risk mitigation, 24, 26, 40 risk monitoring, 24, 26
+
+v4.0 GA Page 76 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
 
 ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
-test result, 48 [test script, 13, 16, 21](#page-13) test session, 37 test technique, 40 [testware, 13, 17, 22, 41](#page-13) [traceability, 15, 21, 22, 42, 44, 50](#page-21) traceability matrix, 22 unguided random testing, 31 usability, 43, 45 usability evaluation, 45 usability review, 45 usability test session, 45 usability testing, 45 use case, 33 user experience, 43, 45 user journey map, 33, 37, 71 user questionnaire, 45 user research, 33, 71 validation, 31 verification, 31 v4.0 GA Page 77 of 77 2025/05/02
+test result, 48 [test script, 13, 16, 21](#page-13) test session, 37 test technique, 40 [testware, 13, 17, 22, 41](#page-13) [traceability, 15, 21, 22, 42, 44, 50](#page-21) traceability matrix, 22 unguided random testing, 31 usability, 43, 45 usability evaluation, 45 usability review, 45 usability test session, 45 usability testing, 45 use case, 33 user experience, 43, 45 user journey map, 33, 37, 71 user questionnaire, 45 user research, 33, 71 validation, 31 verification, 31
+
+v4.0 GA Page 77 of 77 2025/05/02
 
 © International Software Testing Qualifications Board
