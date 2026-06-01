@@ -139,6 +139,13 @@ If a section is empty in a release, the section is omitted entirely.
   split-on-colon loop that flattened or dropped anything that was not a
   flat `key: value`; it now uses PyYAML, with the block hardened against
   a billion-laughs / deep-nesting denial of service. (#150)
+- **A full-width rule is no longer misread as strikethrough.** PyMuPDF's
+  strikeout flag fires for any horizontal line or thin rule crossing text
+  at mid-height, including a page rule or section divider. The converter
+  now cross-checks the drawn geometry: a stroke that overruns the span
+  toward the margins is a rule, not a strike, so the spurious `~~` is
+  dropped. A genuine strike (a line spanning the struck text) still
+  converts. (#202)
 
 ## [0.2.3] — 2026-05-20
 

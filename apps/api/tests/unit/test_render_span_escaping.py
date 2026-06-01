@@ -82,6 +82,44 @@ def test_render_line_does_not_merge_struck_with_unstruck():
     assert out == "~~deleted~~ kept"
 
 
+# --- #202: a full-width rule crossing text must not be read as a strike ---
+
+
+def test_strikethrough_confirmed_local_stroke_is_a_real_strike():
+    # A stroke spanning roughly the struck word, within its x-range.
+    span_bbox = (50.0, 70.0, 93.0, 85.0)
+    strokes = [(76.0, 50.0, 95.0)]
+    assert mod.strikethrough_confirmed(span_bbox, strokes) is True
+
+
+def test_strikethrough_confirmed_rejects_overrunning_rule():
+    # A full-width page rule overruns the span toward both margins.
+    span_bbox = (50.0, 150.0, 207.0, 168.0)
+    strokes = [(157.0, 20.0, 400.0)]
+    assert mod.strikethrough_confirmed(span_bbox, strokes) is False
+
+
+def test_strikethrough_confirmed_rejects_single_margin_overrun():
+    # A stroke that overruns only one side (starts at the span but runs far
+    # past the right margin) is still a rule, not a strike.
+    span_bbox = (50.0, 150.0, 120.0, 168.0)
+    strokes = [(157.0, 50.0, 400.0)]
+    assert mod.strikethrough_confirmed(span_bbox, strokes) is False
+
+
+def test_strikethrough_confirmed_trusts_flag_when_no_geometry():
+    # No drawing evidence (e.g. get_drawings returned nothing): keep the flag.
+    span_bbox = (50.0, 70.0, 93.0, 85.0)
+    assert mod.strikethrough_confirmed(span_bbox, []) is True
+
+
+def test_strikethrough_confirmed_ignores_strokes_off_the_band():
+    # A stroke well above/below the span's vertical band does not count.
+    span_bbox = (50.0, 70.0, 93.0, 85.0)
+    strokes = [(40.0, 50.0, 95.0)]
+    assert mod.strikethrough_confirmed(span_bbox, strokes) is True
+
+
 def test_render_span_mono_with_backtick_falls_back_to_escaped_prose():
     # A single-backtick code span cannot contain a literal backtick, so a mono
     # span whose text already has one degrades to escaped prose instead of

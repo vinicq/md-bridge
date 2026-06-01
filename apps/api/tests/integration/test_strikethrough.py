@@ -41,3 +41,69 @@ def test_strikethrough_round_trips_to_gfm_tildes():
     pdf = _pdf_with_strikethrough()
     md = convert_pdf_bytes(pdf, filename="strike.pdf").md
     assert "~~" in md, f"expected GFM strikethrough in output, got: {md!r}"
+
+
+def _pdf_with_full_width_rule_over_text() -> bytes:
+    doc = pymupdf.open()
+    page = doc.new_page(width=420, height=300)
+    # An intro line of prose so the page carries enough extractable text to skip
+    # the needs_ocr gate; the conversion path (not OCR) is what we exercise.
+    page.insert_text((50, 110), "Some introductory prose gives this page real text.", fontsize=12)
+    page.insert_text((50, 160), "a section divider follows", fontsize=15)
+    # A full-width rule that overlaps the second line at mid-height. mupdf sets
+    # the strikeout char_flag for it, but it is page furniture, not a strike.
+    page.draw_line((20, 155), (400, 155), width=1)
+    try:
+        return doc.tobytes()
+    finally:
+        doc.close()
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason=(
+        "The vendored converter holds the PyMuPDF handle open, which locks the "
+        "per-request tempdir on Windows during cleanup. POSIX unlinks open files, "
+        "so CI exercises this; the geometry logic is covered cross-platform by "
+        "tests/unit/test_render_span_escaping.py."
+    ),
+)
+def test_full_width_rule_is_not_read_as_strikethrough():
+    # #202: a page rule crossing text overruns the span toward the margins, so
+    # the geometry cross-check clears the strikeout flag — no spurious ~~.
+    pdf = _pdf_with_full_width_rule_over_text()
+    md = convert_pdf_bytes(pdf, filename="rule.pdf").md
+    assert "~~" not in md, f"a full-width rule was misread as strikethrough: {md!r}"
+    assert "section divider follows" in md
+
+
+def _pdf_with_thin_rect_rule_over_text() -> bytes:
+    doc = pymupdf.open()
+    page = doc.new_page(width=420, height=300)
+    # Intro prose so the page skips the needs_ocr gate (see the line-rule case).
+    page.insert_text((50, 110), "Some introductory prose gives this page real text.", fontsize=12)
+    page.insert_text((50, 160), "divider as a thin rectangle", fontsize=15)
+    # Some PDFs draw a rule as a thin filled rectangle rather than a line.
+    page.draw_rect(pymupdf.Rect(20, 154, 400, 157), fill=(0, 0, 0), color=(0, 0, 0))
+    try:
+        return doc.tobytes()
+    finally:
+        doc.close()
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason=(
+        "The vendored converter holds the PyMuPDF handle open, which locks the "
+        "per-request tempdir on Windows during cleanup. POSIX unlinks open files, "
+        "so CI exercises this; the geometry logic is covered cross-platform by "
+        "tests/unit/test_render_span_escaping.py."
+    ),
+)
+def test_thin_rect_rule_is_not_read_as_strikethrough():
+    # #202: a rule drawn as a thin filled rectangle (not a line) is also caught
+    # by the geometry cross-check and does not produce a spurious strike.
+    pdf = _pdf_with_thin_rect_rule_over_text()
+    md = convert_pdf_bytes(pdf, filename="rect-rule.pdf").md
+    assert "~~" not in md, f"a thin-rect rule was misread as strikethrough: {md!r}"
+    assert "thin rectangle" in md
