@@ -76,6 +76,14 @@ MONO_FONT_HINTS = ("Mono", "Courier", "Consolas", "Menlo", "Inconsolata", "Hack"
 MONO_RATIO_THRESHOLD = 0.7
 SQL_RE = re.compile(r"\bSELECT\b.*?\bFROM\b", re.IGNORECASE | re.DOTALL)
 
+# A paragraph that continues a list item is indented past the item's marker
+# edge. CommonMark keeps such a paragraph inside the <li> when it aligns with
+# the item content and sits on a blank line (spec 5.2). We treat a paragraph
+# block indented at least this many points past the open item's marker x0 as a
+# continuation of that item (#167). 6 pt sits below the smallest real content
+# offset (a bullet glyph plus its trailing space) yet above bbox jitter.
+LIST_CONTINUATION_MIN_INDENT = 6.0
+
 
 @dataclass
 class Span:
@@ -560,8 +568,6 @@ def convert_page(
     pdf_stem: str = "",
     skip_header_footer: bool = True,
 ) -> str:
-    out_parts: list[str] = []
-
     table_finder = page.find_tables()
     tables = list(table_finder)
     table_bboxes = [tuple(t.bbox) for t in tables]
@@ -605,27 +611,61 @@ def convert_page(
 
     items.sort(key=lambda it: it[0])
 
-    # Consecutive numbered blocks are buffered so they emit as one contiguous
-    # list (items joined by a single newline). The outer "\n\n".join then only
-    # puts a blank line around the whole list, not between items, which is what
-    # CommonMark needs to keep an ordered list from collapsing into one
-    # single-item list per line (#144).
+    typed_items: list[tuple[str, object]] = []
+    for _, kind, payload in items:
+        if kind == "table":
+            typed_items.append(("table", rendered_tables[tuple(payload.bbox)]))
+        elif kind == "image":
+            typed_items.append(("image", payload))
+        else:
+            typed_items.append(("block", payload))
+
+    return assemble_markdown(typed_items, profile)
+
+
+def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> str:
+    """Join page items (tables, images, text blocks) into Markdown.
+
+    Pure assembly over items already in reading order, where each item is
+    ("table", md), ("image", md), or ("block", Block). No page I/O, so the
+    list / heading / paragraph state machine is unit-testable cross-platform.
+
+    Tracks the open list item: a paragraph block indented past that item's
+    marker edge is emitted as a continuation paragraph inside the item, not as
+    a sibling block (#167). Consecutive numbered blocks are buffered into one
+    contiguous list so an ordered list does not collapse into one single-item
+    list per line (#144).
+    """
+    out_parts: list[str] = []
     numbered_run: list[str] = []
+    # x0 of the open list item's marker, or None when not inside a list.
+    list_marker_x0: float | None = None
+    # Leading-space indent that nests a continuation under the item. The
+    # shipped renderer (python-markdown) is not CommonMark: it needs a full
+    # 4-space indent to bind a continuation paragraph to the item, not the
+    # 2 spaces that align with a `- ` marker. We honor the renderer.
+    list_cont_indent = ""
+    # When a numbered item gained a continuation, the next item must sit on a
+    # blank line or the renderer folds it into the continuation paragraph.
+    numbered_loose_pending = False
 
     def flush_numbered() -> None:
+        nonlocal numbered_loose_pending
         if numbered_run:
             out_parts.append("\n".join(numbered_run))
             numbered_run.clear()
+        numbered_loose_pending = False
 
-    for _, kind, payload in items:
+    for kind, payload in items:
         if kind == "table":
             flush_numbered()
-            md = rendered_tables[tuple(payload.bbox)]
-            if md:
-                out_parts.append(md)
+            list_marker_x0 = None
+            if payload:
+                out_parts.append(payload)
             continue
         if kind == "image":
             flush_numbered()
+            list_marker_x0 = None
             out_parts.append(payload)
             continue
 
@@ -634,6 +674,7 @@ def convert_page(
 
         if cls == "code":
             flush_numbered()
+            list_marker_x0 = None
             code_lines = [line.text.rstrip() for line in block.lines if line.text.strip()]
             if not code_lines:
                 continue
@@ -648,11 +689,30 @@ def convert_page(
 
         text_clean = HEADING_DOTS_RE.sub("", text_rendered)
 
+        # A paragraph indented past the open item's marker continues that item.
+        # Emit it aligned to the item content; a blank line (the run's internal
+        # blank, or the outer "\n\n" join for bullets) makes the item loose so
+        # the renderer nests the paragraph inside the <li> (#167).
+        if (
+            cls == "paragraph"
+            and list_marker_x0 is not None
+            and block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
+        ):
+            cont_line = list_cont_indent + text_clean
+            if numbered_run:
+                numbered_run.append("")
+                numbered_run.append(cont_line)
+                numbered_loose_pending = True
+            else:
+                out_parts.append(cont_line)
+            continue
+
         # Any non-numbered block ends the current ordered-list run.
         if cls != "numbered":
             flush_numbered()
 
         if cls.startswith("heading"):
+            list_marker_x0 = None
             level = int(cls[-1])
             heading_text = re.sub(r"\*+", "", text_clean).strip()
             out_parts.append(f"{'#' * level} {heading_text}")
@@ -664,17 +724,26 @@ def convert_page(
                     break
             nesting = profile.nesting_level(block.bbox[0])
             out_parts.append(f"{'  ' * nesting}- {stripped}")
+            list_marker_x0 = block.bbox[0]
+            list_cont_indent = "  " * nesting + "    "
         elif cls == "numbered":
             nesting = profile.nesting_level(block.bbox[0])
             marker, content = normalize_ordered_marker(text_clean, first=not numbered_run)
+            if numbered_loose_pending:
+                numbered_run.append("")
+                numbered_loose_pending = False
             if marker:
                 numbered_run.append(f"{'  ' * nesting}{marker} {content}")
             else:
                 # Classified numbered but no recognizable marker: keep as-is.
                 numbered_run.append(f"{'  ' * nesting}{text_clean}")
+            list_cont_indent = "  " * nesting + "    "
+            list_marker_x0 = block.bbox[0]
         elif cls == "small":
+            list_marker_x0 = None
             out_parts.append(f"<small>{text_clean}</small>")
         else:
+            list_marker_x0 = None
             out_parts.append(text_clean)
 
     flush_numbered()
@@ -909,6 +978,13 @@ PARAGRAPH_END = (".", "!", "?", ":", ";", "\"", "”", "’", ")", "]", "}", "�
 
 
 def is_block_paragraph(block: str) -> bool:
+    # A leading indent now carries list-nesting meaning: the block is a
+    # continuation paragraph bound to a list item (#167). Treat it as
+    # structural so the wrapped-paragraph merge never folds a de-indented
+    # top-level sibling into it (which would keep the indent and pull the
+    # sibling inside the <li>).
+    if block[:1] in (" ", "\t"):
+        return False
     s = block.lstrip()
     if not s:
         return False
