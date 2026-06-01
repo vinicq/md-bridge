@@ -17,6 +17,14 @@ If a section is empty in a release, the section is omitted entirely.
 
 ### Added
 
+- **GFM strikethrough in pdf-to-markdown.** Text struck through in the
+  source PDF (a line drawn across the glyphs) now converts to
+  `~~text~~` instead of dropping the semantic. PyMuPDF surfaces the
+  stroke on the span's `char_flags` when the page is read with
+  `TEXT_COLLECT_STYLES`; the detection is version-gated, so an older
+  PyMuPDF degrades to "no strikethrough" rather than misbehaving.
+  Strikethrough nests outside emphasis (`~~**text**~~`). (#142)
+
 - **Optional Tesseract OCR pre-pass for scanned PDFs** by @0exec
   (first external contribution from this account). New
   `apps/api/app/services/ocr.py` runs when `MD_BRIDGE_OCR_ENABLED=1`

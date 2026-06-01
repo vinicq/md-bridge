@@ -55,6 +55,33 @@ def test_render_span_leaves_literal_caret_bare():
     assert mod.render_span(span("25^C")) == "25^C"
 
 
+def test_render_span_strikethrough_wraps_in_tildes():
+    # #142: a struck span renders as GFM ~~...~~.
+    assert mod.render_span(Span(text="gone", size=10.0, font="Arial", flags=0, is_strikethrough=True)) == "~~gone~~"
+
+
+def test_render_span_strikethrough_nests_outside_emphasis():
+    # Canonical nested order is ~~**text**~~ (strikethrough wraps the emphasis).
+    bold = Span(text="gone", size=10.0, font="Arial-Bold", flags=0, is_strikethrough=True)
+    assert mod.render_span(bold) == "~~**gone**~~"
+    both = Span(text="gone", size=10.0, font="Bold-Italic", flags=0, is_strikethrough=True)
+    assert mod.render_span(both) == "~~***gone***~~"
+
+
+def test_render_span_without_strikethrough_has_no_tildes():
+    assert "~~" not in mod.render_span(span("plain text"))
+
+
+def test_render_line_does_not_merge_struck_with_unstruck():
+    # Adjacent spans of differing strikethrough state must stay separate, or a
+    # single ~~...~~ would swallow the unstruck text.
+    Line = mod.Line
+    struck = Span(text="deleted ", size=10.0, font="Arial", flags=0, is_strikethrough=True)
+    kept = Span(text="kept", size=10.0, font="Arial", flags=0, is_strikethrough=False)
+    out = mod.render_line(Line(spans=[struck, kept], bbox=(0, 0, 10, 10)))
+    assert out == "~~deleted~~ kept"
+
+
 def test_render_span_mono_with_backtick_falls_back_to_escaped_prose():
     # A single-backtick code span cannot contain a literal backtick, so a mono
     # span whose text already has one degrades to escaped prose instead of
