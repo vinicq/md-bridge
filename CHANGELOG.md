@@ -70,6 +70,15 @@ If a section is empty in a release, the section is omitted entirely.
 
 ### Changed
 
+- **OCR runs by default when the stack is installed.** Previously the
+  OCR pre-pass only ran with `MD_BRIDGE_OCR_ENABLED=1`. Now installing
+  the OCR stack (the `[ocr]` extra plus the Tesseract binary, or the
+  `runtime-ocr` image) is itself the opt-in: a scanned PDF is OCR'd
+  automatically, with no flag. A lean install without the stack carries
+  neither the binary nor the binding, so OCR stays off and a scan still
+  returns `422 ocr_required` — the lean default is unchanged.
+  `MD_BRIDGE_OCR_ENABLED` now overrides the auto decision both ways:
+  `1`/`true` forces on, `0`/`false` forces off.
 - **pdf-to-markdown emits pure Markdown instead of raw HTML tags.**
   Small-font blocks (captions, footnotes, copyright lines) now render
   as plain paragraphs instead of `<small>...</small>`, and superscript

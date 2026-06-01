@@ -215,9 +215,10 @@ without re-opening the PDF.
 A few things are deliberately out of scope:
 
 - **OCR**. Scanned PDFs come back with `needs_ocr: true` from the
-  inspect endpoint. The optional Tesseract pre-pass
-  (`MD_BRIDGE_OCR_ENABLED=1`) runs before this converter sees the
-  bytes; once OCR'd, the PDF goes through the same heuristics above.
+  inspect endpoint. The optional Tesseract pre-pass runs automatically
+  when the OCR stack is installed (set `MD_BRIDGE_OCR_ENABLED=0` to force
+  it off), before this converter sees the bytes; once OCR'd, the PDF goes
+  through the same heuristics above.
 - **Reading order across columns**. Multi-column layouts come out in
   the order PyMuPDF reports blocks, which is usually correct for
   single-column documents and best-effort for two-column academic

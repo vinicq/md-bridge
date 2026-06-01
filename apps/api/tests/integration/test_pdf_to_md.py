@@ -83,7 +83,9 @@ def test_pdf_to_md_scanned_pdf_returns_422_when_ocr_disabled(
     # discreet warning (#139). It now blocks with 422 ocr_required so the user
     # gets an actionable error instead of an empty file. The 422 fires right
     # after inspection, before any conversion, so no tempdir is created.
-    monkeypatch.delenv("MD_BRIDGE_OCR_ENABLED", raising=False)
+    # Force OCR off explicitly: the default is now auto-on when the Tesseract
+    # stack is installed (which it is on CI), so we pin the off path here.
+    monkeypatch.setenv("MD_BRIDGE_OCR_ENABLED", "0")
 
     resp = client.post(
         "/api/pdf-to-md",
@@ -109,7 +111,9 @@ def test_pdf_to_md_force_bypasses_ocr_gate(
     scanned_pdf_bytes: bytes,
     monkeypatch,
 ):
-    monkeypatch.delenv("MD_BRIDGE_OCR_ENABLED", raising=False)
+    # Pin OCR off so force exercises the gate-bypass path, not the auto-on OCR
+    # path (the default now auto-enables when the stack is installed).
+    monkeypatch.setenv("MD_BRIDGE_OCR_ENABLED", "0")
 
     resp = client.post(
         "/api/pdf-to-md?force=true",
@@ -138,6 +142,31 @@ def test_pdf_to_md_applies_ocr_when_enabled(client, scanned_pdf_bytes: bytes, mo
     body = resp.json()
     assert body["ocr_applied"] is True
     assert body["md"].strip()
+    assert "OCR" in body["md"].upper()
+
+
+def test_pdf_to_md_ocr_runs_by_default_when_stack_installed(
+    client, scanned_pdf_bytes: bytes, monkeypatch
+):
+    # The headline of the auto-default change: with no MD_BRIDGE_OCR_ENABLED set,
+    # a scanned PDF is OCR'd automatically because the stack is installed. Hits
+    # the real probe and the real Tesseract binary (no mock), so it exercises
+    # the new default end to end rather than a patched flag.
+    pytest.importorskip("pytesseract")
+    if shutil.which("tesseract") is None:
+        pytest.skip("tesseract binary is not installed")
+
+    monkeypatch.delenv("MD_BRIDGE_OCR_ENABLED", raising=False)
+    monkeypatch.delenv("MD_BRIDGE_OCR_LANG", raising=False)
+
+    resp = client.post(
+        "/api/pdf-to-md",
+        files={"file": ("scanned.pdf", scanned_pdf_bytes, "application/pdf")},
+    )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["ocr_applied"] is True
     assert "OCR" in body["md"].upper()
 
 

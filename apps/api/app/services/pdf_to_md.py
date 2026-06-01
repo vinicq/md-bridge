@@ -127,7 +127,20 @@ def convert_pdf_bytes(
     diagnostics = inspect_pdf_bytes(pdf_bytes, filename)
     if diagnostics.needs_ocr:
         if ocr_enabled():
-            pdf_bytes = ocr_pdf_bytes(pdf_bytes, lang=ocr_lang())
+            # A partial OCR install (binary present but the language traineddata
+            # missing) raises pytesseract's TesseractError; surface it as a typed
+            # error instead of a code-less 500. The shipped runtime-ocr image is
+            # complete, so this guards hand-rolled installs.
+            try:
+                pdf_bytes = ocr_pdf_bytes(pdf_bytes, lang=ocr_lang())
+            except Exception as exc:
+                raise ApiError(
+                    500,
+                    "ocr_failed",
+                    "OCR pre-pass failed. Check that the Tesseract binary and "
+                    "the language data for the document are installed.",
+                    detail=str(exc),
+                ) from exc
             ocr_applied = True
         elif not force:
             raise ApiError(
