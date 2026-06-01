@@ -33,6 +33,27 @@ FLAG_SERIF = 1 << 2
 FLAG_MONO = 1 << 3
 FLAG_BOLD = 1 << 4
 
+# Strikethrough is not a font flag: PDFs draw it as a line over the glyphs.
+# PyMuPDF surfaces it on the span's `char_flags` bit 0, but only when the page
+# is extracted with TEXT_COLLECT_STYLES (mupdf then correlates the drawn line
+# with the text). Both the flag and char_flags are recent; gate with getattr so
+# older PyMuPDF degrades to "no strikethrough" deterministically (#142).
+CHAR_FLAG_STRIKEOUT = 1 << 0
+_STYLE_FLAGS = getattr(fitz, "TEXT_COLLECT_STYLES", 0)
+_DICT_FLAGS = getattr(fitz, "TEXTFLAGS_DICT", 0)
+
+
+def page_text_dict(page: fitz.Page) -> dict:
+    """`page.get_text("dict")` with style collection when the build supports it.
+
+    Style collection is what populates `char_flags` with the strikeout bit. When
+    the running PyMuPDF lacks the constants, fall back to the plain call so the
+    converter still works (strikethrough simply stays undetected).
+    """
+    if _STYLE_FLAGS and _DICT_FLAGS:
+        return page.get_text("dict", flags=_DICT_FLAGS | _STYLE_FLAGS)
+    return page.get_text("dict")
+
 BULLET_CHARS = {"▪", "•", "●", "◦", "‣", "⁃", "∙"}
 NUMBERED_RE = re.compile(r"^\s*(\d{1,3}|[a-zA-Z])[.)]\s+")
 
@@ -93,6 +114,8 @@ class Span:
     flags: int
     bbox: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
     link: str | None = None
+    # Set from char_flags (see page_text_dict); not derivable from `flags`.
+    is_strikethrough: bool = False
 
     @property
     def is_bold(self) -> bool:
@@ -249,6 +272,12 @@ def parse_block(raw_block: dict) -> Block | None:
             text = raw_span["text"]
             if not text:
                 continue
+            # char_flags carries the strikeout bit only when the page was read
+            # with style collection; gate on _STYLE_FLAGS so a plain read (or an
+            # older PyMuPDF) never reports a false strikethrough.
+            struck = bool(_STYLE_FLAGS) and bool(
+                raw_span.get("char_flags", 0) & CHAR_FLAG_STRIKEOUT
+            )
             spans.append(
                 Span(
                     text=text,
@@ -256,6 +285,7 @@ def parse_block(raw_block: dict) -> Block | None:
                     font=raw_span["font"],
                     flags=raw_span["flags"],
                     bbox=tuple(raw_span.get("bbox", (0.0, 0.0, 0.0, 0.0))),
+                    is_strikethrough=struck,
                 )
             )
         if not spans:
@@ -342,6 +372,10 @@ def render_span(span: Span) -> str:
             core = f"**{core}**"
         elif italic:
             core = f"*{core}*"
+        # GFM strikethrough wraps the emphasis, giving the canonical nested
+        # order `~~**text**~~` so output is stable across runs (#142).
+        if span.is_strikethrough:
+            core = f"~~{core}~~"
         if span.link:
             core = f"[{core}]({span.link})"
     return out[:leading] + core + (out[len(out) - trailing:] if trailing else "")
@@ -355,6 +389,7 @@ def render_line(line: Line) -> str:
             merged
             and merged[-1].is_bold == s.is_bold
             and merged[-1].is_italic == s.is_italic
+            and merged[-1].is_strikethrough == s.is_strikethrough
             and is_mono_span(merged[-1]) == is_mono_span(s)
         ):
             merged[-1] = Span(
@@ -362,6 +397,7 @@ def render_line(line: Line) -> str:
                 size=merged[-1].size,
                 font=merged[-1].font,
                 flags=merged[-1].flags,
+                is_strikethrough=merged[-1].is_strikethrough,
             )
         else:
             merged.append(s)
@@ -597,7 +633,7 @@ def convert_page(
         items.append((y, "image", md))
 
     parsed_blocks: list[Block] = []
-    for raw_block in page.get_text("dict").get("blocks", []):
+    for raw_block in page_text_dict(page).get("blocks", []):
         if raw_block.get("type") != 0:
             continue
         block = parse_block(raw_block)
