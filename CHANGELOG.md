@@ -54,6 +54,18 @@ If a section is empty in a release, the section is omitted entirely.
 
 ### Changed
 
+- **pdf-to-markdown emits pure Markdown instead of raw HTML tags.**
+  Small-font blocks (captions, footnotes, copyright lines) now render
+  as plain paragraphs instead of `<small>...</small>`, and superscript
+  spans render as Pandoc `^x^` instead of `<sup>...</sup>`. This keeps
+  the output clean for RAG pipelines, plain Markdown viewers, search
+  indexers, and Pandoc. The size hint on small text is dropped (Markdown
+  has no clean equivalent); literal carets in prose are left bare. The
+  `needs_ocr` payload warning no longer strips a `<small>` wrapper that
+  is no longer emitted, so small-font text now counts as content (the
+  hard `ocr_required` gate is unaffected — it reads raw PDF chars).
+  Opt-in raw-HTML preservation is deferred to the allow-list policy.
+  (#141, follow-ups #154 and #148)
 - **Contribution-guide section in every open issue body.** All 27
   open issues now carry a standardized "How to contribute" block
   covering claim workflow, branch naming, Conventional Commits,
