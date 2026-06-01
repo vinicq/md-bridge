@@ -10,7 +10,7 @@ pages: 77
 
 ## International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # Copyright Notice
 
@@ -36,11 +36,11 @@ All rights reserved. The authors hereby transfer the copyright to the ISTQB®. T
 
 - Any ISTQB®-recognized Member Board may translate this syllabus provided they reproduce the abovementioned Copyright Notice in the translated version of the syllabus.
 
-<small>v4.0 GA Page 2 of 77 2025/05/02</small>
+v4.0 GA Page 2 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # Revision History
 
@@ -53,11 +53,11 @@ All rights reserved. The authors hereby transfer the copyright to the ISTQB®. T
 | v3.0 (2019) | 2019/10/19 | Major update with overall revision and scope reduction |
 | v2.0 (2012) | 2012/10/19 | First version as a separate CTAL-TA Syllabus |
 
-<small>v4.0 GA Page 3 of 77 2025/05/02</small>
+v4.0 GA Page 3 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # Table of Contents
 
@@ -75,11 +75,11 @@ All rights reserved. The authors hereby transfer the copyright to the ISTQB®. T
 
 [**3**](#page-28) [**Test Analysis and Test Design – 615 minutes**](#page-28) **28** Introduction to Test Analysis and Test Design . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 [3.1](#page-29) [Data-Based Test Techniques](#page-29) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 [3.1.1](#page-29) Domain Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 [3.1.2](#page-30) Combinatorial Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 30 [3.1.3](#page-31) [Random Testing](#page-31) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31
 
-<small>v4.0 GA Page 4 of 77 2025/05/02</small>
+v4.0 GA Page 4 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 [3.2](#page-32) Behavior-Based Test Techniques . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32 [3.2.1](#page-32) [CRUD Testing](#page-32) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32 [3.2.2](#page-33) State Transition Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 33 [3.2.3](#page-33) Scenario-Based Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 33 [3.3](#page-34) [Rule-Based Test Techniques](#page-34) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 34 [3.3.1](#page-35) Decision Table Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 35 [3.3.2](#page-36) Metamorphic Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 36 [3.4](#page-36) Experience-Based Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 36 [3.4.1](#page-37) Test Charters Supporting Session-Based Testing . . . . . . . . . . . . . . . . . . . . . 37 [3.4.2](#page-38) Checklists Supporting Experience-Based Test Techniques . . . . . . . . . . . . . . . . 38 [3.4.3](#page-39) [Crowd Testing](#page-39) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 39 [3.5](#page-40) Applying the Most Appropriate Test Techniques . . . . . . . . . . . . . . . . . . . . . . . . . . 40 [3.5.1](#page-40) Selecting Test Techniques to Mitigate Product Risks . . . . . . . . . . . . . . . . . . . 40 [3.5.2](#page-41) [Benefits and Risks of Automating the Test Design](#page-41) . . . . . . . . . . . . . . . . . . . . 41
 
@@ -105,11 +105,11 @@ All rights reserved. The authors hereby transfer the copyright to the ISTQB®. T
 
 **14 Index** **75**
 
-<small>v4.0 GA Page 5 of 77 2025/05/02</small>
+v4.0 GA Page 5 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # Acknowledgments
 
@@ -131,19 +131,19 @@ Edition 2019 (v3.0): Laura Albert, Markus Beck, Henriett Braunné Bokor, Francis
 
 Edition 2012 (v2.0): Graham Bath, Arne Becher, Rex Black, Piet de Roo, Frans Dijkman, Mats Grindal, Kobi Halperin, Bernard Homès, Maria Jönsson, Junfei Ma, Eli Margolin, Rik Marselis, Don Mills, Gary Mogyorodi, Stefan Mohacsi, Reto Mueller, Thomas Mueller, Ingvar Nordstrom, Tal Pe’er, Raluca Madalina
 
-<small>v4.0 GA Page 6 of 77 2025/05/02</small>
+v4.0 GA Page 6 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Popescu, Stuart Reid, Jan Sabak, Hans Schaefer, Marco Sogliani, Yaron Tsubery, Hans Weiberg, Paul Weymouth, Chris van Bael, Jurian van der Laar, Stephanie van Dijk, Erik van Veenendaal, Wenqiang Zheng, Debi Zylbermann.
 
-<small>v4.0 GA Page 7 of 77 2025/05/02</small>
+v4.0 GA Page 7 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 0 Introduction
 
@@ -152,14 +152,10 @@ Popescu, Stuart Reid, Jan Sabak, Hans Schaefer, Marco Sogliani, Yaron Tsubery, H
 This syllabus forms the basis for the International Software Testing Qualification for the Advanced Level Test Analyst. The ISTQB® provides this syllabus as follows:
 
 1. To member boards, to translate into their local language, and to accredit training providers. Member boards may adapt the syllabus to their particular language needs and modify the references to adapt to their local publications.
-
-2. To certification bodies, to derive examination questions in their local language adapted to the learning objectives for this syllabus.
-
-3. To training providers, to produce training material and determine appropriate teaching methods.
-
-4. To certification candidates, to prepare for the certification exam (either as part of a training course or independently).
-
-5. To the international software and systems engineering community to advance the software and systems testing profession and as a basis for books and articles.
+1. To certification bodies, to derive examination questions in their local language adapted to the learning objectives for this syllabus.
+1. To training providers, to produce training material and determine appropriate teaching methods.
+1. To certification candidates, to prepare for the certification exam (either as part of a training course or independently).
+1. To the international software and systems engineering community to advance the software and systems testing profession and as a basis for books and articles.
 
 0.2 The Advanced Level Test Analyst in Software Testing
 
@@ -179,11 +175,11 @@ In this syllabus, the test analyst is understood as a role which:
 
 The ISTQB® scheme supports testing professionals at all stages of their careers. Individuals who achieve the ISTQB® Advanced Level Test Analyst certification may also be interested in the other Core Advanced Levels (Technical Test Analyst and Test Management) and, thereafter, Expert Level (Test Management or Improving the Test Process). Anyone seeking to develop skills in testing practices in an Agile environment area could consider the Agile Technical Tester or Agile Test Leadership at Scale certifications. In addition, specialist streams offer certification products focusing on specific test technologies and approaches, specific quality characteristics and test levels, or testing within particular industry domains. Please visit www.istqb.org for the latest information on ISTQB®´s Certified Tester Scheme.
 
-<small>v4.0 GA Page 8 of 77 2025/05/02</small>
+v4.0 GA Page 8 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 0.4 Business Outcomes
 
@@ -225,11 +221,11 @@ Further details and examples of learning objectives are given in [*Section 7*](#
 
 The Advanced Level Test Analyst certificate exam will be based on this syllabus. Answers to exam questions may require the use of material based on more than one section of this syllabus. All sections of the syllabus are examinable except for the Introduction and Appendices. Standards and books are included as references, but their content is not examinable beyond what is summarized in the syllabus itself from such standards and books.
 
-<small>v4.0 GA Page 9 of 77 2025/05/02</small>
+v4.0 GA Page 9 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Refer to the Exam Structures and Rules document compatible with the Advanced Level Test Analyst v4.0 for further details.
 
@@ -263,11 +259,11 @@ The level of detail in this syllabus allows internationally consistent courses a
 
 The syllabus content does not describe the entire knowledge area of software testing; it reflects the level of detail to be covered in Advanced Level Test Analyst training courses.
 
-<small>v4.0 GA Page 10 of 77 2025/05/02</small>
+v4.0 GA Page 10 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 The syllabus uses the terminology (i.e. the name and meaning) of the terms used in software testing and quality assurance according to the ISTQB® Glossary (ISTQB-Glossary, 2024).
 
@@ -279,55 +275,55 @@ There are five chapters with examinable content. The top-level heading for each 
 
 - Chapter 1 (225 minutes): The Tasks of the Test Analyst in the Test Process
 
-**–** The student learns how the test analyst is involved in various software development lifecycles.
+    **–** The student learns how the test analyst is involved in various software development lifecycles.
 
-**–** The student learns how the test analyst is involved in various test activities.
+    **–** The student learns how the test analyst is involved in various test activities.
 
-**–** The student learns about tasks performed by the test analyst related to work products.
+    **–** The student learns about tasks performed by the test analyst related to work products.
 
 - Chapter 2 (90 minutes) The Tasks of the Test Analyst in Risk-Based Testing
 
-**–** The student learns how the test analyst contributes to product risk analysis.
+    **–** The student learns how the test analyst contributes to product risk analysis.
 
-**–** The student learns how to analyze the impact of changes to determine the scope of regression testing.
+    **–** The student learns how to analyze the impact of changes to determine the scope of regression testing.
 
 - Chapter 3 (615 minutes) Test Analysis and Test Design
 
-**–** The student learns about data-based test techniques, such as domain testing, combinatorial testing, and random testing.
+    **–** The student learns about data-based test techniques, such as domain testing, combinatorial testing, and random testing.
 
-**–** The student learns about behavior-based test techniques, such as CRUD testing, state transition testing, and scenario-based testing.
+    **–** The student learns about behavior-based test techniques, such as CRUD testing, state transition testing, and scenario-based testing.
 
-**–** The student learns about rule-based test techniques, such as decision table testing and metamorphic testing.
+    **–** The student learns about rule-based test techniques, such as decision table testing and metamorphic testing.
 
-**–** The student learns about experience-based testing, such as session-based testing and crowd testing.
+    **–** The student learns about experience-based testing, such as session-based testing and crowd testing.
 
-**–** The student learns how to select appropriate test techniques to mitigate product risks.
+    **–** The student learns how to select appropriate test techniques to mitigate product risks.
 
 - Chapter 4 (60 minutes) Testing Quality Characteristics
 
-**–** The student learns how to perform several types of functional testing.
+    **–** The student learns how to perform several types of functional testing.
 
-**–** The student learns how to use the specific knowledge of functionality to contribute to non- functional test types, such as usability testing, flexibility testing, and compatibility testing.
+    **–** The student learns how to use the specific knowledge of functionality to contribute to non- functional test types, such as usability testing, flexibility testing, and compatibility testing.
 
 - Chapter 5 (225 minutes) Software Defect Prevention
 
-**–** The student learns about various defect prevention practices.
+    **–** The student learns about various defect prevention practices.
 
-**–** The student learns about various approaches that support phase containment.
+    **–** The student learns about various approaches that support phase containment.
 
-<small>v4.0 GA Page 11 of 77 2025/05/02</small>
+v4.0 GA Page 11 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 **–** The student learns how to mitigate the recurrence of defects.
 
-<small>v4.0 GA Page 12 of 77 2025/05/02</small>
+v4.0 GA Page 12 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 1 The Tasks of the Test Analyst in the Test Process – 225 minutes
 
@@ -363,11 +359,11 @@ TA-1.3.6 (K3) Use keyword-driven testing to develop test scripts
 
 TA-1.3.7 (K2) Summarize the types of tools to manage the testware
 
-<small>v4.0 GA Page 13 of 77 2025/05/02</small>
+v4.0 GA Page 13 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Introduction to the Tasks of the Test Analyst in the Test Process
 
@@ -391,11 +387,11 @@ An SDLC may combine elements of various models and specific techniques and appro
 
 The TA’s tasks in these four activities are described in detail in the following sections.
 
-<small>v4.0 GA Page 14 of 77 2025/05/02</small>
+v4.0 GA Page 14 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 1.2.1 Test Analysis
 
@@ -427,11 +423,11 @@ The TA captures traceability between the test basis, test conditions, and test c
 
 In addition to these tasks, the TA defines the test environment requirements (see [*Section 1.3.3*](#page-19)) and identifies, creates, and specifies the requirements for test data (see [*Section 1.3.5*](#page-20)).
 
-<small>v4.0 GA Page 15 of 77 2025/05/02</small>
+v4.0 GA Page 15 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 The TA uses the exit criteria defined in test planning to determine when enough test cases have been designed. However, other exit criteria such as residual risk levels or project constraints (e.g., budget or time) also indicate when the test design may end.
 
@@ -459,11 +455,11 @@ Test execution is carried out according to the test execution schedule. The typi
 
 The TA executes tests manually. This includes exploratory testing, executing test procedures, regression testing, and confirmation testing. For exploratory testing, the TA can use session-based testing with
 
-<small>v4.0 GA Page 16 of 77 2025/05/02</small>
+v4.0 GA Page 16 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 test charters (see [*Section 3.4.1*](#page-37)). The TA can also run automated test scripts, but it may be the task of developers, test automation engineers (TAEs), or technical test analysts (TTAs) to run automated test scripts and analyze them in case of failures.
 
@@ -495,11 +491,11 @@ A high-level test case (also called an *abstract test case* or a *logical test c
 
 A low-level test case (also called a *concrete test case* or a *physical test case*) is the detailed refinement of a high-level test case. Low-level test cases describe what data needs to be prepared, what actions the tester must do (if necessary), and what the concrete expected result is. Low-level test cases contain specific preconditions, input data, expected results, and postconditions (e.g., “order books B1 ($10) and B2 ($20), with total order price $30; expected result: 10% discount assigned, total price: $27”).
 
-<small>v4.0 GA Page 17 of 77 2025/05/02</small>
+v4.0 GA Page 17 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Typically, a TA initially designs high-level test cases, which are the foundation for developing low-level test cases. One high-level test case can be implemented in one or more low-level test cases. Sometimes, the test case may remain high-level, with the concrete information determined by the TA during test execution. For instance, high-level test cases can guide the TA when creating test objectives within a test charter for session-based testing, allowing TAs to elaborate on these objectives during the test execution (see [*Section 3.4.1*](#page-37)).
 
@@ -529,11 +525,11 @@ Neglecting test case quality can lead to many problems, such as high maintainabi
 
 The format and level of detail of the test cases depend on the project and product context and should be agreed upon within the test team.
 
-<small>v4.0 GA Page 18 of 77 2025/05/02</small>
+v4.0 GA Page 18 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 1.3.3 Test Environment Requirements
 
@@ -567,11 +563,11 @@ A test oracle is needed to determine the expected results in dynamic testing. Id
 
 Depending on the quality and completeness of the test basis or system characteristics, a cost-effective test oracle may not be available. This is known as the *test oracle problem*. Typical factors contributing to the test oracle problem include data-related complexity, non-determinism (e.g., AI-based systems), probabilistic behavior, and missing or ambiguous requirements.
 
-<small>v4.0 GA Page 19 of 77 2025/05/02</small>
+v4.0 GA Page 19 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Some known solutions to the test oracle problem are (Barr et al., 2014):
 
@@ -601,11 +597,11 @@ During test design, the TA identifies and requests test data that may need prepa
 
 - **Data format.** Systematic data management (e.g., in API testing) may require structured data (e.g., CSV, JSON, XML, or database).
 
-<small>v4.0 GA Page 20 of 77 2025/05/02</small>
+v4.0 GA Page 20 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 - **Traceability.** Traceability ensures test data maintainability when changes are made to test cases.
 
@@ -643,11 +639,11 @@ The tasks of the TA in keyword-driven testing include:
 
 When analyzing the test basis, the TA looks for interactions between the test object and its environment (e.g., users, other systems, and devices). Consider, for example, the user story ’As a member, I want to authenticate myself, such that I get access to the facilities’, with the acceptance criteria ’Valid member cards can be used for authentication’. The TA may specify an (action) keyword ’Authenticate Member’
 
-<small>v4.0 GA Page 21 of 77 2025/05/02</small>
+v4.0 GA Page 21 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 with a parameter ’member card’ and a verification keyword ’Verify Access’. The TA checks whether the identified keywords reside on the appropriate abstraction layer.
 
@@ -691,11 +687,11 @@ Some key types of tools in managing the testware include:
 
 The TA supports the management of testware by:
 
-<small>v4.0 GA Page 22 of 77 2025/05/02</small>
+v4.0 GA Page 22 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 - analyzing the project and release to select the correct subset of testware (e.g., a specification identified by its version to match the version of SUT)
 
@@ -711,11 +707,11 @@ The TA supports the management of testware by:
 
 Tools help to organize, track, and ensure the quality of the test process. The TA supports this effort by selecting, structuring, and maintaining test cases, ensuring traceability, and managing test case versions for efficient testing and test control.
 
-<small>v4.0 GA Page 23 of 77 2025/05/02</small>
+v4.0 GA Page 23 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 2 The Tasks of the Test Analyst in Risk-Based Testing – 90 minutes
 
@@ -731,11 +727,11 @@ TA-2.1.1 (K2) Summarize the test analyst’s contribution to product risk analys
 
 **2.2 Risk Control** TA-2.2.1 (K4) Analyze the impact of changes to determine the scope of regression testing
 
-<small>v4.0 GA Page 24 of 77 2025/05/02</small>
+v4.0 GA Page 24 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Introduction to the Tasks of the Test Analyst in Risk-Based Testing
 
@@ -769,11 +765,11 @@ The TA also helps categorize product risks by the quality characteristics impact
 
 Finally, as part of the product risk assessment, the TA proposes suitable test activities to mitigate each identified product risk. These activities may include static testing and dynamic testing. Depending on factors such as the risk level, the associated test item type, and the quality characteristic affected, the TA indicates the required test levels, test types, test techniques, levels of independence of testing, and test thoroughness. In the spirit of shift left, the TA indicates which test activities can mitigate the risk earliest to minimize the testing effort.
 
-<small>v4.0 GA Page 25 of 77 2025/05/02</small>
+v4.0 GA Page 25 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 2.2 Risk Control
 
@@ -801,11 +797,11 @@ When it comes to manual test execution, there has not been conclusive evidence o
 
 - **The requirement traceability matrix**, which is used to assess the impact of requirements changes on the associated tests. It can be particularly valuable when new or changed requirements indirectly impact existing features. The TA selects regression tests for the directly affected and for related features to cover possible unintended side effects. In Agile software development, this can be done
 
-<small>v4.0 GA Page 26 of 77 2025/05/02</small>
+v4.0 GA Page 26 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 similarly by selecting tests that cover the acceptance criteria impacted by new or changed user stories.
 
@@ -815,11 +811,11 @@ similarly by selecting tests that cover the acceptance criteria impacted by new 
 
 It is often necessary to use a combination of selection techniques for a more comprehensive and effective regression test suite. However, the TA must carefully balance the need for coverage with a manageable size of the test suite. After each test cycle, the TA analyzes the test results to determine the effectiveness of the techniques applied (see [*Section 5.3.1*](#page-52)). Next time, the TA retains effective techniques and replaces ineffective ones. This continuously improves regression test selection over time. It is essential in iterative and incremental development models, where changes are frequent.
 
-<small>v4.0 GA Page 27 of 77 2025/05/02</small>
+v4.0 GA Page 27 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 3 Test Analysis and Test Design – 615 minutes
 
@@ -865,11 +861,11 @@ TA-3.5.1 (K4) Select appropriate test techniques to mitigate product risks for a
 
 TA-3.5.2 (K2) Explain the benefits and risks of automating the test design
 
-<small>v4.0 GA Page 28 of 77 2025/05/02</small>
+v4.0 GA Page 28 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Introduction to Test Analysis and Test Design
 
@@ -899,7 +895,7 @@ Note that random testing can generally refer to both random input data and rando
 
 Domain testing verifies whether the test item behaves as specified on the domain’s equivalence partitions and at their borders. In this case, equivalence partitions are defined using expressions that combine atomic conditions by Boolean operators (e.g., AND, OR, and NOT) and involve one or more interacting variables. Each atomic condition defines a border of the equivalence partition. Closed borders are formed by relational expressions with operators *≤*, *≥*or =, and open borders are formed by relational expressions with operators <, >, or *̸*=.
 
-For example, the expression height > 1.29 meters AND weight / height2 *<sup>≥</sup>*30 defines an equivalence partition of a two-dimensional domain of two variables that has two borders, an open and a closed one.
+For example, the expression height > 1.29 meters AND weight / height2 *^≥^*30 defines an equivalence partition of a two-dimensional domain of two variables that has two borders, an open and a closed one.
 
 Domain testing seeks to identify defects in equivalence partition implementations (e.g., wrong operator or constant) by selecting appropriate coverage items that can reveal those defects. Coverage criteria in domain testing refer to the ON, OFF, IN, and OUT points:
 
@@ -907,11 +903,11 @@ Domain testing seeks to identify defects in equivalence partition implementation
 
 - For a closed border, an OFF point lies outside the equivalence partition and is closest to the border according to the given precision. For an open border, an OFF point lies on this border.
 
-<small>v4.0 GA Page 29 of 77 2025/05/02</small>
+v4.0 GA Page 29 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 - An IN point belongs to the equivalence partition and is not an ON point.
 
@@ -953,11 +949,11 @@ In combinatorial testing, the test conditions usually combine configuration para
 
 A specific parameter-value pair consists of a parameter and its value (e.g., ’(color, red)’).
 
-<small>v4.0 GA Page 30 of 77 2025/05/02</small>
+v4.0 GA Page 30 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 The combinatorial coverage criteria include the following (Ammann et al., 2008), (Forgács et al., 2019):
 
@@ -981,11 +977,11 @@ Random testing lacks recognized coverage criteria. Therefore, the exit criteria 
 
 Random testing is especially valuable when domain knowledge is limited or there is a need for a large volume of test data. It is cost-effective and provides, in probabilistic terms, insights into test object reliability. Random testing helps to avoid biases such as overlooking defects in manual testing due to misplaced trust in some code or functionality. However, random testing also has several challenges and limitations, including neglecting data semantics, potentially missing defects related to data meaning, overlooking certain defects, generating redundant tests, dependency on an automated test oracle, and
 
-<small>v4.0 GA Page 31 of 77 2025/05/02</small>
+v4.0 GA Page 31 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 random outputs leading to inconsistent test results. Balancing the advantages and limitations of random testing is essential in each testing context.
 
@@ -1017,11 +1013,11 @@ CRUD testing consists of two parts (Koomen et al., 2006):
 
 **CRUD coverage** is measured by the number of operations executed by the test suite divided by the total number of operations in the CRUD matrix. A more rigorous CRUD coverage can consider specific combinations of operations as coverage items (e.g., after each U, all possible Rs should be covered).
 
-<small>v4.0 GA Page 32 of 77 2025/05/02</small>
+v4.0 GA Page 32 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 CRUD testing is primarily used at the system level. It focuses on defects in the behavior of the test item in treating entities, such as data integrity violations, access control defects, or data inconsistencies.
 
@@ -1047,11 +1043,11 @@ Further state transition coverage criteria are discussed in (Rechtberger et al.,
 
 Scenario-based testing evaluates the test item’s behavior in realistic scenarios. Techniques such as user research, user stories, personas, and user journey maps (see [*Section 11*](#page-71)) may help to identify valuable scenarios. In scenario-based testing, the TA creates a scenario model based on sequences of actions that constitute workflows through the test item (cf. [*ISO/IEC/IEEE 29119-4*](#page-55), 2021). This syllabus discusses the following two models: activity diagrams and use cases. Other models include flowcharts, business process model and notation diagrams (*OMG® BPMN*, 2013), sequence diagrams, or collaboration
 
-<small>v4.0 GA Page 33 of 77 2025/05/02</small>
+v4.0 GA Page 33 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 diagrams (*OMG® UML*, 2017). These models are not discussed in this syllabus. Please refer to (ISTQB- AcT, v1.0) for more details.
 
@@ -1077,11 +1073,11 @@ Rule-based test techniques verify the implementation of the stateless behavior o
 
 - decision table testing
 
-<small>v4.0 GA Page 34 of 77 2025/05/02</small>
+v4.0 GA Page 34 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 - metamorphic testing
 
@@ -1109,11 +1105,11 @@ The *checksum procedure* uses the number of rules in a minimized decision table 
 
 **Decision table coverage** is measured by dividing the number of columns exercised by the total number of feasible columns in the decision table. When implementing test cases resulting from a decision table rule, the TA must implement the conditions and actions. The TA has to decide how to implement the ‘–’ condition values for a given rule because ‘–’ represents at least two values. However, if the risk level
 
-<small>v4.0 GA Page 35 of 77 2025/05/02</small>
+v4.0 GA Page 35 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 associated with the decision table is high, the TA should refrain from minimizing and should measure the decision table coverage of the feasible columns in the full decision table.
 
@@ -1139,11 +1135,11 @@ For more details, see also the standard ([*ISO/IEC/IEEE 29119-4*](#page-55), 202
 
 A TA employs experience-based test approaches and test techniques, leveraging their expertise and past encounters to guide testing. This chapter details the TA’s use of documentation in session-based testing
 
-<small>v4.0 GA Page 36 of 77 2025/05/02</small>
+v4.0 GA Page 36 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 and checklist-based testing (see ISTQB-CTFL, v4.0.1, Sections 4.4.2 and 4.4.3). In addition, crowd testing is discussed. All experience-based test techniques can be applied in collaboration-based testing, like acceptance test-driven development. For more details, see (ISTQB-CTFL, v4.0.1, Section 4.5).
 
@@ -1161,7 +1157,7 @@ When preparing a test charter for session-based testing, the TA must consider ce
 
 A test charter consists of a mission that describes the test objective and various additional information.
 
-A popular lightweight format of a mission is “Explore [target] With [resources] To discover [information]” (Hendrickson, 2013), where [target] describes what is to be explored (e.g., area, feature, risk, component, and requirement), [resources] describe what the TA will use (e.g., test data, configurations, tools, restrictions, heuristics, and dependencies), and [information] explains which type of information the TA is aiming to find (e.g., quality characteristic evaluations, expected type of defects, and violations of standards).
+A popular lightweight format of a mission is “Explore \[target\] With \[resources\] To discover \[information\]” (Hendrickson, 2013), where \[target\] describes what is to be explored (e.g., area, feature, risk, component, and requirement), \[resources\] describe what the TA will use (e.g., test data, configurations, tools, restrictions, heuristics, and dependencies), and \[information\] explains which type of information the TA is aiming to find (e.g., quality characteristic evaluations, expected type of defects, and violations of standards).
 
 Test charters may contain but are not limited to the following additional information (Ghazi et al., 2017):
 
@@ -1181,11 +1177,11 @@ Test charters may contain but are not limited to the following additional inform
 
 - existing data sources, product information, and test tools that would aid testing
 
-<small>v4.0 GA Page 37 of 77 2025/05/02</small>
+v4.0 GA Page 37 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 - historical information (e.g., previously found defects such as compatibility and interoperability defects, current open questions that refer to existing anomalies, and test-related failure patterns of the past)
 
@@ -1209,11 +1205,11 @@ Next, the TA collects the information necessary to define the checklist items. T
 
 Finally, the TA structures and organizes the checklist by categorizing checklist items into logical groups based on functional areas, user roles, test levels, or other relevant criteria. Creating separate categories can be especially useful for a long checklist.
 
-<small>v4.0 GA Page 38 of 77 2025/05/02</small>
+v4.0 GA Page 38 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Where possible, templates and standards should be used. The TA can save effort by utilizing existing templates or predefined checklists aligned with industry standards and best practices.
 
@@ -1249,11 +1245,11 @@ Some of the limitations of crowd testing include the following:
 
 Crowd testing is an approach that does not replace TAs applying test techniques but can increase the coverage of diverse test environments.
 
-<small>v4.0 GA Page 39 of 77 2025/05/02</small>
+v4.0 GA Page 39 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 3.5 Applying the Most Appropriate Test Techniques
 
@@ -1287,11 +1283,11 @@ Risk analysis also helps determine the appropriate test approach, for example:
 
 **Software development lifecycle used**. A sequential development model is conducive to employing more formal techniques. In contrast, an iterative development model might be more appropriate for adopting lightweight test techniques (e.g., experience-based test techniques) or when the test design can be automated.
 
-<small>v4.0 GA Page 40 of 77 2025/05/02</small>
+v4.0 GA Page 40 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 **Customer and contract requirements**. Contracts can explicitly require performing specific testing (e.g., in terms of certain test levels or test types), which influences the selection of test techniques (e.g., acceptance criteria with a set of scenarios provided by the client suggest the use of a scenario-based test technique).
 
@@ -1327,11 +1323,11 @@ Automating the test design often improves the efficiency and effectiveness of te
 
 - **Less defective testware**. Manual work is prone to errors. Testware generated by tools has a higher quality and consistency.
 
-<small>v4.0 GA Page 41 of 77 2025/05/02</small>
+v4.0 GA Page 41 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 - **Enhanced team collaboration**. Stakeholders may review the test model to find defects or to better understand the test conditions.
 
@@ -1341,11 +1337,11 @@ Automating the test design often improves the efficiency and effectiveness of te
 
 The TA must also consider the risks of automating the test design. They include overlooking test conditions that are not shown in the model, underestimating the maintenance effort of the test model, stakeholders finding the model difficult to understand, and the generic risks of test automation (see ISTQB- [CTFL, v4.0.1, Section 6.2).](#page-56)
 
-<small>v4.0 GA Page 42 of 77 2025/05/02</small>
+v4.0 GA Page 42 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 4 Testing Quality Characteristics – 60 minutes
 
@@ -1371,11 +1367,11 @@ TA-4.3.1 (K2) Explain how the test analyst contributes to adaptability and insta
 
 TA-4.4.1 (K2) Explain how the test analyst contributes to interoperability testing
 
-<small>v4.0 GA Page 43 of 77 2025/05/02</small>
+v4.0 GA Page 43 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Introduction to Testing Quality Characteristics
 
@@ -1405,11 +1401,11 @@ All black-box test techniques, experience-based test techniques, and collaborati
 
 Functional appropriateness testing may include user interface design reviews, especially for interactive applications. Dynamic testing starts with system testing and acceptance testing in sequential development models, as well as demo sessions in Agile software development.
 
-<small>v4.0 GA Page 44 of 77 2025/05/02</small>
+v4.0 GA Page 44 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Exploratory testing and collaboration-based testing are most appropriate. In addition, behavior-based black-box test techniques are also suitable.
 
@@ -1437,11 +1433,11 @@ The TA can contribute to the principal usability evaluation techniques as follow
 
 In accessibility testing, a common test objective is to verify compliance with standards. The international standard Web Content Accessibility Guidelines (WCAG, 2023) defines three levels of conformance (A, AA, and AAA) that represent increasing degrees of web content accessibility. National standards include the [United Kingdom’s Equality Act (UK Government, 2010) and the United States’ Americans Disabilities Act](#page-59) (U.S. Department of Justice, 2010). The TA can identify the required compliance level and the specific needs of the intended target group by analyzing the context of use.
 
-<small>v4.0 GA Page 45 of 77 2025/05/02</small>
+v4.0 GA Page 45 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 4.3 Flexibility Testing
 
@@ -1475,11 +1471,11 @@ The typical installability test objectives in focus for the TA are:
 
 - To test permissions-related behavior, particularly for mobile applications (see ISTQB-MAT, v1.0).
 
-<small>v4.0 GA Page 46 of 77 2025/05/02</small>
+v4.0 GA Page 46 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 4.4 Compatibility Testing
 
@@ -1511,11 +1507,11 @@ Interoperability testing is usually applied during integration testing. Black-bo
 
 Examples of general standards in interoperability are ([*ISO 15745*](#page-55)[, 2003) and (](#page-55)[*ISO 16100*](#page-55), 2009). ETSI [(](#page-55)[*ETSI EG 202 237 v1.2.1*](#page-55), 2010) provides an example of a concrete interoperability testing methodology in the telecommunications domain.
 
-<small>v4.0 GA Page 47 of 77 2025/05/02</small>
+v4.0 GA Page 47 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 5 Software Defect Prevention – 225 minutes
 
@@ -1539,11 +1535,11 @@ TA-5.3.1 (K4) Analyze test results to identify potential improvements to defect 
 
 TA-5.3.2 (K2) Explain how defect classification supports root cause analysis
 
-<small>v4.0 GA Page 48 of 77 2025/05/02</small>
+v4.0 GA Page 48 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 Introduction to Software Defect Prevention
 
@@ -1577,11 +1573,11 @@ In addition to participating in defect prevention, the TA assesses (usually in c
 
 - Phase containment effectiveness (PCE) – measures the number of defects introduced and removed in the same phase relative to the total number of defects introduced in that phase. High PCE
 
-<small>v4.0 GA Page 49 of 77 2025/05/02</small>
+v4.0 GA Page 49 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 indicates that fewer defects escape to later phases.
 
@@ -1613,11 +1609,11 @@ Modeling can also detect defects such as inconsistencies in naming, data values 
 
 **Detecting defects in models**. If the test basis contains models, the TA can analyze these models to detect defects. This syllabus discusses defect detection in three typical models used in software testing:
 
-<small>v4.0 GA Page 50 of 77 2025/05/02</small>
+v4.0 GA Page 50 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 state transition diagrams (see [*Section 3.2.2*](#page-33)), activity diagrams (see [*Section 3.2.3*](#page-33)), and decision tables (see [*Section 3.3.1*](#page-35)). Examples of defects in the models mentioned above include:
 
@@ -1645,11 +1641,11 @@ Below, this syllabus discusses five review techniques commonly used by the TA.
 
 **Scenario-based reviewing** involves simulating a process or activity to identify anomalies and refine the
 
-<small>v4.0 GA Page 51 of 77 2025/05/02</small>
+v4.0 GA Page 51 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 test basis. This review technique is most effective when the test basis has a scenario-based format, such as a use case or activity diagram. In such cases, reviewers can perform "dry runs" based on the expected usage of the work product. Scenarios provide valuable guidelines, but the reviewers are not constrained to documented scenarios and should also think beyond the scenarios to identify more anomalies.
 
@@ -1669,11 +1665,11 @@ Test results allow the TA to identify failures, but they also provide feedback t
 
 **Defect detection percentage (DDP) analysis**. DDP is one of the most important test effectiveness measures for a test level. When calculating DDP, the number of escaped defects should be limited to those that the test level under consideration could have detected. Clear boundaries for defect counting, such as temporal limits (e.g., defects found within a defined time frame after release) and exclusion criteria (e.g., defects in third-party components or specific customer environments), should be established to ensure consistency. A low DDP for a given test level indicates a high percentage of escaped defects, meaning defect detection is ineffective. In such a case, the TA should analyze the reasons and propose measures to improve it, making the test level more focused and rigorous. The DDP is best divided by severity levels, as the priority of reducing escaped defects usually depends on their severity.
 
-<small>v4.0 GA Page 52 of 77 2025/05/02</small>
+v4.0 GA Page 52 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 **Structural coverage analysis** assesses the extent to which tests have exercised specific areas of the test object. Identifying low-coverage areas allows the TA to target test efforts in those areas. Increasing their coverage helps to discover new, previously escaped defects. Structural coverage such as statement coverage, branch coverage, or neuron coverage is usually measured with test tools. When selecting the additional areas to be covered, their risk levels should be considered.
 
@@ -1691,11 +1687,11 @@ The classical RCA involves subject matter experts studying a defect in considera
 
 Defect classification is based on the recognition that individual defects capture a great deal of information about the development process and the system under test. Defect classification allows the TA to extract information about various aspects of the development process from the defect and turn it into a process measurement. This, in turn, gives an insight into the types of errors made during development, which is helpful for process improvement. Defect classification bridges the gap between quantitative defect statistics and qualitative RCA. To effectively support RCA, the defects should be uniformly classified throughout the entire SDLC, from early testing to production.
 
-<small>v4.0 GA Page 53 of 77 2025/05/02</small>
+v4.0 GA Page 53 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 The TA should support their organization in standardizing software defect classification. This will improve communication and the exchange of information regarding defects among developers and organizations, facilitating the RCA.
 
@@ -1713,11 +1709,11 @@ Defects can also be mapped to quality attributes using software quality models s
 
 More information on RCA can be found in (ISTQB-ITP, v1.0).
 
-<small>v4.0 GA Page 54 of 77 2025/05/02</small>
+v4.0 GA Page 54 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 6 References
 
@@ -1761,11 +1757,11 @@ ISTQB-ACT, ISTQB®, 2019. *Certified Tester Specialist Mobile Acceptance Testing
 
 ISTQB-AI, ISTQB®, 2021. *Certified Tester AI Testing: Syllabus*. Version 1.0.
 
-<small>v4.0 GA Page 55 of 77 2025/05/02</small>
+v4.0 GA Page 55 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 ISTQB-CTFL, ISTQB®, 2024. *Certified Tester Foundation Level: Syllabus*. Version 4.0.1.
 
@@ -1819,11 +1815,11 @@ ALYAHYA, Sultan, 2020. Crowdsourced Software Testing: A Systematic Literature Re
 
 ANTONIOL, Giuliano; BRIAND, Lionel; DI PENTA, Massimiliano; LABICHE, Yvan, 2002. A case study using the round-trip strategy for state-based class testing. *Proceedings 13th International Symposium*
 
-<small>v4.0 GA Page 56 of 77 2025/05/02</small>
+v4.0 GA Page 56 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 *on Software Reliability Engineering*, pp. 269–279. isbn 0-7695-1763-3. Available from doi: 10.1109/ [ISSRE.2002.1173268.](https://doi.org/10.1109/ISSRE.2002.1173268)
 
@@ -1843,7 +1839,7 @@ COHEN, D.M.; DALAL, Siddhartha; KAJLA, A.; PATTON, G.C., 1994. The Automatic Eff
 
 ENGSTRÖM, Emelie; RUNESON, Per; SKOGLUND, Mats, 2010. A systematic review on regression test selection techniques. *Information and Software Technology*. Vol. 52, pp. 14–30. Available from doi: [10.1016/j.infsof.2009.07.001.](https://doi.org/10.1016/j.infsof.2009.07.001)
 
-GHAZI, Ahmad Nauman; GARIGAPATI, Ratna; PETERSEN, Kai, 2017. Checklists to Support Test Charter Design in Exploratory Testing. *Agile Processes in Software Engineering and Extreme* *Programming. XP 2017*. isbn 978-3-319-57632-9. Available from doi: 10.1007/978-3-319-57633-6_17.
+GHAZI, Ahmad Nauman; GARIGAPATI, Ratna; PETERSEN, Kai, 2017. Checklists to Support Test Charter Design in Exploratory Testing. *Agile Processes in Software Engineering and Extreme* *Programming. XP 2017*. isbn 978-3-319-57632-9. Available from doi: 10.1007/978-3-319-57633-6\_17.
 
 HAREL, David, 1987. Statecharts: A Visual Formalism For Complex Systems. *Science of Computer* *Programming*. Vol. 8, pp. 231–274. Available from doi: 10.1016/0167-6423(87)90035-9.
 
@@ -1855,11 +1851,11 @@ JUERGENS, Elmar; PAGANO, Dennis; GOEB, Andreas, 2018. Test Impact Analysis: Dete
 
 KUHN, D.; WALLACE, Dolores; JR, A.M., 2004. Software Fault Interactions and Implications for Software Testing. *IEEE Transactions on Software Engineering*. Vol. 30, pp. 418–421. Available from doi: 10.1109/ [TSE.2004.24.](https://doi.org/10.1109/TSE.2004.24)
 
-<small>v4.0 GA Page 57 of 77 2025/05/02</small>
+v4.0 GA Page 57 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 LEICHT, Niklas; BLOHM, Ivo; LEIMEISTER, Jan Marco, 2017. Leveraging the Power of the Crowd for Software Testing. *IEEE Software*. Vol. 34, pp. 62–69. Available from doi: 10.1109/MS.2017.37.
 
@@ -1877,43 +1873,43 @@ WU, Huayao; NIE, Changhai; PETKE, Justyna; JIA, Yue; HARMAN, Mark, 2020. An Empi
 
 Web Pages
 
-COMMISSION, European, 2016. *General Data Protection Regulation: Regulation (EU) 2016/679* [online]. [[visited on 2024-09-15]. Available from: https://commission.europa.eu/law/law-topic/data-protection/](https://commission.europa.eu/law/law-topic/data-protection/legal-framework-eu-data-protection_en?) [legal-framework-eu-data-protection_en?.](https://commission.europa.eu/law/law-topic/data-protection/legal-framework-eu-data-protection_en?)
+COMMISSION, European, 2016. *General Data Protection Regulation: Regulation (EU) 2016/679* \[online\]. [\[visited on 2024-09-15\]. Available from: https://commission.europa.eu/law/law-topic/data-protection/](https://commission.europa.eu/law/law-topic/data-protection/legal-framework-eu-data-protection_en?) [legal-framework-eu-data-protection\_en?.](https://commission.europa.eu/law/law-topic/data-protection/legal-framework-eu-data-protection_en?)
 
-COMPUTER SOCIETY, IEEE; JTC 1/SC7, ISO/IEC, 2024. *SE VOCAB: Software and Systems* *Engineering Vocabulary* [online]. [visited on 2024-09-15]. Available from: https://pascal.computer.org/.
+COMPUTER SOCIETY, IEEE; JTC 1/SC7, ISO/IEC, 2024. *SE VOCAB: Software and Systems* *Engineering Vocabulary* \[online\]. \[visited on 2024-09-15\]. Available from: https://pascal.computer.org/.
 
-CZERWONKA, Jacek, 2004. *Pairwise Testing: Combinatorial Test Case Generation* [online]. [visited on 2024-09-15]. Available from: www.pairwise.org.
+CZERWONKA, Jacek, 2004. *Pairwise Testing: Combinatorial Test Case Generation* \[online\]. \[visited on 2024-09-15\]. Available from: www.pairwise.org.
 
-HEALTH, U.S. Department of; SERVICES, Human, 2024. *Health Insurance Portability and Accountability* *Act: Standards for Privacy of Individually Identifiable Health Information (Privacy Rules)* [online]. [visited [on 2024-09-15]. Available from: https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/](https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/index.html) [index.html.](https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/index.html)
+HEALTH, U.S. Department of; SERVICES, Human, 2024. *Health Insurance Portability and Accountability* *Act: Standards for Privacy of Individually Identifiable Health Information (Privacy Rules)* \[online\]. \[visited [on 2024-09-15\]. Available from: https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/](https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/index.html) [index.html.](https://www.hhs.gov/hipaa/for-professionals/privacy/laws-regulations/index.html)
 
-IREB-GLOSSARY, IREB®, 2024. *The CPRE Glossary: Core terms of Requirements Engineering* [online]. [visited on 2024-09-15]. Available from: https://glossary.istqb.org.
+IREB-GLOSSARY, IREB®, 2024. *The CPRE Glossary: Core terms of Requirements Engineering* \[online\]. \[visited on 2024-09-15\]. Available from: https://glossary.istqb.org.
 
-ISTQB-GLOSSARY, ISTQB®, 2024. *Standard Glossary of Terms Used in Software Testing* [online]. [visited on 2024-09-15]. Available from: https://glossary.istqb.org.
+ISTQB-GLOSSARY, ISTQB®, 2024. *Standard Glossary of Terms Used in Software Testing* \[online\]. \[visited on 2024-09-15\]. Available from: https://glossary.istqb.org.
 
-*Site of Software Test Design*, 2020 [online]. [visited on 2024-09-15]. Available from: https://test-design. [org/.](https://test-design.org/)
+*Site of Software Test Design*, 2020 \[online\]. \[visited on 2024-09-15\]. Available from: https://test-design. [org/.](https://test-design.org/)
 
-SUMI, 1991. *Software Usability Measurement Inventory: Standard evaluation questionnaire for assessing* *quality of use* [online]. [visited on 2024-09-15]. Available from: sumi.uxp.ie.
+SUMI, 1991. *Software Usability Measurement Inventory: Standard evaluation questionnaire for assessing* *quality of use* \[online\]. \[visited on 2024-09-15\]. Available from: sumi.uxp.ie.
 
-<small>v4.0 GA Page 58 of 77 2025/05/02</small>
+v4.0 GA Page 58 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
-U.S. DEPARTMENT OF JUSTICE, Civil Rights Division, 2010. *Americans with Disabilities Act: Guidance* *& Resource Materials* [online]. [visited on 2024-09-15]. Available from: www.ada.gov/resources/.
+U.S. DEPARTMENT OF JUSTICE, Civil Rights Division, 2010. *Americans with Disabilities Act: Guidance* *& Resource Materials* \[online\]. \[visited on 2024-09-15\]. Available from: www.ada.gov/resources/.
 
-UK GOVERNMENT, Equalities Office, 2010. *Equality Act 2010: guidance: Information and guidance on* *the Equality Act 2010, including age discrimination and public sector Equality Duty.* [online]. [visited on 2024-09-15]. Available from: www.gov.uk/guidance/equality-act-2010-guidance.
+UK GOVERNMENT, Equalities Office, 2010. *Equality Act 2010: guidance: Information and guidance on* *the Equality Act 2010, including age discrimination and public sector Equality Duty.* \[online\]. \[visited on 2024-09-15\]. Available from: www.gov.uk/guidance/equality-act-2010-guidance.
 
-WAMMI, 1999. *Website Analysis and Measurement Inventory: Professional service for analyzing user* *experience* [online]. [visited on 2024-09-15]. Available from: www.wammi.com.
+WAMMI, 1999. *Website Analysis and Measurement Inventory: Professional service for analyzing user* *experience* \[online\]. \[visited on 2024-09-15\]. Available from: www.wammi.com.
 
-WCAG, 2023. *Web Content Accessibility Guidelines 2.2: W3C Recommendation* [online]. [visited on 2024- 09-15]. Available from: www.w3.org/TR/WCAG22/.
+WCAG, 2023. *Web Content Accessibility Guidelines 2.2: W3C Recommendation* \[online\]. \[visited on 2024- 09-15\]. Available from: www.w3.org/TR/WCAG22/.
 
 *The previous references point to information available on the Internet and elsewhere. Even though those* *references were checked at the time of publication of this syllabus, the ISTQB® cannot be held responsible* *if the references are unavailable anymore.*
 
-<small>v4.0 GA Page 59 of 77 2025/05/02</small>
+v4.0 GA Page 59 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 7 Appendix A – Learning Objectives/Cognitive Level of Knowledge
 
@@ -1956,11 +1952,11 @@ The candidate can carry out a procedure when confronted with a familiar task or 
 
 ### Level 4: Analyze (K4)
 
-<small>v4.0 GA Page 60 of 77 2025/05/02</small>
+v4.0 GA Page 60 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 The candidate can separate information related to a procedure or technique into its constituent parts for better understanding and can distinguish between facts and inferences. A typical application is to analyze a document, software or project situation and propose appropriate actions to solve a problem or task.
 
@@ -1977,11 +1973,11 @@ The candidate can separate information related to a procedure or technique into 
 
 Anderson, L. W. and Krathwohl, D. R. (eds) (2001) A Taxonomy for Learning, Teaching, and Assessing: A Revision of Bloom’s Taxonomy of Educational Objectives, Allyn & Bacon
 
-<small>v4.0 GA Page 61 of 77 2025/05/02</small>
+v4.0 GA Page 61 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 8 Appendix B – Business Outcomes traceability matrix with Learning Objectives
 
@@ -1999,11 +1995,11 @@ This section lists the traceability between the Business Outcomes and the Learni
 | TA-BO8 | Improve the efficiency of the test process with the use of tools |  |  |  |  |  |  | 4 |  |
 | TA-BO9 | Specify the requirements for test environments and test data |  |  |  |  |  |  |  | 2 |
 
-<small>v4.0 GA Page 62 of 77 2025/05/02</small>
+v4.0 GA Page 62 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 | Business Outcomes: Advanced Level Test Analyst |  | TA-BO1 | TA-BO2 | TA-BO3 | TA-BO4 | TA-BO5 | TA-BO6 | TA-BO8 TA-BO7 | TA-BO9 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -2026,11 +2022,11 @@ This section lists the traceability between the Business Outcomes and the Learni
 | TA-1.3.7 | Summarize the types of tools to manage the testware (K2) |  |  |  |  |  |  | ✕ |  |
 | 2 | The Tasks of the Test Analyst in Risk-Based Testing – 90 minutes |  |  |  |  |  |  |  |  |
 
-<small>v4.0 GA Page 63 of 77 2025/05/02</small>
+v4.0 GA Page 63 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 | Business Outcomes: Advanced Level Test Analyst |  | TA-BO1 | TA-BO2 | TA-BO3 | TA-BO4 | TA-BO5 | TA-BO6 | TA-BO8 TA-BO7 | TA-BO9 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -2054,11 +2050,11 @@ This section lists the traceability between the Business Outcomes and the Learni
 | TA-3.4.1 | Prepare test charters for session-based testing (K3) |  |  | ✕ |  |  |  |  |  |
 | TA-3.4.2 | Prepare checklists that support experience-based testing (K3) |  |  | ✕ |  |  |  |  |  |
 
-<small>v4.0 GA Page 64 of 77 2025/05/02</small>
+v4.0 GA Page 64 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 | Business Outcomes: Advanced Level Test Analyst |  | TA-BO1 | TA-BO2 | TA-BO3 | TA-BO4 | TA-BO5 | TA-BO6 | TA-BO8 TA-BO7 | TA-BO9 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -2081,11 +2077,11 @@ This section lists the traceability between the Business Outcomes and the Learni
 | 5.2 | Supporting Phase Containment |  |  |  |  |  |  |  |  |
 | TA-5.2.1 | Use a model of the test object to detect defects in a specification (K3) |  |  |  |  |  |  | ✕ |  |
 
-<small>v4.0 GA Page 65 of 77 2025/05/02</small>
+v4.0 GA Page 65 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 | Business Outcomes: Advanced Level Test Analyst |  | TA-BO1 | TA-BO2 | TA-BO3 | TA-BO4 | TA-BO5 | TA-BO6 | TA-BO8 TA-BO7 | TA-BO9 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -2094,11 +2090,11 @@ This section lists the traceability between the Business Outcomes and the Learni
 | TA-5.3.1 | Analyze test results to identify potential improvements to defect detection (K4) |  |  |  |  |  |  | ✕ |  |
 | TA-5.3.2 | Explain how defect classification supports root cause analysis (K2) |  |  |  |  |  |  | ✕ |  |
 
-<small>v4.0 GA Page 66 of 77 2025/05/02</small>
+v4.0 GA Page 66 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 9 Appendix C – Release Notes
 
@@ -2135,11 +2131,11 @@ The Old Chapter 5 (devoted solely to reviews) was expanded to discuss other esse
 
 - Equivalence partitioning (old K4 TA-3.2.1) and boundary value analysis (old K4 TA-3.2.2) were replaced with the more general K3 TA-3.1.1 on domain testing.
 
-<small>v4.0 GA Page 67 of 77 2025/05/02</small>
+v4.0 GA Page 67 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 - Pairwise testing (old K4 TA-3.2.6) and classification tree diagrams (old K2 TA-3.2.5) were merged into one, more general K3 TA-3.1.2 on combinatorial testing.
 
@@ -2187,21 +2183,21 @@ The Old Chapter 5 (devoted solely to reviews) was expanded to discuss other esse
 
 - Supporting root cause analysis with defect classification (K2 TA-5.3.2)
 
-<small>v4.0 GA Page 68 of 77 2025/05/02</small>
+v4.0 GA Page 68 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 ### Standard updates
 
 Changes in the latest versions of the international standards for software quality ([*ISO/IEC 25010*](#page-55)[,](#page-55) 2023) and test techniques ([*ISO/IEC/IEEE 29119-4*](#page-55), 2021) have led to the adaptation of the syllabus’s corresponding content.
 
-<small>v4.0 GA Page 69 of 77 2025/05/02</small>
+v4.0 GA Page 69 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 10 Appendix D – List of Abbreviations
 
@@ -2230,11 +2226,11 @@ Changes in the latest versions of the international standards for software quali
 | UX | user experience |
 | XML | Extensible Markup Language |
 
-<small>v4.0 GA Page 70 of 77 2025/05/02</small>
+v4.0 GA Page 70 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 11 Appendix E – Domain-Specific Terms
 
@@ -2247,11 +2243,11 @@ Changes in the latest versions of the international standards for software quali
 | user journey map | User experience visualization documentation that shows the steps that a user takes in a process to accomplish a goal. |
 | user research | A discipline of learning about users’ needs and thought processes by studying how they perform tasks, observing how they interact with a component or system, or by data analysis and interpretation. |
 
-<small>v4.0 GA Page 71 of 77 2025/05/02</small>
+v4.0 GA Page 71 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 12 Appendix F – Software Quality Model
 
@@ -2280,11 +2276,11 @@ The table below shows the quality characteristics of the ISO/IEC 25010 product q
 | User assistance |  |  |  |
 | Self-descriptiveness |  | New |  |
 
-<small>v4.0 GA Page 72 of 77 2025/05/02</small>
+v4.0 GA Page 72 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 | ISO/IEC 25010:2023 (current) | ISO/IEC 25010:2011 (previous) | Notes | ISTQB® syllabi |
 | --- | --- | --- | --- |
@@ -2318,11 +2314,11 @@ The table below shows the quality characteristics of the ISO/IEC 25010 product q
 | Hazard warning |  | New |  |
 | Safe integration |  | New |  |
 
-<small>v4.0 GA Page 73 of 77 2025/05/02</small>
+v4.0 GA Page 73 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 13 Appendix G – Trademarks
 
@@ -2332,32 +2328,32 @@ UML® is a registered trademark of the Object Management Group (OMG).
 
 BPMN™is a trademark of the Object Management Group (OMG).
 
-<small>v4.0 GA Page 74 of 77 2025/05/02</small>
+v4.0 GA Page 74 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 # 14 Index
 
 defect arrival pattern, 53 defect classification, 54 defect cluster, 52 defect detection effectiveness, 52 defect detection percentage, 52 defect prevention, 48, 49 defect removal efficiency, 49 defect taxonomy, 54 do-confirm checklist, 38 domain, 29 domain testing, 28, 29 dry run, 52 end-to-end testing, 34 equivalence partition, 28 equivalence partitioning, 29 exit criteria, 31, 36 experience-based testing, 28, 38 exploratory testing, 37 five whys technique, 53, 71 flexibility, 43, 46 flexibility testing, 46 follow-up test case, 36 full decision table, 35 functional appropriateness, 43, 44 functional completeness, 43, 44 functional correctness, 43, 44 functional suitability, 43, 44 functional testing, 43, 44 fuzz testing, 32 guard conditions, 33 guided random testing, 31 high-level test case, 13, 17 history-based testing, 26 human oracle, 20 impact analysis, 24, 26 in point, 30 incremental development model, 14 individual review, 51 installability, 43, 46 interaction capability, 43, 45 interoperability, 43, 47 interoperability testing, 47 iterative development model, 14 keyword, 13 keyword-driven testing, 13, 21 accessibility, 45 accessibility testing, 45 activity diagram, 33, 51 ad hoc reviewing, 48, 51 adaptability, 43, 46 adaptability testing, 46 agile software development, 14, 26, 44, 50 anonymized data, 20 automated test script, 17 base choice coverage, 31 behavior-based test technique, 28, 32 border, 29 boundary value analysis, 29 branch coverage, 53 cause-effect diagram, 53 chaos engineering, 32 checklist, 38, 51 checklist item, 38 checklist-based reviewing, 48, 51 checklist-based testing, 28, 38 checksum procedure, 35 classification tree, 31 closed border, 29 coexistence, 47 combinatorial testing, 28, 30 compatibility, 43, 47 completeness testing, 32 configuration items, 26 configuration management, 26 consistency testing, 32 cost of quality, 50 [coverage, 15, 26, 40, 51, 53](#page-26) [coverage criteria, 20, 29, 31, 33, 34, 41](#page-20) [coverage item, 18, 29, 31, 32, 34](#page-18) coverage-based testing, 26 crowd testing, 28, 39 crud, 32 crud coverage, 32 crud matrix, 32, 71 crud testing, 28, 32 data semantics, 31, 71 data-based test technique, 28, 29 decision table, 35, 51 decision table coverage, 35 decision table testing, 28, 35
 
-<small>v4.0 GA Page 75 of 77 2025/05/02</small>
+v4.0 GA Page 75 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 risk-based test selection, 26 risk-based testing, 24, 25 role-based reviewing, 48, 52 root cause analysis, 48, 53 round trip, 33 round-trip coverage, 33 rule-based test technique, 28, 34 scalability, 46 scenario model, 33 scenario-based coverage, 34 scenario-based reviewing, 48, 51 scenario-based testing, 28, 33 sequential development model, 14 session sheet, 38 session-based testing, 28, 37 simplified domain coverage, 30 software development lifecycle, 13, 14 source test case, 36 specification, 50 [stakeholder, 15, 16, 18, 19, 21, 25, 50](#page-16) state, 33 state transition, 33 state transition diagram, 51 state transition testing, 28, 33 state-based model, 33 stateful, 33 statement coverage, 53 structural coverage, 53 survey, 45 synthetic data, 20 test analysis, 13, 15, 29 test analyst, 13, 14 [test basis, 15, 19, 49–51](#page-15) [test case, 13, 15, 18](#page-13) test charter, 28, 37 [test condition, 13, 15, 29, 50](#page-13) [test data, 13, 20, 31](#page-13) [test design, 13, 15, 29, 41](#page-13) test environment, 13, 16, 19 test execution, 13, 16 test gap, 53 test implementation, 13, 16 test log, 38 test model, 41 test objective, 40 test oracle, 13, 19, 31, 40, 44 test oracle problem, 19, 36 test procedure, 16, 36 low-level test case, 13, 17 mbt model, 51 mbt tool, 51 metamorphic relation, 28, 36 metamorphic testing, 28, 36 minimized decision table, 35 model-based testing, 20, 33, 41, 48, 51 modeling, 50 n-switch, 33 n-switch coverage, 33 neuron coverage, 53 off point, 29 on point, 29 open border, 29 operational profile, 27, 31 orthogonal defect classification, 54 out point, 30 pairwise coverage, 31 parameter-value pair, 30 pareto analysis, 53, 71 persona, 33 perspective-based reading, 48, 52 phase containment, 50 phase containment effectiveness, 49 portability testing, 46 product risk, 24, 40 production data, 20 property-based testing, 20 pseudo-oracle, 20 pseudonymized data, 20 random testing, 28, 31 read-do checklist, 38 recurrence of defects, 52 regression test selection, 26 regression testing, 24, 26 reliable domain coverage, 30 replaceability, 46 requirement traceability matrix, 26 retrospective, 49 review technique, 48, 51 reviewer, 51 risk analysis, 24, 25 risk assessment, 24, 25 risk control, 24, 25 risk identification, 24, 25 risk level, 25 risk mitigation, 24, 26, 40 risk monitoring, 24, 26
 
-<small>v4.0 GA Page 76 of 77 2025/05/02</small>
+v4.0 GA Page 76 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board
 
-<small>ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)</small>
+ISTQB® Certified Tester Advanced Level Syllabus – Test Analyst (CTAL-TA)
 
 test result, 48 [test script, 13, 16, 21](#page-13) test session, 37 test technique, 40 [testware, 13, 17, 22, 41](#page-13) [traceability, 15, 21, 22, 42, 44, 50](#page-21) traceability matrix, 22 unguided random testing, 31 usability, 43, 45 usability evaluation, 45 usability review, 45 usability test session, 45 usability testing, 45 use case, 33 user experience, 43, 45 user journey map, 33, 37, 71 user questionnaire, 45 user research, 33, 71 validation, 31 verification, 31
 
-<small>v4.0 GA Page 77 of 77 2025/05/02</small>
+v4.0 GA Page 77 of 77 2025/05/02
 
-<small>© International Software Testing Qualifications Board</small>
+© International Software Testing Qualifications Board

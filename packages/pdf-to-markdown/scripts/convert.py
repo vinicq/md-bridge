@@ -331,7 +331,11 @@ def render_span(span: Span) -> str:
         else:
             core = escape_markdown_inline(core)
         if sup:
-            core = f"<sup>{core}</sup>"
+            # Pandoc/pymdownx superscript (`^x^`) instead of raw <sup>, to keep
+            # output pure Markdown (#141). A caret-unaware renderer shows the
+            # carets literally, which is acceptable; `^` is inert punctuation in
+            # the shipped renderer, so we do not escape literal prose carets.
+            core = f"^{core}^"
         if bold and italic:
             core = f"***{core}***"
         elif bold:
@@ -740,8 +744,12 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             list_cont_indent = "  " * nesting + "    "
             list_marker_x0 = block.bbox[0]
         elif cls == "small":
+            # Markdown has no clean small-text semantic, and raw <small> breaks
+            # pure-Markdown consumers (RAG, plain viewers, indexers). Emit the
+            # text as a plain paragraph and drop the size hint (#141). Opt-in
+            # raw-HTML preservation is the job of the allow-list policy (#154).
             list_marker_x0 = None
-            out_parts.append(f"<small>{text_clean}</small>")
+            out_parts.append(text_clean)
         else:
             list_marker_x0 = None
             out_parts.append(text_clean)
@@ -977,6 +985,18 @@ def normalize_headings_from_toc(md: str, toc: list) -> str:
 PARAGRAPH_END = (".", "!", "?", ":", ";", "\"", "”", "’", ")", "]", "}", "…")
 
 
+# Running page furniture: "Page 3 of 77", "v4.0 GA Page 3 of 77 2025/05/02".
+# These lines are not prose. Before #141 the <small> wrapper kept them out of
+# the wrapped-paragraph merge; now that small blocks render as plain text, this
+# content test fills the same role so a footer is never fused into an adjacent
+# paragraph. Comprehensive header/footer removal is tracked in #187.
+_PAGE_FURNITURE_RE = re.compile(r"\bpage\s+\d+\s+of\s+\d+\b", re.IGNORECASE)
+
+
+def looks_like_page_furniture(text: str) -> bool:
+    return bool(_PAGE_FURNITURE_RE.search(text))
+
+
 def is_block_paragraph(block: str) -> bool:
     # A leading indent now carries list-nesting meaning: the block is a
     # continuation paragraph bound to a list item (#167). Treat it as
@@ -995,11 +1015,15 @@ def is_block_paragraph(block: str) -> bool:
         return False
     if s.startswith("- ") or s.startswith("* ") or s.startswith("+ "):
         return False
-    if s.startswith("<small>") or s.startswith("---"):
+    if s.startswith("---"):
         return False
     if s.startswith("```"):
         return False
     if NUMBERED_RE.match(s):
+        return False
+    # A running header/footer is not prose; keep it out of the merge so it is
+    # not fused into the surrounding paragraphs (#141).
+    if looks_like_page_furniture(s):
         return False
     return True
 

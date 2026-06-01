@@ -55,3 +55,21 @@ def test_istqb_regression(
             f"ISTQB drift {drift:.2%} > {TOLERANCE:.0%} on {istqb_pdf.name}. "
             f"Run `pytest tests/ --update-golden` if intentional."
         )
+
+
+def test_istqb_output_is_pure_markdown(istqb_pdf, pdf_to_md_mod):
+    # #141: the converter must not emit raw <small>/<sup> tags. The drift test
+    # above tolerates 2% churn; this asserts the tag count is exactly zero on a
+    # real, caption- and footnote-heavy document, so a reintroduced wrapper
+    # fails loudly rather than hiding under the drift threshold.
+    current = _convert(pdf_to_md_mod, istqb_pdf)
+    assert "<small>" not in current
+    assert "<sup>" not in current
+    # The former-<small> page footers must stay standalone, not be fused into
+    # the preceding paragraph by the wrapped-paragraph merge (#141 review).
+    lines = current.splitlines()
+    footer_lines = [ln for ln in lines if "Page 3 of 77" in ln]
+    assert footer_lines, "expected the page-3 footer to survive in the output"
+    assert all(ln.strip() == "v4.0 GA Page 3 of 77 2025/05/02" for ln in footer_lines), (
+        f"page footer was fused into prose: {footer_lines}"
+    )
