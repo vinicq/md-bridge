@@ -88,8 +88,12 @@ def _build_warnings(md_body: str, options: PdfToMdOptions, pages: int) -> list[s
     entries (en, pt, es).
     """
     warnings: list[str] = []
-    plain = re.sub(r"<small>.*?</small>", " ", md_body, flags=re.DOTALL)
-    plain_chars = len(re.sub(r"\s+", "", plain))
+    # The converter no longer wraps small-font text in <small> (#141), so there
+    # is nothing to strip first; small-font captions/footnotes are real content
+    # and now count toward the char total. The hard 422 ocr_required gate lives
+    # in inspect.py and reads raw PDF chars, independent of this informational
+    # warning, so dropping the strip does not move the OCR boundary.
+    plain_chars = len(re.sub(r"\s+", "", md_body))
     if plain_chars < max(80, pages * 40):
         warnings.append("needs_ocr")
     if options.with_images:
