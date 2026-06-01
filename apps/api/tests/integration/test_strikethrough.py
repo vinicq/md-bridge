@@ -46,9 +46,12 @@ def test_strikethrough_round_trips_to_gfm_tildes():
 def _pdf_with_full_width_rule_over_text() -> bytes:
     doc = pymupdf.open()
     page = doc.new_page(width=420, height=300)
-    page.insert_text((50, 160), "a section divider follows this line", fontsize=15)
-    # A full-width rule that overlaps the text at mid-height. mupdf sets the
-    # strikeout char_flag for it, but it is page furniture, not a strike.
+    # An intro line of prose so the page carries enough extractable text to skip
+    # the needs_ocr gate; the conversion path (not OCR) is what we exercise.
+    page.insert_text((50, 110), "Some introductory prose gives this page real text.", fontsize=12)
+    page.insert_text((50, 160), "a section divider follows", fontsize=15)
+    # A full-width rule that overlaps the second line at mid-height. mupdf sets
+    # the strikeout char_flag for it, but it is page furniture, not a strike.
     page.draw_line((20, 155), (400, 155), width=1)
     try:
         return doc.tobytes()
@@ -77,7 +80,9 @@ def test_full_width_rule_is_not_read_as_strikethrough():
 def _pdf_with_thin_rect_rule_over_text() -> bytes:
     doc = pymupdf.open()
     page = doc.new_page(width=420, height=300)
-    page.insert_text((50, 160), "divider drawn as a thin rectangle", fontsize=15)
+    # Intro prose so the page skips the needs_ocr gate (see the line-rule case).
+    page.insert_text((50, 110), "Some introductory prose gives this page real text.", fontsize=12)
+    page.insert_text((50, 160), "divider as a thin rectangle", fontsize=15)
     # Some PDFs draw a rule as a thin filled rectangle rather than a line.
     page.draw_rect(pymupdf.Rect(20, 154, 400, 157), fill=(0, 0, 0), color=(0, 0, 0))
     try:
