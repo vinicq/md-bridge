@@ -713,11 +713,31 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
         cls = classify_block(block, profile)
 
         if cls == "code":
-            flush_numbered()
-            list_marker_x0 = None
             code_lines = [line.text.rstrip() for line in block.lines if line.text.strip()]
             if not code_lines:
                 continue
+            # A code block indented past the open item's marker continues that
+            # item (#197). The shipped renderer (python-markdown) nests code
+            # under a list item only as an INDENTED block, not a fence: a fence
+            # at the content column degrades to an inline code span. So we emit
+            # the lines indented to the item content column plus 4, which drops
+            # the language hint for the continuation; top-level code keeps its
+            # fence and language.
+            if (
+                list_marker_x0 is not None
+                and block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
+            ):
+                indent = list_cont_indent + "    "
+                cont_block = "\n".join(indent + ln for ln in code_lines)
+                if numbered_run:
+                    numbered_run.append("")
+                    numbered_run.append(cont_block)
+                    numbered_loose_pending = True
+                else:
+                    out_parts.append(cont_block)
+                continue
+            flush_numbered()
+            list_marker_x0 = None
             code_body = "\n".join(code_lines)
             lang = detect_language(code_body)
             out_parts.append(f"```{lang}\n{code_body}\n```")
