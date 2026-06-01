@@ -6,7 +6,13 @@ import os
 
 import pymupdf
 
-DEFAULT_OCR_LANG = "eng+por"
+# Multi-language Tesseract set so a scanned document is read without an
+# operator configuring a per-document language. Tesseract scores each region
+# across all three models, which is deterministic given the same input and the
+# same installed traineddata. PT-PT and PT-BR share a single `por` model. A
+# narrower per-document auto-detect (first-pass language ID) is a follow-up;
+# `MD_BRIDGE_OCR_LANG` stays the override escape hatch. (#199)
+DEFAULT_OCR_LANG = "eng+por+spa"
 
 
 def get_lang() -> str:

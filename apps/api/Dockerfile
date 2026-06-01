@@ -43,7 +43,7 @@ CMD ["python", "-m", "uvicorn", "app.main:app", \
 FROM runtime AS runtime-ocr
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-por \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-por tesseract-ocr-spa \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install -e "/app/apps/api[ocr]"
@@ -54,7 +54,7 @@ RUN pip install -e "/app/apps/api[ocr]"
 FROM base AS test
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-por \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-por tesseract-ocr-spa \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install -e "/app/apps/api[dev,ocr]"
