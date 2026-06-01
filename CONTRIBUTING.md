@@ -367,6 +367,10 @@ need:
 Once that is wired up, the root-level `npm run dev` starts the API on
 `localhost:8000` and the Vite dev server on `localhost:5173`.
 
+The root npm scripts auto-detect the backend interpreter at
+`apps/api/.venv` (Windows or POSIX layout) and fall back to `python` on
+your PATH, so they work the same on macOS, Linux, and Windows.
+
 ### Install the pre-commit hooks (strongly recommended)
 
 Before your first commit, install the local hooks. They run `ruff` and a
