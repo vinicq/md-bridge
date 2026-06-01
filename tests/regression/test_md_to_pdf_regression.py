@@ -60,3 +60,46 @@ def test_md_to_pdf_renders_minimal(md_to_pdf_mod, chromium_ready):
 
     assert data.startswith(b"%PDF-"), "output is not a PDF"
     assert len(data) > 1024, f"PDF too small to be plausible: {len(data)} bytes"
+
+
+COMPLEX_FM_MD = """---
+title: "Front Matter Sample"
+keywords: [zzqkeyword1, zzqkeyword2, zzqkeyword3]
+author:
+  name: Ada Lovelace
+  email: ada@example.org
+description: |
+  First line of the abstract.
+  Second line of the abstract.
+---
+
+# Body Heading
+
+A plain body paragraph.
+"""
+
+
+def test_md_to_pdf_renders_complex_front_matter(md_to_pdf_mod, chromium_ready):
+    # #150: list, nested-mapping, and block-scalar front matter must not leak
+    # into the rendered body and must still produce a valid PDF.
+    from app.config import MD_TO_PDF_TEMPLATES
+
+    css = MD_TO_PDF_TEMPLATES / "default.css"
+
+    # The parsed front matter carries the structured values, and none of them
+    # bleed into the body markdown that gets rendered.
+    fm, body_md = md_to_pdf_mod.split_front_matter(COMPLEX_FM_MD)
+    assert fm["keywords"] == ["zzqkeyword1", "zzqkeyword2", "zzqkeyword3"]
+    assert fm["author"] == {"name": "Ada Lovelace", "email": "ada@example.org"}
+    assert "zzqkeyword1" not in body_md
+    assert "ada@example.org" not in body_md
+
+    with tempfile.TemporaryDirectory(prefix="regress-md2pdf-fm-") as raw:
+        md_path = Path(raw) / "doc.md"
+        pdf_path = Path(raw) / "doc.pdf"
+        md_path.write_text(COMPLEX_FM_MD, encoding="utf-8")
+        md_to_pdf_mod.convert(md_path, pdf_path, [css], lang="en")
+        data = pdf_path.read_bytes()
+
+    assert data.startswith(b"%PDF-"), "output is not a PDF"
+    assert len(data) > 1024, f"PDF too small to be plausible: {len(data)} bytes"

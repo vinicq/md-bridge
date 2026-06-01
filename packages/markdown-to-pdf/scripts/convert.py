@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 import markdown
+import yaml
 from playwright.sync_api import sync_playwright
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -36,18 +37,29 @@ MD_EXTENSIONS = [
 
 
 def split_front_matter(md_text: str) -> tuple[dict, str]:
-    """Return (front_matter_dict, body_md). Empty dict if no front matter."""
+    """Return (front_matter_dict, body_md). Empty dict if no front matter.
+
+    The block is parsed with `yaml.safe_load`, so list, nested-mapping, and
+    block-scalar (`|`, `>`) values survive instead of being flattened to a
+    string or dropped by a hand-written split-on-colon loop (#150). A malformed
+    block is tolerated the way the old loop tolerated bad lines: the delimiters
+    are still stripped from the body, a warning goes to stderr, and parsing
+    falls back to an empty mapping so the document still renders. A non-mapping
+    top-level value (a bare scalar or list between the fences) is treated as no
+    usable front matter.
+    """
     for prefix, sep in (("---\n", "\n---\n"), ("---\r\n", "\r\n---\r\n")):
         if md_text.startswith(prefix):
             end = md_text.find(sep, len(prefix))
             if end != -1:
                 fm_block = md_text[len(prefix):end]
                 body = md_text[end + len(sep):]
-                fm: dict[str, str] = {}
-                for line in fm_block.splitlines():
-                    if ":" in line:
-                        key, value = line.split(":", 1)
-                        fm[key.strip()] = value.strip().strip('"').strip("'")
+                try:
+                    parsed = yaml.safe_load(fm_block)
+                except yaml.YAMLError as exc:
+                    print(f"[warn] could not parse YAML front matter: {exc}", file=sys.stderr)
+                    parsed = None
+                fm = parsed if isinstance(parsed, dict) else {}
                 return fm, body
     return {}, md_text
 
@@ -62,7 +74,11 @@ def escape_html(s: str) -> str:
 
 
 def build_html(body_html: str, fm: dict, lang: str, css_blocks: list[str]) -> str:
+    # safe_load can return non-string scalars (a date, a number) or even a list
+    # for `title:`; coerce so escape_html always receives a string.
     title = fm.get("title") or "Document"
+    if not isinstance(title, str):
+        title = str(title)
     style = "\n".join(f"<style>\n{css}\n</style>" for css in css_blocks)
     return (
         '<!DOCTYPE html>\n'
