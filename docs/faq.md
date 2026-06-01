@@ -16,13 +16,16 @@ the lean default install in the wrong direction.
 The opt-in flow is one environment variable and one Docker target:
 
 ```bash
-# pip install with the [ocr] extra
+# pip install with the [ocr] extra (plus the Tesseract binary + language packs)
 python -m pip install -e "apps/api[ocr]"
 
-# enable at runtime
-MD_BRIDGE_OCR_ENABLED=1 uvicorn app.main:app --app-dir apps/api
+# OCR then runs automatically for scanned PDFs — no flag needed.
+uvicorn app.main:app --app-dir apps/api
 
-# or build the dedicated container target
+# Force it off even when installed:
+MD_BRIDGE_OCR_ENABLED=0 uvicorn app.main:app --app-dir apps/api
+
+# Or build the dedicated container target (OCR on by default):
 docker build -f apps/api/Dockerfile --target runtime-ocr \
   -t md-bridge-api:ocr .
 ```

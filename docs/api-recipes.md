@@ -100,7 +100,8 @@ with open("whitepaper.pdf", "rb") as fh:
 r.raise_for_status()
 report = r.json()
 if report["needs_ocr"]:
-    print("This PDF is scanned. Enable MD_BRIDGE_OCR_ENABLED on the server.")
+    print("This PDF is scanned. Install the OCR extra on the server "
+          "(it then runs automatically), or retry with force=true.")
 ```
 
 ### JavaScript
