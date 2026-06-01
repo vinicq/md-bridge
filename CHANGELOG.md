@@ -124,10 +124,25 @@ If a section is empty in a release, the section is omitted entirely.
 
 ### Fixed
 
+- **Multi-paragraph list items no longer collapse.** A list item that
+  spanned more than one paragraph in the PDF used to emit the second
+  paragraph at top level, splitting the list. The page assembly now
+  tracks the open item and nests a paragraph indented past the marker
+  inside the `<li>`. (#167)
+- **Code blocks under a list item stay in the item.** A fenced code
+  block indented past the marker used to escape to top level and split
+  the list; it now nests inside the item as an indented code block
+  (the shipped renderer does not nest a fence at the content column, so
+  the language hint is dropped for the nested case). (#197)
+- **YAML front matter keeps list, nested, and multi-line values.** The
+  markdown-to-pdf reader parsed front matter with a hand-written
+  split-on-colon loop that flattened or dropped anything that was not a
+  flat `key: value`; it now uses PyYAML, with the block hardened against
+  a billion-laughs / deep-nesting denial of service. (#150)
 - **A full-width rule is no longer misread as strikethrough.** PyMuPDF's
-  strikeout flag fires for any horizontal line crossing text at
-  mid-height, including a page rule or section divider. The converter now
-  cross-checks the drawn-line geometry: a stroke that overruns the span
+  strikeout flag fires for any horizontal line or thin rule crossing text
+  at mid-height, including a page rule or section divider. The converter
+  now cross-checks the drawn geometry: a stroke that overruns the span
   toward the margins is a rule, not a strike, so the spurious `~~` is
   dropped. A genuine strike (a line spanning the struck text) still
   converts. (#202)

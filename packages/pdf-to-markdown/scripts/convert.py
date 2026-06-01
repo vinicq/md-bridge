@@ -347,7 +347,12 @@ def annotate_spans_with_links(blocks: list[Block], page_links: list[dict]) -> No
 
 
 def horizontal_strokes(page: fitz.Page) -> list[tuple[float, float, float]]:
-    """Return (y, x0, x1) for each near-horizontal line segment drawn on the page."""
+    """Return (y, x0, x1) for each near-horizontal rule drawn on the page.
+
+    Covers both shapes a PDF uses for a rule or a strike: a line item (`"l"`)
+    and a thin filled rectangle (`"re"`, e.g. a divider drawn as a 1-3 pt tall
+    box). A tall rectangle is a fill/box, not a rule, so only thin ones count.
+    """
     strokes: list[tuple[float, float, float]] = []
     try:
         drawings = page.get_drawings()
@@ -355,10 +360,16 @@ def horizontal_strokes(page: fitz.Page) -> list[tuple[float, float, float]]:
         return strokes
     for drawing in drawings:
         for item in drawing.get("items", []):
-            if item and item[0] == "l":
+            if not item:
+                continue
+            if item[0] == "l":
                 p1, p2 = item[1], item[2]
                 if abs(p1.y - p2.y) <= 1.5:
                     strokes.append(((p1.y + p2.y) / 2, min(p1.x, p2.x), max(p1.x, p2.x)))
+            elif item[0] == "re":
+                rect = item[1]
+                if abs(rect.y1 - rect.y0) <= 3.0:
+                    strokes.append(((rect.y0 + rect.y1) / 2, rect.x0, rect.x1))
     return strokes
 
 
@@ -778,11 +789,31 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
         cls = classify_block(block, profile)
 
         if cls == "code":
-            flush_numbered()
-            list_marker_x0 = None
             code_lines = [line.text.rstrip() for line in block.lines if line.text.strip()]
             if not code_lines:
                 continue
+            # A code block indented past the open item's marker continues that
+            # item (#197). The shipped renderer (python-markdown) nests code
+            # under a list item only as an INDENTED block, not a fence: a fence
+            # at the content column degrades to an inline code span. So we emit
+            # the lines indented to the item content column plus 4, which drops
+            # the language hint for the continuation; top-level code keeps its
+            # fence and language.
+            if (
+                list_marker_x0 is not None
+                and block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
+            ):
+                indent = list_cont_indent + "    "
+                cont_block = "\n".join(indent + ln for ln in code_lines)
+                if numbered_run:
+                    numbered_run.append("")
+                    numbered_run.append(cont_block)
+                    numbered_loose_pending = True
+                else:
+                    out_parts.append(cont_block)
+                continue
+            flush_numbered()
+            list_marker_x0 = None
             code_body = "\n".join(code_lines)
             lang = detect_language(code_body)
             out_parts.append(f"```{lang}\n{code_body}\n```")

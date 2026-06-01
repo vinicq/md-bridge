@@ -99,6 +99,14 @@ def test_strikethrough_confirmed_rejects_overrunning_rule():
     assert mod.strikethrough_confirmed(span_bbox, strokes) is False
 
 
+def test_strikethrough_confirmed_rejects_single_margin_overrun():
+    # A stroke that overruns only one side (starts at the span but runs far
+    # past the right margin) is still a rule, not a strike.
+    span_bbox = (50.0, 150.0, 120.0, 168.0)
+    strokes = [(157.0, 50.0, 400.0)]
+    assert mod.strikethrough_confirmed(span_bbox, strokes) is False
+
+
 def test_strikethrough_confirmed_trusts_flag_when_no_geometry():
     # No drawing evidence (e.g. get_drawings returned nothing): keep the flag.
     span_bbox = (50.0, 70.0, 93.0, 85.0)
