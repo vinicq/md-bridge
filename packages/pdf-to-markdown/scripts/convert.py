@@ -978,6 +978,13 @@ PARAGRAPH_END = (".", "!", "?", ":", ";", "\"", "”", "’", ")", "]", "}", "�
 
 
 def is_block_paragraph(block: str) -> bool:
+    # A leading indent now carries list-nesting meaning: the block is a
+    # continuation paragraph bound to a list item (#167). Treat it as
+    # structural so the wrapped-paragraph merge never folds a de-indented
+    # top-level sibling into it (which would keep the indent and pull the
+    # sibling inside the <li>).
+    if block[:1] in (" ", "\t"):
+        return False
     s = block.lstrip()
     if not s:
         return False

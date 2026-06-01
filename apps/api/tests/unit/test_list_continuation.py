@@ -98,3 +98,22 @@ def test_two_continuations_under_one_item():
     first_item = html.split("</li>")[0]
     assert "First continuation." in first_item
     assert "Another continuation." in first_item
+
+
+def test_continuation_does_not_swallow_a_following_sibling():
+    # `merge_continued_paragraphs` joins wrapped paragraphs after assembly. A
+    # continuation that trails off mid-phrase (a comma here) must not pull the
+    # de-indented top-level paragraph that follows it into the <li>: the indent
+    # marks list nesting, so an indented block is structural, not mergeable.
+    md = (
+        "- Item one,\n\n"
+        "    a continuation clause that trails off with a comma,\n\n"
+        "A brand new top-level paragraph that stays outside the list."
+    )
+    merged = mod.merge_continued_paragraphs(md)
+    html = markdown.markdown(merged)
+
+    assert "<p>A brand new top-level paragraph that stays outside the list.</p>" in html
+    assert html.count("<li>") == 1
+    first_item = html.split("</li>")[0]
+    assert "brand new top-level paragraph" not in first_item
