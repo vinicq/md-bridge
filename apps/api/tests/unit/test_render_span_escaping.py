@@ -41,6 +41,20 @@ def test_render_span_does_not_escape_inside_a_code_span():
     assert mod.render_span(span("a_b", font="Courier")) == "`a_b`"
 
 
+def test_render_span_superscript_emits_caret_not_html():
+    # #141: a superscript span renders as Pandoc `^x^`, not raw <sup>.
+    out = mod.render_span(span("2", flags=mod.FLAG_SUPERSCRIPT))
+    assert out == "^2^"
+    assert "<sup>" not in out
+
+
+def test_render_span_leaves_literal_caret_bare():
+    # A literal caret in prose stays bare: `^` is inert in the shipped renderer,
+    # so escaping it would only leak a backslash to plain-Markdown consumers
+    # without preventing any real misparse (#141).
+    assert mod.render_span(span("25^C")) == "25^C"
+
+
 def test_render_span_mono_with_backtick_falls_back_to_escaped_prose():
     # A single-backtick code span cannot contain a literal backtick, so a mono
     # span whose text already has one degrades to escaped prose instead of
