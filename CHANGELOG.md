@@ -122,6 +122,24 @@ If a section is empty in a release, the section is omitted entirely.
   history. Replaced with the new `Deploy: deployment-other.md`
   entry so MkDocs builds without the orphan-page warning. (#98)
 
+### Fixed
+
+- **Multi-paragraph list items no longer collapse.** A list item that
+  spanned more than one paragraph in the PDF used to emit the second
+  paragraph at top level, splitting the list. The page assembly now
+  tracks the open item and nests a paragraph indented past the marker
+  inside the `<li>`. (#167)
+- **Code blocks under a list item stay in the item.** A fenced code
+  block indented past the marker used to escape to top level and split
+  the list; it now nests inside the item as an indented code block
+  (the shipped renderer does not nest a fence at the content column, so
+  the language hint is dropped for the nested case). (#197)
+- **YAML front matter keeps list, nested, and multi-line values.** The
+  markdown-to-pdf reader parsed front matter with a hand-written
+  split-on-colon loop that flattened or dropped anything that was not a
+  flat `key: value`; it now uses PyYAML, with the block hardened against
+  a billion-laughs / deep-nesting denial of service. (#150)
+
 ## [0.2.3] — 2026-05-20
 
 Minor release. Headline change is the **first external contribution**:

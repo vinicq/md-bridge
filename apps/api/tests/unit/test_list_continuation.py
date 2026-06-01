@@ -117,3 +117,25 @@ def test_continuation_does_not_swallow_a_following_sibling():
     assert html.count("<li>") == 1
     first_item = html.split("</li>")[0]
     assert "brand new top-level paragraph" not in first_item
+
+
+def test_code_block_continuation_nests_in_item():
+    # #197: a code block indented past the marker nests inside the item as an
+    # indented code block (the shipped renderer won't nest a fence). The list
+    # must not split, and the code lands inside the first <li> as <pre><code>.
+    items = [
+        ("block", _block("1. Run the snippet:", 72.0)),
+        ("block", _block('print("hello")', 110.0, font="Courier")),
+        ("block", _block("2. Read the output.", 72.0)),
+    ]
+    md = mod.assemble_markdown(items, _profile())
+    html = markdown.markdown(md)
+
+    assert html.count("<ol>") == 1
+    assert html.count("<li>") == 2
+    first_item = html.split("</li>")[0]
+    assert "<pre><code>" in first_item
+    assert 'print("hello")' in first_item
+    # Nested code is an indented block, so it carries no language class — the
+    # hint-drop contract for the continuation case.
+    assert "language-" not in first_item
