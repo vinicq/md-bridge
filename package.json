@@ -5,18 +5,18 @@
   "description": "Self-hosted document converter built on hand-written heuristics. Ships PDF and Markdown conversion today; the architecture welcomes new format pairs as contributions land. Deterministic by design.",
   "scripts": {
     "dev": "concurrently -n api,web -c blue,magenta \"npm:dev:api\" \"npm:dev:web\"",
-    "dev:api": "apps/api/.venv/Scripts/python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir apps/api",
+    "dev:api": "node scripts/py.mjs -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir apps/api",
     "dev:web": "npm --prefix apps/web run dev",
     "build": "npm --prefix apps/web run build",
 
     "test:unit": "npm run test:unit:api && npm run test:unit:regression && npm run test:unit:web",
-    "test:unit:api": "apps/api/.venv/Scripts/python.exe -m pytest apps/api/tests/unit",
-    "test:unit:regression": "apps/api/.venv/Scripts/python.exe -m pytest tests/unit",
+    "test:unit:api": "node scripts/py.mjs -m pytest apps/api/tests/unit",
+    "test:unit:regression": "node scripts/py.mjs -m pytest tests/unit",
     "test:unit:web": "npm --prefix apps/web run test:unit",
 
     "test:integration": "npm run test:integration:api && npm run test:integration:regression && npm run test:integration:web",
-    "test:integration:api": "apps/api/.venv/Scripts/python.exe -m pytest apps/api/tests/integration",
-    "test:integration:regression": "apps/api/.venv/Scripts/python.exe -m pytest tests/regression",
+    "test:integration:api": "node scripts/py.mjs -m pytest apps/api/tests/integration",
+    "test:integration:regression": "node scripts/py.mjs -m pytest tests/regression",
     "test:integration:web": "npm --prefix apps/web run test:integration",
 
     "test:e2e": "npm --prefix apps/web run test:e2e",
