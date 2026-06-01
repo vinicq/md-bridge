@@ -35,6 +35,27 @@ MD_EXTENSIONS = [
     "md_in_html",
 ]
 
+# Front matter is metadata: a few hundred bytes in practice. Cap the block before
+# parsing so a pathological document cannot make the YAML tokenizer chew through
+# hundreds of MB of nesting. 64 KiB is far above any real front matter (#150).
+_MAX_FRONT_MATTER_CHARS = 64 * 1024
+
+
+class _FrontMatterLoader(yaml.SafeLoader):
+    """SafeLoader that also refuses YAML anchors/aliases.
+
+    `safe_load` blocks arbitrary-object construction (no RCE), but it still
+    expands aliases — and that is a billion-laughs amplifier: a few hundred
+    bytes of nested `&anchor`/`*alias` materialize millions of nodes and
+    exhaust the worker. Front matter never legitimately uses anchors, and this
+    parses untrusted uploads, so we reject aliases outright (#150).
+    """
+
+    def compose_node(self, parent, index):
+        if self.check_event(yaml.events.AliasEvent):
+            raise yaml.YAMLError("YAML anchors/aliases are not allowed in front matter")
+        return super().compose_node(parent, index)
+
 
 def split_front_matter(md_text: str) -> tuple[dict, str]:
     """Return (front_matter_dict, body_md). Empty dict if no front matter.
@@ -54,9 +75,18 @@ def split_front_matter(md_text: str) -> tuple[dict, str]:
             if end != -1:
                 fm_block = md_text[len(prefix):end]
                 body = md_text[end + len(sep):]
+                if len(fm_block) > _MAX_FRONT_MATTER_CHARS:
+                    print(
+                        f"[warn] front matter exceeds {_MAX_FRONT_MATTER_CHARS} chars; skipping it",
+                        file=sys.stderr,
+                    )
+                    return {}, body
                 try:
-                    parsed = yaml.safe_load(fm_block)
-                except yaml.YAMLError as exc:
+                    parsed = yaml.load(fm_block, Loader=_FrontMatterLoader)
+                # Deep nesting raises RecursionError, not YAMLError; both (and an
+                # OOM) must fall back to skipping front matter, not crash the
+                # render — the body still has to come through (#150).
+                except (yaml.YAMLError, RecursionError, MemoryError) as exc:
                     print(f"[warn] could not parse YAML front matter: {exc}", file=sys.stderr)
                     parsed = None
                 fm = parsed if isinstance(parsed, dict) else {}

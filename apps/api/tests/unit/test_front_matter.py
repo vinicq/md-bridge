@@ -70,3 +70,41 @@ def test_build_html_coerces_non_string_title():
 def test_build_html_defaults_title_when_absent():
     html = mod.build_html("<p>x</p>", {}, "en", [])
     assert "<title>Document</title>" in html
+
+
+# --- DoS hardening (#150 review): untrusted front matter must not crash or hang ---
+
+
+def test_alias_bomb_is_rejected_and_body_survives(capsys):
+    # A billion-laughs amplifier: safe_load alone would expand the aliases. The
+    # no-alias loader rejects it, so it degrades to "no front matter".
+    bomb = (
+        "---\n"
+        "a: &a [1,1,1,1,1,1,1,1,1]\n"
+        "b: &b [*a,*a,*a,*a,*a,*a,*a,*a,*a]\n"
+        "c: &c [*b,*b,*b,*b,*b,*b,*b,*b,*b]\n"
+        "d: [*c,*c,*c,*c,*c,*c,*c,*c,*c]\n"
+        "---\nKEEP THIS BODY"
+    )
+    fm, body = mod.split_front_matter(bomb)
+    assert fm == {}
+    assert body == "KEEP THIS BODY"
+    assert "could not parse YAML front matter" in capsys.readouterr().err
+
+
+def test_deep_nesting_recursionerror_is_caught_and_body_survives(capsys):
+    # Deep nesting raises RecursionError, not YAMLError; the broadened except
+    # must catch it so the document still renders.
+    deep = "---\n" + ("[" * 600) + "\n---\nKEEP THIS BODY"
+    fm, body = mod.split_front_matter(deep)
+    assert fm == {}
+    assert body == "KEEP THIS BODY"
+    assert "could not parse YAML front matter" in capsys.readouterr().err
+
+
+def test_oversized_front_matter_is_skipped_and_body_survives(capsys):
+    big = "---\n" + ("k: v\n" * 20000) + "---\nKEEP THIS BODY"
+    fm, body = mod.split_front_matter(big)
+    assert fm == {}
+    assert body == "KEEP THIS BODY"
+    assert "exceeds" in capsys.readouterr().err
