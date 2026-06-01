@@ -15,6 +15,17 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-06-01
+
+Minor release. Two converter behaviour changes lead the headline: the OCR
+pre-pass now runs **automatically when the OCR stack is installed** (no flag),
+and pdf-to-markdown now emits **pure Markdown** instead of raw `<small>` and
+`<sup>` HTML tags. The release also ships automatic trilingual OCR (English,
+Portuguese, Spanish), GFM strikethrough detection, four list and front-matter
+conversion fixes, and the docs build-out (heuristics, FAQ, API recipes,
+deployment recipes). The lean default install is unchanged: no OCR binary, no
+behaviour shift, a scan still returns `422 ocr_required`.
+
 ### Added
 
 - **Automatic multi-language OCR (English, Portuguese, Spanish).** The
@@ -32,7 +43,6 @@ If a section is empty in a release, the section is omitted entirely.
   `TEXT_COLLECT_STYLES`; the detection is version-gated, so an older
   PyMuPDF degrades to "no strikethrough" rather than misbehaving.
   Strikethrough nests outside emphasis (`~~**text**~~`). (#142)
-
 - **Optional Tesseract OCR pre-pass for scanned PDFs** by @0exec
   (first external contribution from this account). New
   `apps/api/app/services/ocr.py` runs when `MD_BRIDGE_OCR_ENABLED=1`
@@ -78,7 +88,7 @@ If a section is empty in a release, the section is omitted entirely.
   neither the binary nor the binding, so OCR stays off and a scan still
   returns `422 ocr_required` — the lean default is unchanged.
   `MD_BRIDGE_OCR_ENABLED` now overrides the auto decision both ways:
-  `1`/`true` forces on, `0`/`false` forces off.
+  `1`/`true` forces on, `0`/`false` forces off. (#207)
 - **pdf-to-markdown emits pure Markdown instead of raw HTML tags.**
   Small-font blocks (captions, footnotes, copyright lines) now render
   as plain paragraphs instead of `<small>...</small>`, and superscript
@@ -470,7 +480,8 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/vinicq/md-bridge/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/vinicq/md-bridge/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/vinicq/md-bridge/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/vinicq/md-bridge/compare/v0.2.0...v0.2.1
