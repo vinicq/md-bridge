@@ -9,7 +9,7 @@ Reference material for the `pdf-to-markdown` package. Use it after running `conv
 | Headings | Title, Heading 1-6 | Yes (`#` to `######`) |
 | Paragraphs | Body text, breaks | Yes |
 | Basic emphasis | Bold, italic, both | Yes (`**`, `*`, `***`) |
-| Other font styles | Underline, small caps, strikethrough | Partial (GFM strikethrough; HTML fallback otherwise) |
+| Other font styles | Underline, small caps, strikethrough | Strikethrough emitted as GFM `~~`; underline and small caps drop to plain text |
 | Font family, size, color | Arial 12pt red, highlight | No (CSS/theme territory) |
 | Alignment | Left, center, right, justify | Partial (HTML or GFM tables only) |
 | Spacing, indent | Line spacing, first-line indent, tabs | No semantic |
@@ -52,7 +52,7 @@ After running `convert.py <pdf> -o <md>`, open the `.md` and walk through this l
 - [ ] `**bold**` and `*italic*` correct; no `**texto **` or `__*texto*__` artifacts.
 - [ ] Underlines (decorative-only) ignored or reinterpreted.
 - [ ] Strikethrough (`~~text~~`) only where it carried meaning.
-- [ ] Sub/sup readable: `H<sub>2</sub>O`, `x<sup>2</sup>` or domain-appropriate.
+- [ ] Superscript readable as Pandoc caret: `x^2^` (raw `<sup>` no longer emitted).
 - [ ] No spurious whitespace inside emphasis markers.
 
 ## 4. Lists
