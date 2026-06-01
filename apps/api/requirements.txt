@@ -21,3 +21,5 @@ pypdf>=6.10.2
 # markdown 3.8.1+ closes GHSA-5wmx-573v-2qwq.
 markdown>=3.8.1
 playwright>=1.49
+# markdown-to-pdf parses YAML front matter with safe_load (#150).
+PyYAML>=6.0
