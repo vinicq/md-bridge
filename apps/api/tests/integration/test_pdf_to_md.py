@@ -83,7 +83,9 @@ def test_pdf_to_md_scanned_pdf_returns_422_when_ocr_disabled(
     # discreet warning (#139). It now blocks with 422 ocr_required so the user
     # gets an actionable error instead of an empty file. The 422 fires right
     # after inspection, before any conversion, so no tempdir is created.
-    monkeypatch.delenv("MD_BRIDGE_OCR_ENABLED", raising=False)
+    # Force OCR off explicitly: the default is now auto-on when the Tesseract
+    # stack is installed (which it is on CI), so we pin the off path here.
+    monkeypatch.setenv("MD_BRIDGE_OCR_ENABLED", "0")
 
     resp = client.post(
         "/api/pdf-to-md",
@@ -109,7 +111,9 @@ def test_pdf_to_md_force_bypasses_ocr_gate(
     scanned_pdf_bytes: bytes,
     monkeypatch,
 ):
-    monkeypatch.delenv("MD_BRIDGE_OCR_ENABLED", raising=False)
+    # Pin OCR off so force exercises the gate-bypass path, not the auto-on OCR
+    # path (the default now auto-enables when the stack is installed).
+    monkeypatch.setenv("MD_BRIDGE_OCR_ENABLED", "0")
 
     resp = client.post(
         "/api/pdf-to-md?force=true",

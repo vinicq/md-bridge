@@ -3,8 +3,12 @@ from __future__ import annotations
 
 import io
 import os
+import shutil
 
 import pymupdf
+
+_TRUTHY = {"1", "true", "yes", "on"}
+_FALSY = {"0", "false", "no", "off"}
 
 # Multi-language Tesseract set so a scanned document is read without an
 # operator configuring a per-document language. Tesseract scores each region
@@ -19,8 +23,37 @@ def get_lang() -> str:
     return os.getenv("MD_BRIDGE_OCR_LANG", DEFAULT_OCR_LANG)
 
 
+def ocr_stack_available() -> bool:
+    """True when both halves of the OCR stack are installed: the Tesseract
+    binary on PATH and the `pytesseract` Python binding (the `[ocr]` extra)."""
+    if shutil.which("tesseract") is None:
+        return False
+    try:
+        import pytesseract  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
 def is_enabled() -> bool:
-    return os.getenv("MD_BRIDGE_OCR_ENABLED") == "1"
+    """Whether the OCR pre-pass should run for a scanned PDF.
+
+    The default is automatic: OCR runs when the stack is actually installed,
+    because installing the `[ocr]` extra or the `runtime-ocr` image *is* the
+    act of opting in. A lean base install carries neither the binary nor the
+    binding, so OCR stays off and a scanned PDF returns the same 422
+    `ocr_required` as before. `MD_BRIDGE_OCR_ENABLED` overrides the auto
+    decision either way: `1`/`true`/`yes`/`on` forces it on, `0`/`false`/`no`/
+    `off` forces it off (e.g. to keep a slow OCR pass out of a hot path).
+    """
+    flag = os.getenv("MD_BRIDGE_OCR_ENABLED")
+    if flag is not None and flag.strip():
+        value = flag.strip().lower()
+        if value in _TRUTHY:
+            return True
+        if value in _FALSY:
+            return False
+    return ocr_stack_available()
 
 
 def ocr_pdf_bytes(pdf_bytes: bytes, lang: str = DEFAULT_OCR_LANG) -> bytes:
