@@ -136,3 +136,6 @@ def test_code_block_continuation_nests_in_item():
     first_item = html.split("</li>")[0]
     assert "<pre><code>" in first_item
     assert 'print("hello")' in first_item
+    # Nested code is an indented block, so it carries no language class — the
+    # hint-drop contract for the continuation case.
+    assert "language-" not in first_item

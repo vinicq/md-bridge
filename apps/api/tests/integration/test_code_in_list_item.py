@@ -54,3 +54,5 @@ def test_code_block_nests_inside_list_item():
     first_item = html.split("</li>")[0]
     assert "<pre><code>" in first_item
     assert 'print("hello")' in first_item
+    # The second item is its own <li>, not swallowed into the first.
+    assert "Read the output" not in first_item
