@@ -145,6 +145,31 @@ def test_pdf_to_md_applies_ocr_when_enabled(client, scanned_pdf_bytes: bytes, mo
     assert "OCR" in body["md"].upper()
 
 
+def test_pdf_to_md_ocr_runs_by_default_when_stack_installed(
+    client, scanned_pdf_bytes: bytes, monkeypatch
+):
+    # The headline of the auto-default change: with no MD_BRIDGE_OCR_ENABLED set,
+    # a scanned PDF is OCR'd automatically because the stack is installed. Hits
+    # the real probe and the real Tesseract binary (no mock), so it exercises
+    # the new default end to end rather than a patched flag.
+    pytest.importorskip("pytesseract")
+    if shutil.which("tesseract") is None:
+        pytest.skip("tesseract binary is not installed")
+
+    monkeypatch.delenv("MD_BRIDGE_OCR_ENABLED", raising=False)
+    monkeypatch.delenv("MD_BRIDGE_OCR_LANG", raising=False)
+
+    resp = client.post(
+        "/api/pdf-to-md",
+        files={"file": ("scanned.pdf", scanned_pdf_bytes, "application/pdf")},
+    )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["ocr_applied"] is True
+    assert "OCR" in body["md"].upper()
+
+
 def test_pdf_to_md_skips_ocr_for_textual_pdf_when_enabled(
     client,
     istqb_pdf: Path,
