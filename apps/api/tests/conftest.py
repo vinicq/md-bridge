@@ -57,3 +57,31 @@ def scanned_pdf_bytes() -> bytes:
         return doc.tobytes()
     finally:
         doc.close()
+
+
+@pytest.fixture
+def scanned_spanish_pdf_bytes() -> bytes:
+    """An image-only PDF carrying Spanish words, for the auto-language OCR test.
+
+    The words are plain, accent-free, and unambiguously Spanish so a default
+    `eng+por+spa` run reads them reliably without depending on accent fidelity.
+    """
+    Image = pytest.importorskip("PIL.Image")
+    ImageDraw = pytest.importorskip("PIL.ImageDraw")
+    ImageFont = pytest.importorskip("PIL.ImageFont")
+
+    image = Image.new("RGB", (1400, 400), "white")
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default(size=64)
+    draw.text((60, 160), "INFORME DE PRUEBA DEL DOCUMENTO", fill="black", font=font)
+
+    png = io.BytesIO()
+    image.save(png, format="PNG")
+
+    doc = pymupdf.open()
+    try:
+        page = doc.new_page(width=720, height=206)
+        page.insert_image(page.rect, stream=png.getvalue())
+        return doc.tobytes()
+    finally:
+        doc.close()

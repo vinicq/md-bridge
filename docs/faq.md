@@ -231,9 +231,12 @@ Yes, with two caveats.
   load`, the way you would any container.
 
 The opt-in OCR target (`runtime-ocr`) adds the Tesseract binary,
-which is also self-contained. The `tesseract-ocr-por` language pack
-is included; other languages are an `apt install` away inside the
-image.
+which is also self-contained. The English, Portuguese, and Spanish
+language packs (`tesseract-ocr-por`, `tesseract-ocr-spa`) are
+included and applied together by default, so a scanned document in
+any of the three is read without configuring a language. Set
+`MD_BRIDGE_OCR_LANG` to pin a single pack, and other languages are an
+`apt install` away inside the image.
 
 ## How do I contribute?
 

@@ -26,3 +26,24 @@ def test_ocr_pdf_bytes_adds_extractable_text(scanned_pdf_bytes: bytes):
 
     assert "OCR" in text
     assert "BRIDGE" in text
+
+
+def test_ocr_reads_spanish_with_the_default_language_set(
+    scanned_spanish_pdf_bytes: bytes, monkeypatch
+):
+    # #199: a scanned Spanish document is read with the default multi-language
+    # set (no MD_BRIDGE_OCR_LANG), proving Spanish is auto-handled. Needs the
+    # spa traineddata installed (CI installs it; skips otherwise).
+    from app.services.ocr import get_lang
+
+    monkeypatch.delenv("MD_BRIDGE_OCR_LANG", raising=False)
+    lang = get_lang()
+    assert "spa" in lang
+    assert not _extract_text(scanned_spanish_pdf_bytes).strip()
+
+    ocr_pdf = ocr_pdf_bytes(scanned_spanish_pdf_bytes, lang=lang)
+    text = _extract_text(ocr_pdf).upper()
+
+    assert "INFORME" in text
+    assert "PRUEBA" in text
+    assert "DOCUMENTO" in text

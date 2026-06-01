@@ -140,10 +140,11 @@ python -m pip install -e ".[dev]"
 python -m playwright install chromium
 
 # Optional OCR for scanned PDFs (Linux example):
-sudo apt install tesseract-ocr tesseract-ocr-por
+sudo apt install tesseract-ocr tesseract-ocr-por tesseract-ocr-spa
 python -m pip install -e ".[dev,ocr]"
 export MD_BRIDGE_OCR_ENABLED=1
-# Optional: export MD_BRIDGE_OCR_LANG=eng
+# OCR auto-handles English, Portuguese, and Spanish by default.
+# Optional: export MD_BRIDGE_OCR_LANG=eng  # pin a single language pack
 
 # Docker: build the OCR-enabled API image target.
 docker build -f apps/api/Dockerfile --target runtime-ocr -t md-bridge-api:ocr
