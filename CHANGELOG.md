@@ -17,6 +17,14 @@ If a section is empty in a release, the section is omitted entirely.
 
 ### Added
 
+- **Automatic multi-language OCR (English, Portuguese, Spanish).** The
+  opt-in OCR pre-pass now defaults to `eng+por+spa`, so a scanned
+  document in any of the three is read without configuring a language
+  per document; Tesseract scores each region across the three models,
+  which is deterministic. Spanish (`tesseract-ocr-spa`) is added to the
+  OCR Docker image, the CI Tesseract install, and the docs. PT-PT and
+  PT-BR share the single `por` model. `MD_BRIDGE_OCR_LANG` still pins a
+  language. A narrower per-document auto-detect is a follow-up. (#199)
 - **GFM strikethrough in pdf-to-markdown.** Text struck through in the
   source PDF (a line drawn across the glyphs) now converts to
   `~~text~~` instead of dropping the semantic. PyMuPDF surfaces the
