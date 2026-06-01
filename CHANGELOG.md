@@ -122,6 +122,16 @@ If a section is empty in a release, the section is omitted entirely.
   history. Replaced with the new `Deploy: deployment-other.md`
   entry so MkDocs builds without the orphan-page warning. (#98)
 
+### Fixed
+
+- **A full-width rule is no longer misread as strikethrough.** PyMuPDF's
+  strikeout flag fires for any horizontal line crossing text at
+  mid-height, including a page rule or section divider. The converter now
+  cross-checks the drawn-line geometry: a stroke that overruns the span
+  toward the margins is a rule, not a strike, so the spurious `~~` is
+  dropped. A genuine strike (a line spanning the struck text) still
+  converts. (#202)
+
 ## [0.2.3] — 2026-05-20
 
 Minor release. Headline change is the **first external contribution**:

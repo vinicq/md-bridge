@@ -42,6 +42,15 @@ CHAR_FLAG_STRIKEOUT = 1 << 0
 _STYLE_FLAGS = getattr(fitz, "TEXT_COLLECT_STYLES", 0)
 _DICT_FLAGS = getattr(fitz, "TEXTFLAGS_DICT", 0)
 
+# mupdf's strikeout bit fires for any horizontal line crossing the text at
+# mid-height, including a full-width page rule that merely overlaps a line of
+# text. A genuine strike spans roughly the struck text; a rule overruns the
+# span toward the margins. We cross-check the drawn-line geometry and clear the
+# flag when only an overrunning stroke crosses the span (#202). A stroke counts
+# as a strike when it stays within the span x-range give or take this many
+# points on each side.
+STRIKETHROUGH_OVERRUN_TOL = 6.0
+
 
 def page_text_dict(page: fitz.Page) -> dict:
     """`page.get_text("dict")` with style collection when the build supports it.
@@ -335,6 +344,61 @@ def annotate_spans_with_links(blocks: list[Block], page_links: list[dict]) -> No
                     if tx0 - 1 <= scx <= tx1 + 1 and ty0 - 1 <= scy <= ty1 + 1:
                         span.link = uri
                         break
+
+
+def horizontal_strokes(page: fitz.Page) -> list[tuple[float, float, float]]:
+    """Return (y, x0, x1) for each near-horizontal line segment drawn on the page."""
+    strokes: list[tuple[float, float, float]] = []
+    try:
+        drawings = page.get_drawings()
+    except Exception:
+        return strokes
+    for drawing in drawings:
+        for item in drawing.get("items", []):
+            if item and item[0] == "l":
+                p1, p2 = item[1], item[2]
+                if abs(p1.y - p2.y) <= 1.5:
+                    strokes.append(((p1.y + p2.y) / 2, min(p1.x, p2.x), max(p1.x, p2.x)))
+    return strokes
+
+
+def strikethrough_confirmed(
+    span_bbox: tuple[float, float, float, float],
+    strokes: list[tuple[float, float, float]],
+) -> bool:
+    """Whether a strikeout char_flag is backed by a real strike line (#202).
+
+    True when a horizontal stroke crosses the span's vertical band and stays
+    within the span x-range (a genuine strike), or when no stroke geometry is
+    available (trust the flag). False when the only strokes crossing the span
+    overrun it toward the margins — a page rule misread as a strike.
+    """
+    sx0, sy0, sx1, sy1 = span_bbox
+    crossing = [
+        (x0, x1)
+        for (y, x0, x1) in strokes
+        if sy0 - 2 <= y <= sy1 + 2 and x0 <= sx1 and x1 >= sx0
+    ]
+    if not crossing:
+        return True
+    tol = STRIKETHROUGH_OVERRUN_TOL
+    return any(x0 >= sx0 - tol and x1 <= sx1 + tol for (x0, x1) in crossing)
+
+
+def drop_rule_strikethroughs(blocks: list[Block], page: fitz.Page) -> None:
+    """Clear is_strikethrough on spans crossed only by an overrunning page rule.
+
+    Runs the geometry cross-check (#202) lazily: pages with no struck spans —
+    the overwhelming majority — pay nothing, since `get_drawings` is only called
+    when at least one span carries the strikeout flag.
+    """
+    struck = [s for b in blocks for line in b.lines for s in line.spans if s.is_strikethrough]
+    if not struck:
+        return
+    strokes = horizontal_strokes(page)
+    for span in struck:
+        if not strikethrough_confirmed(span.bbox, strokes):
+            span.is_strikethrough = False
 
 
 def render_span(span: Span) -> str:
@@ -646,6 +710,7 @@ def convert_page(
         parsed_blocks.append(block)
 
     annotate_spans_with_links(parsed_blocks, page_links)
+    drop_rule_strikethroughs(parsed_blocks, page)
     for block in parsed_blocks:
         items.append((block.bbox[1], "block", block))
 
