@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 import markdown
+import yaml
 from playwright.sync_api import sync_playwright
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -34,20 +35,61 @@ MD_EXTENSIONS = [
     "md_in_html",
 ]
 
+# Front matter is metadata: a few hundred bytes in practice. Cap the block before
+# parsing so a pathological document cannot make the YAML tokenizer chew through
+# hundreds of MB of nesting. 64 KiB is far above any real front matter (#150).
+_MAX_FRONT_MATTER_CHARS = 64 * 1024
+
+
+class _FrontMatterLoader(yaml.SafeLoader):
+    """SafeLoader that also refuses YAML anchors/aliases.
+
+    `safe_load` blocks arbitrary-object construction (no RCE), but it still
+    expands aliases — and that is a billion-laughs amplifier: a few hundred
+    bytes of nested `&anchor`/`*alias` materialize millions of nodes and
+    exhaust the worker. Front matter never legitimately uses anchors, and this
+    parses untrusted uploads, so we reject aliases outright (#150).
+    """
+
+    def compose_node(self, parent, index):
+        if self.check_event(yaml.events.AliasEvent):
+            raise yaml.YAMLError("YAML anchors/aliases are not allowed in front matter")
+        return super().compose_node(parent, index)
+
 
 def split_front_matter(md_text: str) -> tuple[dict, str]:
-    """Return (front_matter_dict, body_md). Empty dict if no front matter."""
+    """Return (front_matter_dict, body_md). Empty dict if no front matter.
+
+    The block is parsed with `yaml.safe_load`, so list, nested-mapping, and
+    block-scalar (`|`, `>`) values survive instead of being flattened to a
+    string or dropped by a hand-written split-on-colon loop (#150). A malformed
+    block is tolerated the way the old loop tolerated bad lines: the delimiters
+    are still stripped from the body, a warning goes to stderr, and parsing
+    falls back to an empty mapping so the document still renders. A non-mapping
+    top-level value (a bare scalar or list between the fences) is treated as no
+    usable front matter.
+    """
     for prefix, sep in (("---\n", "\n---\n"), ("---\r\n", "\r\n---\r\n")):
         if md_text.startswith(prefix):
             end = md_text.find(sep, len(prefix))
             if end != -1:
                 fm_block = md_text[len(prefix):end]
                 body = md_text[end + len(sep):]
-                fm: dict[str, str] = {}
-                for line in fm_block.splitlines():
-                    if ":" in line:
-                        key, value = line.split(":", 1)
-                        fm[key.strip()] = value.strip().strip('"').strip("'")
+                if len(fm_block) > _MAX_FRONT_MATTER_CHARS:
+                    print(
+                        f"[warn] front matter exceeds {_MAX_FRONT_MATTER_CHARS} chars; skipping it",
+                        file=sys.stderr,
+                    )
+                    return {}, body
+                try:
+                    parsed = yaml.load(fm_block, Loader=_FrontMatterLoader)
+                # Deep nesting raises RecursionError, not YAMLError; both (and an
+                # OOM) must fall back to skipping front matter, not crash the
+                # render — the body still has to come through (#150).
+                except (yaml.YAMLError, RecursionError, MemoryError) as exc:
+                    print(f"[warn] could not parse YAML front matter: {exc}", file=sys.stderr)
+                    parsed = None
+                fm = parsed if isinstance(parsed, dict) else {}
                 return fm, body
     return {}, md_text
 
@@ -62,7 +104,11 @@ def escape_html(s: str) -> str:
 
 
 def build_html(body_html: str, fm: dict, lang: str, css_blocks: list[str]) -> str:
+    # safe_load can return non-string scalars (a date, a number) or even a list
+    # for `title:`; coerce so escape_html always receives a string.
     title = fm.get("title") or "Document"
+    if not isinstance(title, str):
+        title = str(title)
     style = "\n".join(f"<style>\n{css}\n</style>" for css in css_blocks)
     return (
         '<!DOCTYPE html>\n'
