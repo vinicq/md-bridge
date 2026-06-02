@@ -20,6 +20,7 @@
   --c-rule: var(--theme-surface-3);
   --c-accent: var(--theme-accent);
   --c-accent-soft: var(--theme-accent-soft);
+  --c-accent-strong: var(--theme-accent-strong); /* accent text on accent-soft tint (#178) */
   --c-ok: var(--theme-ok);
   --c-warn: var(--theme-warn);
   --c-focus-ring: var(--theme-accent);

@@ -17,6 +17,9 @@ html {
 
   --theme-accent:       #c8362f;
   --theme-accent-soft: #f1d8d5;
+  /* Darker accent for accent-text on the accent-soft tint: #c8362f on
+     #f1d8d5 is only 3.86:1; this clears WCAG AA (5.38:1) and stays brand red. */
+  --theme-accent-strong: #a52521;
 
   --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
   --theme-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.08);
@@ -45,6 +48,9 @@ html[data-theme="dark"] {
 
   --theme-accent:       #ff8a80;
   --theme-accent-soft: #3a1a1a;
+  /* Dark text-on-tint: #ff8a80 on #3a1a1a is already 6.85:1. Declared on its
+     own so a later change to --theme-accent cannot silently drop the contrast. */
+  --theme-accent-strong: #ff8a80;
 
   --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
   --theme-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.4);
