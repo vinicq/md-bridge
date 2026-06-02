@@ -23,6 +23,12 @@ on a TeX-set PDF than on a browser-rendered one:
 | `wikipedia-pdf-en.pdf` | Chromium (MediaWiki PDF render) | Deep heading hierarchy, long reference/footnote tail, page numbers |
 | `wikipedia-markdown-ja.pdf` | Chromium (MediaWiki PDF render) | Multilingual: CJK (Japanese) body text mixed with Latin |
 
+The golden snapshots under `tests/golden/` were generated with PyMuPDF 1.27.2.3.
+The regression test tolerates 2% line drift, which absorbs the platform-to-platform
+variation seen between the local machine and Linux CI. A larger drift after a
+PyMuPDF minor-version bump is expected and means "regenerate the goldens"
+(`pytest tests/ --update-golden`), not "the converter regressed".
+
 Known gaps left for follow-up fixtures: a Word/LibreOffice export path and a
 landscape presentation export. Both are hard to source with an unambiguous
 licence; add them when a clean source appears rather than committing a fixture

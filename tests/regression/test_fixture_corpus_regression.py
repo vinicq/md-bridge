@@ -77,9 +77,10 @@ def test_corpus_fixture_regression(corpus_pdf: Path, golden_dir: Path, pdf_to_md
     golden = golden_dir / f"{corpus_pdf.stem}.md"
     current = _convert(pdf_to_md_mod, corpus_pdf)
 
-    if update_golden or not golden.exists():
+    existed = golden.exists()
+    if update_golden or not existed:
         golden.write_text(current, encoding="utf-8")
-        if not golden.exists():
+        if not existed:
             pytest.skip(f"created baseline at {golden}")
         return
 
