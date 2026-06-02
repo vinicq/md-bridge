@@ -15,7 +15,7 @@
 .diag--error {
   border-color: var(--c-accent);
   background: var(--c-accent-soft);
-  color: var(--c-accent);
+  color: var(--c-accent-strong); /* same accent-on-tint contrast fix as the batch label (#178) */
 }
 
 .diag__grid {

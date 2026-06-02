@@ -99,7 +99,7 @@
 }
 
 .batch__status--converting {
-  color: var(--c-accent);
+  color: var(--c-accent-strong); /* text on the accent-soft row tint (#178) */
 }
 
 .batch__status--done {
@@ -107,7 +107,7 @@
 }
 
 .batch__status--error {
-  color: var(--c-accent);
+  color: var(--c-accent-strong); /* #178 */
 }
 
 .batch__actions {
@@ -119,7 +119,7 @@
   grid-column: 1 / -1;
   margin: var(--s-2) 0 0;
   font-size: var(--fs-xs);
-  color: var(--c-accent);
+  color: var(--c-accent-strong); /* #178 */
 }
 
 .batch__foot {
