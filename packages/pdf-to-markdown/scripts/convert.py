@@ -102,7 +102,10 @@ def normalize_ordered_marker(text: str, *, first: bool) -> tuple[str, str]:
 HEADING_DOTS_RE = re.compile(r"\s*\.{3,}\s*\d+\s*$")  # "Title ........ 8" (TOC dot leaders)
 
 # Code-block detection
-MONO_FONT_HINTS = ("Mono", "Courier", "Consolas", "Menlo", "Inconsolata", "Hack")
+MONO_FONT_HINTS = (
+    "Mono", "Courier", "Consolas", "Menlo", "Inconsolata", "Hack",
+    "JetBrains", "FiraCode", "SourceCode", "PlexMono", "RobotoMono",
+)
 MONO_RATIO_THRESHOLD = 0.7
 SQL_RE = re.compile(r"\bSELECT\b.*?\bFROM\b", re.IGNORECASE | re.DOTALL)
 

@@ -159,6 +159,24 @@ def test_is_mono_span_detects_courier_name(mod):
     assert mod.is_mono_span(_span(mod, "x", font="JetBrainsMono-Regular"))
 
 
+def test_is_mono_span_detects_modern_editor_fonts(mod):
+    # Fira Code and Source Code Pro carry no "Mono" token, so they need their
+    # own hints; the rest are covered for robustness.
+    assert mod.is_mono_span(_span(mod, "x", font="FiraCode-Retina"))
+    assert mod.is_mono_span(_span(mod, "x", font="SourceCodePro-Regular"))
+    assert mod.is_mono_span(_span(mod, "x", font="RobotoMono-Regular"))
+    assert mod.is_mono_span(_span(mod, "x", font="IBMPlexMono-Regular"))
+
+
+def test_is_mono_span_rejects_proportional_siblings(mod):
+    # Plex, Source, Fira and Roboto all ship proportional families. A hint
+    # must not flag body text set in those as a code block.
+    assert not mod.is_mono_span(_span(mod, "x", font="IBMPlexSans-Regular"))
+    assert not mod.is_mono_span(_span(mod, "x", font="SourceSansPro-Regular"))
+    assert not mod.is_mono_span(_span(mod, "x", font="FiraSans-Regular"))
+    assert not mod.is_mono_span(_span(mod, "x", font="Roboto-Regular"))
+
+
 def test_is_mono_span_rejects_serif(mod):
     assert not mod.is_mono_span(_span(mod, "x", font="TimesNewRoman"))
 
