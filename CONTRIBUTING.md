@@ -464,6 +464,39 @@ Pick the lowest tier that actually exercises the behaviour. A heuristic
 that parses a heading does not need a Playwright test; a button that
 triggers a download does.
 
+### Visual regression baselines
+
+The `Visual regression` workflow screenshots every public route across the
+three locales and both themes and diffs them against committed baselines in
+`apps/web/e2e/__screenshots__/`. A CSS change that breaks a layout without
+breaking its event handlers fails here, not in production.
+
+The baselines are generated under **Linux on CI**, never committed from a
+local machine — font rendering differs per platform, so a local PNG would
+diff against the CI run forever. Local snapshots are platform-suffixed
+(`*-win32.png`, `*-darwin.png`) and gitignored.
+
+When your PR changes the rendered UI on purpose, the `Visual regression`
+check goes red and uploads a per-route diff image as an artefact. The flow:
+
+1. Open the failed `Visual regression` run and download the diff artefact.
+2. The designer reviews each diff and confirms the change is intentional.
+3. A maintainer comments **`/update-snapshots`** on the PR. A workflow
+   regenerates the Chromium baselines on CI and pushes them to your branch.
+4. The next `Visual regression` run passes.
+
+`/update-snapshots` only works for branches in this repository. A PR from a
+fork has to regenerate baselines locally in the Linux Playwright container
+(`npx playwright test --project=visual --update-snapshots`) and push them, or
+ask a maintainer to.
+
+The diff has a known blind spot: a colour-token change whose new value is close
+to the old one in YIQ space (a small per-pixel delta) can stay under the
+threshold and pass. The guard reliably catches layout shifts and strong colour
+changes, not subtle re-tints. So a PR that changes a design token still owes the
+before/after screenshots in its body — the visual check is a backstop, not a
+replacement for that review.
+
 ### Updating Lighthouse budgets
 
 The Lighthouse CI workflow protects the web app from accidental bundle and

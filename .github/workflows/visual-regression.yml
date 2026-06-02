@@ -1,0 +1,78 @@
+name: Visual regression
+
+# Diffs the rendered public surface against committed baselines on every PR.
+# Functional behaviour is covered by the End-to-end job in ci.yml; this guards
+# the pixels, so a CSS change that breaks a layout without breaking its event
+# handlers fails here instead of shipping (#16).
+#
+# The job runs inside the official Playwright container so the browser build
+# and the bundled fonts are byte-for-byte the environment the baselines were
+# generated in. That removes the font-rendering drift a bare ubuntu-latest
+# runner would introduce, and lets a maintainer regenerate matching baselines
+# locally from the same image. Keep the container tag in sync with the
+# @playwright/test version in apps/web/package.json.
+#
+# Baselines live under apps/web/e2e/__screenshots__/. When a PR changes the UI
+# on purpose, a maintainer comments `/update-snapshots` to rebuild them (see
+# update-snapshots.yml). Chromium only; Firefox/WebKit is tracked in #37.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visual-regression-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  visual:
+    name: Visual snapshots (chromium)
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Create the API virtualenv (booted as the E2E web server)
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3-venv
+          python3 -m venv apps/api/.venv
+          apps/api/.venv/bin/pip install --upgrade pip
+          apps/api/.venv/bin/pip install -e apps/api
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci || npm install
+
+      - name: Verify Playwright version matches the container image
+        working-directory: apps/web
+        # The baselines are rendered by the browser build in the container, so
+        # the @playwright/test version and the image tag must share a major.minor.
+        # A Dependabot bump that forgets the image tag surfaces here as a red
+        # check instead of as silent font drift in every baseline.
+        run: |
+          pkg=$(node -p "require('@playwright/test/package.json').version")
+          echo "Installed @playwright/test: $pkg (image: v1.60.0-noble)"
+          case "$pkg" in
+            1.60.*) ;;
+            *) echo "::error::@playwright/test $pkg does not match the v1.60.0-noble image. Bump the container tag in visual-regression.yml and update-snapshots.yml to match, then regenerate the baselines."; exit 1 ;;
+          esac
+
+      - name: Run visual snapshots
+        working-directory: apps/web
+        env:
+          CI: "1"
+        run: npx playwright test --project=visual
+
+      - name: Upload diff artefacts on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        with:
+          name: visual-regression-diff
+          path: |
+            apps/web/test-results/
+            apps/web/playwright-report/
+          retention-days: 14
