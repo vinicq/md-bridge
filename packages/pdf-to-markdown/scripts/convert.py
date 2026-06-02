@@ -221,6 +221,8 @@ class DocProfile:
     cluster_headings: bool = False  # opt-in: gap-partition font sizes into heading bands (#188)
     allow_html: frozenset = frozenset()  # opt-in HTML tags the emitter may keep (#154)
     preserve_line_breaks: bool = False  # opt-in: keep intentional layout line breaks (#156)
+    footnote_pairing: bool = False  # opt-in: pair footer footnote blocks with body refs (#148)
+    footnote_numbers: frozenset = frozenset()  # collected footnote numbers to rewrite as [^N] (#148)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
@@ -506,7 +508,7 @@ def drop_rule_strikethroughs(blocks: list[Block], page: fitz.Page) -> None:
             span.is_strikethrough = False
 
 
-def render_span(span: Span) -> str:
+def render_span(span: Span, footnote_numbers: frozenset[int] = frozenset()) -> str:
     text = span.text
     if not text.strip():
         return text
@@ -521,6 +523,12 @@ def render_span(span: Span) -> str:
     leading = len(out) - len(out.lstrip())
     trailing = len(out) - len(out.rstrip())
     core = out[leading: len(out) - trailing] if trailing else out[leading:]
+    # A superscript that is a bare number matching a collected footnote becomes
+    # a GFM footnote reference (#148): a leaf token, no emphasis/link wrapping.
+    # An empty set (the flag-off default) leaves the `^N^` path below untouched.
+    if sup and footnote_numbers and core.strip().isdigit() and int(core.strip()) in footnote_numbers:
+        ref = f"[^{int(core.strip())}]"
+        return out[:leading] + ref + (out[len(out) - trailing:] if trailing else "")
     if core:
         if mono and "`" not in core:
             # Code spans render their content literally, so do not escape inside
@@ -550,7 +558,7 @@ def render_span(span: Span) -> str:
     return out[:leading] + core + (out[len(out) - trailing:] if trailing else "")
 
 
-def render_line(line: Line) -> str:
+def render_line(line: Line, footnote_numbers: frozenset[int] = frozenset()) -> str:
     # Merge adjacent spans with same style to avoid `**a****b**` artifacts
     merged: list[Span] = []
     for s in line.spans:
@@ -559,6 +567,11 @@ def render_line(line: Line) -> str:
             and merged[-1].is_bold == s.is_bold
             and merged[-1].is_italic == s.is_italic
             and merged[-1].is_strikethrough == s.is_strikethrough
+            # Under footnote pairing, keep a superscript span separate so a
+            # footnote digit is rewritten on its own rather than fused into
+            # adjacent body text (#148). With the flag off (empty set) the
+            # equality is skipped, so the default merge stays byte-identical.
+            and (not footnote_numbers or merged[-1].is_superscript == s.is_superscript)
             and is_mono_span(merged[-1]) == is_mono_span(s)
         ):
             merged[-1] = Span(
@@ -570,7 +583,7 @@ def render_line(line: Line) -> str:
             )
         else:
             merged.append(s)
-    return "".join(render_span(s) for s in merged)
+    return "".join(render_span(s, footnote_numbers) for s in merged)
 
 
 def dominant_font(block: Block) -> str:
@@ -901,6 +914,74 @@ def find_recurring_furniture(doc: fitz.Document) -> frozenset[str]:
     return select_recurring(page_line_sets, doc.page_count)
 
 
+# Footnote pairing (#148). A definition block sits in the bottom band at small
+# font and opens with the number followed by prose.
+FOOTNOTE_DEF_RE = re.compile(r"^\s*(\d{1,3})[.)]?\s+(\S.*)$", re.DOTALL)
+FOOTNOTE_MIN_DEF_CHARS = 12
+FOOTNOTE_BAND_RATIO = 0.80
+
+
+def parse_footnote_definition(
+    block: Block, profile: DocProfile, page_height: float
+) -> tuple[int, str] | None:
+    """A small-font block in the bottom band opening with `N <prose>` is a
+    footnote definition; returns (number, text), else None. The geometry +
+    small-font gates exclude body-size numbered-list items, and the prose-length
+    and page-furniture guards exclude bare page numbers like "Page 3" (#148).
+
+    Known limitation: a numbered-list item that is itself small-font AND lands in
+    the bottom band is indistinguishable from a footnote by these gates and is
+    treated as one. The geometry gate is the sole list/footnote discriminator, so
+    a small-font ordered list at the foot of a page misfires. This is the reason
+    the whole feature is opt-in; the common case (body-size lists, body-size
+    bottom content) is unaffected because the small-font gate rejects it."""
+    if block.bbox[1] <= page_height * FOOTNOTE_BAND_RATIO:
+        return None
+    if block.dominant_size > profile.small_size:
+        return None
+    text = block.text.strip()
+    if looks_like_page_furniture(text):
+        return None
+    m = FOOTNOTE_DEF_RE.match(text)
+    if not m:
+        return None
+    body = m.group(2).strip()
+    if len(body) < FOOTNOTE_MIN_DEF_CHARS:
+        return None
+    return int(m.group(1)), body
+
+
+def collect_footnote_definitions(doc: fitz.Document, profile: DocProfile) -> dict[int, str]:
+    """One pass over the document gathering footnote definitions from bottom-band
+    small-font blocks; the first definition of a number wins (#148)."""
+    definitions: dict[int, str] = {}
+    for page in doc:
+        page_height = page.rect.height
+        for raw_block in page.get_text("dict").get("blocks", []):
+            if raw_block.get("type") != 0:
+                continue
+            block = parse_block(raw_block)
+            if block is None:
+                continue
+            parsed = parse_footnote_definition(block, profile, page_height)
+            if parsed is None:
+                continue
+            n, body = parsed
+            if n in definitions:
+                log.warning("footnote %d defined more than once; keeping the first", n)
+                continue
+            definitions[n] = body
+    return definitions
+
+
+def render_footnote_tail(definitions: dict[int, str]) -> str:
+    """Document-tail block of `[^N]: text` for every collected definition,
+    sorted ascending for determinism (#148). A definition whose body superscript
+    was not detected still emits here as an (unreferenced) GFM footnote, which
+    is valid Markdown and avoids dropping the footnote text."""
+    return "\n".join(f"[^{n}]: {definitions[n]}" for n in sorted(definitions))
+
+
 def convert_page(
     page: fitz.Page,
     profile: DocProfile,
@@ -949,6 +1030,8 @@ def convert_page(
             and any(normalize_furniture(line.text) in recurring_furniture for line in block.lines)
         ):
             continue  # running header/footer detected by cross-page recurrence (#187)
+        if profile.footnote_pairing and parse_footnote_definition(block, profile, page_height) is not None:
+            continue  # footnote definition: emitted in the document-tail block, not inline (#148)
         if block_in_any_bbox(block.bbox, table_bboxes):
             continue
         parsed_blocks.append(block)
@@ -1018,7 +1101,7 @@ def render_paragraph(block: Block, profile: DocProfile) -> str:
     when `profile.preserve_line_breaks` is on. Off by default keeps output
     byte-identical (#156)."""
     lines = [ln for ln in block.lines if ln.text.strip()]
-    rendered = [render_line(ln).strip() for ln in lines]
+    rendered = [render_line(ln, profile.footnote_numbers).strip() for ln in lines]
     if not profile.preserve_line_breaks:
         return " ".join(rendered).strip()
     parts: list[str] = []
@@ -1141,7 +1224,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             out_parts.append(f"```{lang}\n{code_body}\n```")
             continue
 
-        text_rendered = " ".join(render_line(line).strip() for line in block.lines if line.text.strip()).strip()
+        text_rendered = " ".join(render_line(line, profile.footnote_numbers).strip() for line in block.lines if line.text.strip()).strip()
         if not text_rendered:
             continue
 
@@ -1304,6 +1387,7 @@ def convert_document(
     allow_html: frozenset[str] = frozenset(),
     preserve_line_breaks: bool = False,
     max_heading_level: int = 3,
+    footnote_pairing: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -1311,6 +1395,13 @@ def convert_document(
     profile.cluster_headings = cluster_headings
     profile.allow_html = allow_html
     profile.preserve_line_breaks = preserve_line_breaks
+    profile.footnote_pairing = footnote_pairing
+    footnote_defs: dict[int, str] = {}
+    if footnote_pairing:
+        footnote_defs = collect_footnote_definitions(doc, profile)
+        # Rewrite a body superscript to [^N] only when there is a matching
+        # definition; a ref with no definition stays a literal `^N^`.
+        profile.footnote_numbers = frozenset(footnote_defs)
     if cluster_headings:
         # Replace the fixed-cutoff thresholds with gap-partitioned size bands,
         # capped at max_heading_level (deeper levels only exist here, #146).
@@ -1364,6 +1455,14 @@ def convert_document(
     full = merge_continued_paragraphs(full)
     full = normalize_headings_from_toc(full, toc)
     full = drop_orphan_heading_fragments(full)
+
+    if footnote_pairing:
+        # Append the GFM footnote definitions at the document tail, after the
+        # wrapped-paragraph/heading post-passes so they never fuse `[^N]:` into
+        # prose (#148).
+        tail = render_footnote_tail(footnote_defs)
+        if tail:
+            full = full + "\n\n" + tail
 
     if front_matter:
         fm = build_front_matter(pdf_path, doc)
@@ -1676,6 +1775,11 @@ def main() -> int:
         metavar="N",
         help="Cap clustered heading depth at N (1-6); only affects output with --cluster-headings (#146)",
     )
+    parser.add_argument(
+        "--footnote-pairing",
+        action="store_true",
+        help="Pair small-font footer footnotes with body superscript refs as GFM [^N] (opt-in, #148)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -1695,6 +1799,7 @@ def main() -> int:
         subtract_running_furniture=args.subtract_furniture,
         preserve_line_breaks=args.preserve_line_breaks,
         max_heading_level=args.max_heading_level,
+        footnote_pairing=args.footnote_pairing,
     )
     return 0
 

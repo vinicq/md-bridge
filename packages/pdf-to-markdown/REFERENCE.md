@@ -114,6 +114,8 @@ Block quotes are detected **opt-in**: pass `--detect-blockquotes` to `convert.py
 
 Heading levels beyond H3 are **opt-in** and gated on clustering: pass `--cluster-headings` (`{"cluster_headings": true}`) to map font sizes to heading levels by gap-partitioned size bands, and `--max-heading-level N` (`{"max_heading_level": N}`, 1-6) to allow H4-H6. `max_heading_level` defaults to 3 and only affects output when `cluster_headings` is on; the default fixed-cutoff path still tops out at H3, so default output is unchanged. A flat size histogram yields fewer levels naturally; levels with no font-size evidence are never synthesized.
 
+Footnote pairing is **opt-in** (#148): pass `--footnote-pairing` (`{"footnote_pairing": true}`) to lift small-font bottom-of-page `N text` blocks out of the body and re-emit them as a sorted GFM `[^N]: text` tail, while a body superscript digit `N` whose number has a matching definition becomes a `[^N]` reference. A pre-scan over the whole document collects the definition numbers before the page loop, so a reference on one page still rewrites against a definition on another. It ships off by default because a numbered list item at the bottom of a page can look like a definition; with the flag off the output stays byte-identical. First definition wins on a number collision.
+
 ## HTML emission policy (#154)
 
 The converter emits pure Markdown by default and never writes raw HTML tags: superscript becomes Pandoc `^x^`, strikethrough GFM `~~text~~`, small-font captions plain text. A grep of any output for `<tag>` returns nothing.
@@ -124,6 +126,6 @@ Raw HTML is opt-in and capped. The `allow_html` option takes a set of tag names;
 
 - **OCR** for scanned PDFs. Run Tesseract with `por`/`eng` first; check `inspect_pdf.py` output. Zero fonts means the PDF is scanned.
 - **Math formula recognition**: PyMuPDF returns formula characters as plain text. Reformulate manually if precision matters.
-- **Footnote correlation**: small text at the page bottom is rendered inline as plain text (the `<small>` wrapper was dropped in #141); correlation to `[^n]` footnotes is not implemented. Manual rework if needed.
+- **Footnote correlation** is **opt-in** (#148): by default small text at the page bottom is rendered inline as plain text (the `<small>` wrapper was dropped in #141). Manual rework if needed.
 - **Merged-cell tables**: extracted as best-effort flat tables. Complex cases need manual restructuring.
 - **Multi-column layouts**: blocks come in PyMuPDF's reading order, which can interleave for academic two-column papers.

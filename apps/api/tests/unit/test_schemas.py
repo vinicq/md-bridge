@@ -24,6 +24,7 @@ def test_pdf_to_md_options_defaults():
     assert opts.allow_html == frozenset()
     assert opts.preserve_line_breaks is False
     assert opts.max_heading_level == 3
+    assert opts.footnote_pairing is False
     assert opts.lang == "pt-BR"
 
 
