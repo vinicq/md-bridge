@@ -20,6 +20,7 @@ const ROUTES = [
   { path: '/convert/pdf-to-md', name: 'PdfToMd' },
   { path: '/convert/md-to-pdf', name: 'MdToPdf' },
   { path: '/about', name: 'About' },
+  { path: '/contribute/i18n', name: 'I18nWorkshop' },
 ]
 
 test.describe('WCAG 2.1 AA Accessibility Audit', () => {

@@ -1,0 +1,171 @@
+.workshop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-8);
+  padding: var(--s-8) 0;
+}
+
+.workshop__sub {
+  color: var(--c-ink-soft);
+  margin-top: var(--s-2);
+}
+
+.workshop__locale-list {
+  list-style: none;
+  margin: var(--s-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.workshop__locale-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.workshop__locale-label {
+  min-width: 8ch;
+  font-weight: 600;
+}
+
+.workshop__bar {
+  flex: 1;
+  max-width: 320px;
+  height: var(--s-2);
+  background: var(--c-rule);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.workshop__bar-fill {
+  height: 100%;
+  background: var(--c-accent);
+  border-radius: var(--r-sm);
+  transition: width var(--t-base) var(--easing);
+}
+
+.workshop__locale-count {
+  color: var(--c-ink-soft);
+  font-size: var(--fs-xs);
+  min-width: 10ch;
+}
+
+.workshop__editor-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.workshop__select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--c-ink-soft);
+  font-size: var(--fs-sm);
+}
+
+.workshop__select select {
+  background: var(--c-bg-elev);
+  color: var(--c-ink);
+  border: 1px solid var(--c-rule);
+  border-radius: var(--r-md);
+  padding: var(--s-1) var(--s-2);
+}
+
+.workshop__count {
+  color: var(--c-ink-soft);
+  font-size: var(--fs-sm);
+  margin: var(--s-2) 0;
+}
+
+.workshop__done {
+  color: var(--c-ok);
+}
+
+.workshop__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.workshop__table caption {
+  text-align: left;
+  color: var(--c-ink-soft);
+  font-size: var(--fs-xs);
+  padding-bottom: var(--s-2);
+}
+
+.workshop__table th,
+.workshop__table td {
+  border-bottom: 1px solid var(--c-rule);
+  padding: var(--s-2) var(--s-3);
+  text-align: left;
+  vertical-align: top;
+}
+
+.workshop__row--untranslated {
+  background: var(--c-accent-soft);
+}
+
+.workshop__key {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+.workshop__untranslated-badge {
+  color: var(--c-accent-strong);
+  font-size: var(--fs-xs);
+}
+
+.workshop__input {
+  width: 100%;
+  background: var(--c-bg-elev);
+  color: var(--c-ink);
+  border: 1px solid var(--c-rule);
+  border-radius: var(--r-md);
+  padding: var(--s-2);
+  box-sizing: border-box;
+}
+
+.workshop__input:focus-visible {
+  outline: 2px solid var(--c-focus-ring);
+  outline-offset: 1px;
+}
+
+.workshop__export {
+  border-top: 1px solid var(--c-rule);
+  padding-top: var(--s-4);
+}
+
+.workshop__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-top: var(--s-3);
+}
+
+/* Explicit token-based button. The UA default is white-on-silver, which fails
+   contrast in dark mode (webkit caught it); ink-on-bg clears AA in both themes. */
+.workshop__actions button {
+  background: var(--c-ink);
+  color: var(--c-bg);
+  border: 1px solid var(--c-ink);
+  border-radius: var(--r-md);
+  padding: var(--s-2) var(--s-4);
+  font: inherit;
+  cursor: pointer;
+}
+
+.workshop__actions button:focus-visible {
+  outline: 2px solid var(--c-focus-ring);
+  outline-offset: 2px;
+}
+
+.workshop__copied {
+  color: var(--c-ok);
+  font-size: var(--fs-sm);
+}

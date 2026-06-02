@@ -6,6 +6,7 @@ import { I18nProvider } from './i18n'
 import { ThemeProvider } from './theme'
 import { About } from './pages/About'
 import { Home } from './pages/Home'
+import { LanguageWorkshop } from './pages/LanguageWorkshop'
 import { MdToPdf } from './pages/MdToPdf'
 import { PdfToMd } from './pages/PdfToMd'
 
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
       { path: 'convert/pdf-to-md', Component: PdfToMd },
       { path: 'convert/md-to-pdf', Component: MdToPdf },
       { path: 'about', Component: About },
+      { path: 'contribute/i18n', Component: LanguageWorkshop },
     ],
   },
 ])

@@ -120,6 +120,26 @@ interface Dictionary {
   languageSwitcher: {
     label: string
   }
+  workshop: {
+    title: string
+    subtitle: string
+    localesHeading: string
+    completion: (filled: number, total: number) => string
+    editorHeading: string
+    tableCaption: string
+    colKey: string
+    colReference: string
+    colDraft: string
+    untranslatedBadge: string
+    draftInputLabel: (key: string) => string
+    showingCount: (total: number, untranslated: number) => string
+    exportHeading: string
+    copyTs: string
+    copyJson: string
+    copied: string
+    selectLocale: string
+    allDone: string
+  }
 }
 
 const en: Dictionary = {
@@ -262,6 +282,27 @@ const en: Dictionary = {
   },
   languageSwitcher: {
     label: 'Language',
+  },
+  workshop: {
+    title: 'Language Workshop',
+    subtitle:
+      'Edit any translation for a locale and copy a snippet to paste into the dictionary. Keys still identical to English are flagged; a few (brand names, "Markdown") are identical on purpose.',
+    localesHeading: 'Locales',
+    completion: (translated, total) => `${translated} of ${total} localized`,
+    editorHeading: 'Translations',
+    tableCaption: 'Every translation key with its English reference and your draft.',
+    colKey: 'Key',
+    colReference: 'English',
+    colDraft: 'Your translation',
+    untranslatedBadge: 'same as English',
+    draftInputLabel: (key) => `Translation for ${key}`,
+    showingCount: (total, untranslated) => `${total} keys, ${untranslated} still match English`,
+    exportHeading: 'Export',
+    copyTs: 'Copy as TypeScript',
+    copyJson: 'Copy as JSON',
+    copied: 'Copied',
+    selectLocale: 'Locale to translate',
+    allDone: 'Every key in this locale differs from English.',
   },
 }
 
@@ -406,6 +447,27 @@ const pt: Dictionary = {
   languageSwitcher: {
     label: 'Idioma',
   },
+  workshop: {
+    title: 'Oficina de Idiomas',
+    subtitle:
+      'Edite qualquer tradução de um idioma e copie um trecho para colar no dicionário. Chaves ainda iguais ao inglês são sinalizadas; algumas (nomes de marca, "Markdown") são iguais de propósito.',
+    localesHeading: 'Idiomas',
+    completion: (translated, total) => `${translated} de ${total} traduzidas`,
+    editorHeading: 'Traduções',
+    tableCaption: 'Todas as chaves de tradução, com a referência em inglês e o seu rascunho.',
+    colKey: 'Chave',
+    colReference: 'Inglês',
+    colDraft: 'Sua tradução',
+    untranslatedBadge: 'igual ao inglês',
+    draftInputLabel: (key) => `Tradução para ${key}`,
+    showingCount: (total, untranslated) => `${total} chaves, ${untranslated} ainda iguais ao inglês`,
+    exportHeading: 'Exportar',
+    copyTs: 'Copiar como TypeScript',
+    copyJson: 'Copiar como JSON',
+    copied: 'Copiado',
+    selectLocale: 'Idioma a traduzir',
+    allDone: 'Todas as chaves deste idioma diferem do inglês.',
+  },
 }
 
 const es: Dictionary = {
@@ -548,6 +610,27 @@ const es: Dictionary = {
   },
   languageSwitcher: {
     label: 'Idioma',
+  },
+  workshop: {
+    title: 'Taller de Idiomas',
+    subtitle:
+      'Edita cualquier traducción de un idioma y copia un fragmento para pegar en el diccionario. Las claves aún idénticas al inglés se señalan; algunas (nombres de marca, "Markdown") son idénticas a propósito.',
+    localesHeading: 'Idiomas',
+    completion: (translated, total) => `${translated} de ${total} traducidas`,
+    editorHeading: 'Traducciones',
+    tableCaption: 'Todas las claves de traducción, con la referencia en inglés y tu borrador.',
+    colKey: 'Clave',
+    colReference: 'Inglés',
+    colDraft: 'Tu traducción',
+    untranslatedBadge: 'igual al inglés',
+    draftInputLabel: (key) => `Traducción para ${key}`,
+    showingCount: (total, untranslated) => `${total} claves, ${untranslated} aún iguales al inglés`,
+    exportHeading: 'Exportar',
+    copyTs: 'Copiar como TypeScript',
+    copyJson: 'Copiar como JSON',
+    copied: 'Copiado',
+    selectLocale: 'Idioma a traducir',
+    allDone: 'Todas las claves de este idioma difieren del inglés.',
   },
 }
 
