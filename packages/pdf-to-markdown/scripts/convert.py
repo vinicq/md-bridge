@@ -613,8 +613,47 @@ def detect_language(text: str) -> str:
         return "sql"
     if re.search(r"^\s*(def |class |import |from \S+ import )", text, re.MULTILINE):
         return "python"
+    # The rules below stay conservative: each keys off a high-signal, line-
+    # anchored construct (a shebang, a declaration keyword, a document marker),
+    # never a bare word that also reads as prose, so a misdetect mislabels at
+    # most one fence rather than firing on ordinary text (#145). Language-
+    # specific declarations are checked before the looser JavaScript rule so a
+    # Rust `let mut` or a Go `func` is not stolen by JavaScript's `let`/`func`.
+    # Bash: a shebang or a visible shell prompt. Bare builtins (cd, rm, echo)
+    # are deliberately not matched.
+    if re.search(r"^#!\s*(?:/usr/bin/env\s+|/bin/)?(?:bash|sh|zsh)\b", text, re.MULTILINE):
+        return "bash"
+    if re.search(r"^\s*\$\s+[a-zA-Z]", text, re.MULTILINE):
+        return "bash"
+    # Dockerfile: the defining FROM plus at least one more instruction.
+    if re.search(r"^\s*FROM\s+\S+", text, re.MULTILINE) and re.search(
+        r"^\s*(RUN|CMD|COPY|ADD|ENTRYPOINT|WORKDIR|ENV|EXPOSE|VOLUME)\s", text, re.MULTILINE
+    ):
+        return "dockerfile"
+    # Go: a package line or a func definition. (An `import (` block is not used
+    # as a signal: Python's `import ` rule above already claims that line.)
+    if re.search(r"^\s*package\s+\w+\s*$|^\s*func\s+\w+\s*\(", text, re.MULTILINE):
+        return "go"
+    # Rust: declaration keywords at line start (fn/impl/struct/enum/let mut/use path).
+    if re.search(
+        r"^\s*(pub\s+)?(fn\s+\w+|impl\s+\w|struct\s+\w+|enum\s+\w+|let\s+mut\s|use\s+\w+::)",
+        text,
+        re.MULTILINE,
+    ):
+        return "rust"
+    # TypeScript: an interface body or a type alias (the brace / `=` keeps the
+    # keyword from matching prose like "interface with the system").
+    if re.search(r"^\s*interface\s+\w+\s*\{|^\s*type\s+\w+\s*=", text, re.MULTILINE):
+        return "typescript"
     if re.search(r"^\s*(function\s|const\s|let\s|var\s|=>\s)", text, re.MULTILINE):
         return "javascript"
+    # YAML: a document marker, or two or more `key: value` lines. Checked after
+    # the typed languages so an interface body's `name: type` lines do not read
+    # as YAML.
+    if re.search(r"^---\s*$", text, re.MULTILINE) or len(
+        re.findall(r"^[\w.-]+:\s+\S", text, re.MULTILINE)
+    ) >= 2:
+        return "yaml"
     return ""
 
 
