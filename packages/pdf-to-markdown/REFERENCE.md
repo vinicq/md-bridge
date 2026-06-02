@@ -112,6 +112,8 @@ The current converter (`scripts/convert.py`) already covers items 1, 2, 3 (most)
 
 Block quotes are detected **opt-in**: pass `--detect-blockquotes` to `convert.py` (or `{"detect_blockquotes": true}` in the API options). A body-size block inset from the margin on every line becomes a `>` quote. It ships off by default because a list continuation is also an indented body block; when the flag is on, an indented block under an open list still binds to the item as content, not a quote.
 
+Heading levels beyond H3 are **opt-in** and gated on clustering: pass `--cluster-headings` (`{"cluster_headings": true}`) to map font sizes to heading levels by gap-partitioned size bands, and `--max-heading-level N` (`{"max_heading_level": N}`, 1-6) to allow H4-H6. `max_heading_level` defaults to 3 and only affects output when `cluster_headings` is on; the default fixed-cutoff path still tops out at H3, so default output is unchanged. A flat size histogram yields fewer levels naturally; levels with no font-size evidence are never synthesized.
+
 ## HTML emission policy (#154)
 
 The converter emits pure Markdown by default and never writes raw HTML tags: superscript becomes Pandoc `^x^`, strikethrough GFM `~~text~~`, small-font captions plain text. A grep of any output for `<tag>` returns nothing.
