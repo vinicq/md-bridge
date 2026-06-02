@@ -73,3 +73,24 @@ def test_istqb_output_is_pure_markdown(istqb_pdf, pdf_to_md_mod):
     assert all(ln.strip() == "v4.0 GA Page 3 of 77 2025/05/02" for ln in footer_lines), (
         f"page footer was fused into prose: {footer_lines}"
     )
+
+
+def test_istqb_running_furniture_subtracted_when_flag_on(istqb_pdf, pdf_to_md_mod):
+    # #187: the opt-in flag removes the recurring page footer. The default path
+    # (test above) keeps it, so this proves the flag rather than a golden change.
+    with tempfile.TemporaryDirectory(prefix="regress-furniture-") as raw:
+        out = Path(raw) / f"{istqb_pdf.stem}.md"
+        pdf_to_md_mod.convert_document(
+            istqb_pdf,
+            out,
+            page_break=False,
+            debug=False,
+            extract_images=False,
+            front_matter=True,
+            subtract_running_furniture=True,
+        )
+        current = out.read_text(encoding="utf-8")
+
+    assert "v4.0 GA Page 3 of 77 2025/05/02" not in current
+    # The body survives the subtraction: the document still has its structure.
+    assert current.count("\n#") > 20

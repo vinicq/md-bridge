@@ -16,6 +16,7 @@ class PdfToMdOptions(BaseModel):
     front_matter: bool = True
     detect_blockquotes: bool = False
     cluster_headings: bool = False
+    subtract_running_furniture: bool = False
     lang: SupportedLang = "pt-BR"
 
 
