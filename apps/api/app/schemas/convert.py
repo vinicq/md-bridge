@@ -24,6 +24,7 @@ class PdfToMdOptions(BaseModel):
     cluster_headings: bool = False
     subtract_running_furniture: bool = False
     allow_html: frozenset[str] = frozenset()
+    preserve_line_breaks: bool = False
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")

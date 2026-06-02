@@ -430,3 +430,68 @@ def test_detect_language_empty_when_no_match(mod):
     assert mod.detect_language("") == ""
     # Prose that brushes the new rules must still fall through to no language.
     assert mod.detect_language("Warning: this section is long but readable") == ""
+
+
+# --- #156: hard line breaks from PDF layout -----------------------------------
+
+
+def _lb_block(mod, rows, *, font="Body", size=11.0):
+    """Block whose lines carry their own (text, x0[, font, size]) so the
+    hard-break predicate can be exercised on font/size/indent differences."""
+    lines = []
+    for r in rows:
+        text, x0 = r[0], r[1]
+        f = r[2] if len(r) > 2 else font
+        sz = r[3] if len(r) > 3 else size
+        bbox = (x0, 0.0, x0 + 300, sz + 2)
+        lines.append(mod.Line(spans=[mod.Span(text=text, size=sz, font=f, flags=0, bbox=bbox)], bbox=bbox))
+    x0min = min(r[1] for r in rows)
+    return mod.Block(lines=lines, bbox=(x0min, 0.0, x0min + 300, (size + 2) * len(rows)))
+
+
+def test_hard_break_three_short_lines(mod):
+    profile = _profile(mod)
+    profile.preserve_line_breaks = True
+    block = _lb_block(mod, [("Roses are red", 72.0), ("Violets are blue", 72.0), ("Sugar is sweet", 72.0)])
+    out = mod.render_paragraph(block, profile)
+    assert out.count("  \n") == 2
+    assert out == "Roses are red  \nViolets are blue  \nSugar is sweet"
+
+
+def test_hard_break_long_wrapped_line_has_none(mod):
+    profile = _profile(mod)
+    profile.preserve_line_breaks = True
+    block = _lb_block(mod, [
+        ("This is a long wrapped sentence that clearly exceeds the sixty character threshold", 72.0),
+        ("and keeps going on the next line", 72.0),
+    ])
+    assert "  \n" not in mod.render_paragraph(block, profile)
+
+
+def test_hard_break_off_by_default_space_joins(mod):
+    profile = _profile(mod)  # preserve_line_breaks defaults False
+    block = _lb_block(mod, [("Roses are red", 72.0), ("Violets are blue", 72.0)])
+    out = mod.render_paragraph(block, profile)
+    assert "  \n" not in out
+    assert out == "Roses are red Violets are blue"
+
+
+def test_hard_break_continuation_word_not_broken(mod):
+    profile = _profile(mod)
+    profile.preserve_line_breaks = True
+    block = _lb_block(mod, [("A short line", 72.0), ("and more text follows", 72.0)])
+    assert "  \n" not in mod.render_paragraph(block, profile)
+
+
+def test_hard_break_different_font_not_broken(mod):
+    profile = _profile(mod)
+    profile.preserve_line_breaks = True
+    block = _lb_block(mod, [("Short line one", 72.0, "Body"), ("Short line two", 72.0, "JetBrainsMono")])
+    assert "  \n" not in mod.render_paragraph(block, profile)
+
+
+def test_hard_break_different_indent_not_broken(mod):
+    profile = _profile(mod)
+    profile.preserve_line_breaks = True
+    block = _lb_block(mod, [("Short line one", 72.0), ("Short line two", 100.0)])
+    assert "  \n" not in mod.render_paragraph(block, profile)
