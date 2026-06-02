@@ -65,3 +65,47 @@ def test_split_heading_stays_split_by_default():
 
     # Without clustering, the two heading blocks emit independently.
     assert html.count("<h1>") >= 2
+
+
+def _pdf_with_six_heading_sizes() -> bytes:
+    doc = pymupdf.open()
+    page = doc.new_page(width=612, height=792)
+    # Body at 11pt (dominant), then six distinct heading sizes with clear gaps.
+    for i, y in enumerate(range(80, 200, 20)):
+        page.insert_text((72, y), f"Body paragraph {i} with enough real words to anchor the size.", fontsize=11)
+    headings = [("Heading one", 34), ("Heading two", 28), ("Heading three", 24),
+                ("Heading four", 20), ("Heading five", 17), ("Heading six", 14)]
+    y = 240
+    for text, size in headings:
+        page.insert_text((72, y), text, fontsize=size)
+        y += 50
+    try:
+        return doc.tobytes()
+    finally:
+        doc.close()
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Same Windows tempdir-lock constraint as the cases above.",
+)
+def test_six_level_headings_with_max_six():
+    pdf = _pdf_with_six_heading_sizes()
+    opts = PdfToMdOptions(cluster_headings=True, max_heading_level=6)
+    md = convert_pdf_bytes(pdf, filename="levels.pdf", options=opts).md
+    html = markdown.markdown(md)
+    assert "<h4>" in html
+    assert "<h5>" in html
+    assert "<h6>" in html
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Same Windows tempdir-lock constraint as the cases above.",
+)
+def test_deep_levels_capped_at_three_by_default():
+    pdf = _pdf_with_six_heading_sizes()
+    opts = PdfToMdOptions(cluster_headings=True)  # default max_heading_level=3
+    md = convert_pdf_bytes(pdf, filename="levels.pdf", options=opts).md
+    html = markdown.markdown(md)
+    assert "<h4>" not in html

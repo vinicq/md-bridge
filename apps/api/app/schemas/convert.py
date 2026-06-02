@@ -25,6 +25,7 @@ class PdfToMdOptions(BaseModel):
     subtract_running_furniture: bool = False
     allow_html: frozenset[str] = frozenset()
     preserve_line_breaks: bool = False
+    max_heading_level: int = Field(default=3, ge=1, le=6)
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")

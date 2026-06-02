@@ -224,7 +224,9 @@ class DocProfile:
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
-        for level in (1, 2, 3):
+        # Iterate the actual threshold keys so a legacy {1,2,3} dict behaves
+        # exactly as before and a clustered {1..6} dict (#146) reaches H4-H6.
+        for level in sorted(self.heading_thresholds):
             if size >= self.heading_thresholds[level]:
                 return level
         return None
@@ -236,25 +238,29 @@ class DocProfile:
         return min(max(n, 0), 5)
 
 
-def cluster_heading_bands(size_histogram: dict[float, int], body_size: float) -> dict[int, float]:
-    """Map font sizes above body to H1/H2/H3 thresholds by partitioning the
-    distinct sizes at their largest gaps (#188).
+def cluster_heading_bands(
+    size_histogram: dict[float, int], body_size: float, *, max_level: int = 3
+) -> dict[int, float]:
+    """Map font sizes above body to H1..H{max_level} thresholds by partitioning
+    the distinct sizes at their largest gaps (#188, #146).
 
     Deterministic by construction: no RNG, no dependency. Sizes close together
     (a tiny gap) land in the same band instead of being split by a fixed
     cutoff, which is what fixes sibling heading sizes getting mislabeled. A
     band's threshold is the midpoint to the next band's ceiling, so the cut
-    sits in the real empty space between size clusters.
+    sits in the real empty space between size clusters. `max_level` caps how
+    many bands (heading levels) the partition may produce; a flat histogram
+    yields fewer levels naturally and they are never synthesized (#146).
     """
     candidates = sorted({s for s in size_histogram if s > body_size + 0.5}, reverse=True)
     if not candidates:
-        # No heading-size text: keep the legacy fallback ladder.
+        # No heading-size text: keep the legacy fallback ladder (always 3).
         h1, h2, h3 = body_size + 6, body_size + 3, body_size + 1.5
         return {1: h1 - 0.5, 2: h2 - 0.5, 3: h3 - 0.5}
 
-    # Partition the sorted-desc distinct sizes into at most 3 contiguous bands
-    # by cutting at the most significant gaps. A gap counts as significant only
-    # if it stands out from the largest gap, so close siblings never cut.
+    # Partition the sorted-desc distinct sizes into at most `max_level` bands by
+    # cutting at the most significant gaps. A gap counts as significant only if
+    # it stands out from the largest gap, so close siblings never cut.
     bands: list[list[float]] = [candidates]
     if len(candidates) > 1:
         gaps = sorted(
@@ -262,7 +268,7 @@ def cluster_heading_bands(size_histogram: dict[float, int], body_size: float) ->
             key=lambda g: (-g[0], g[1]),  # largest gap first; tie -> lower index (larger size)
         )
         significant = max(0.5, gaps[0][0] * 0.25)
-        cut_after = sorted(i for gap, i in gaps[:2] if gap >= significant)
+        cut_after = sorted(i for gap, i in gaps[: max_level - 1] if gap >= significant)
         if cut_after:
             bands = []
             start = 0
@@ -273,7 +279,7 @@ def cluster_heading_bands(size_histogram: dict[float, int], body_size: float) ->
 
     unreachable = candidates[0] + 100.0
     thresholds: dict[int, float] = {}
-    for level in (1, 2, 3):
+    for level in range(1, max_level + 1):
         if level <= len(bands):
             floor = min(bands[level - 1])
             if level < len(bands):
@@ -281,7 +287,7 @@ def cluster_heading_bands(size_histogram: dict[float, int], body_size: float) ->
             else:
                 thresholds[level] = floor - 0.5
         else:
-            thresholds[level] = unreachable  # fewer than 3 bands: level never matches
+            thresholds[level] = unreachable  # fewer bands than max_level: level never matches
     return thresholds
 
 
@@ -1297,6 +1303,7 @@ def convert_document(
     subtract_running_furniture: bool = False,
     allow_html: frozenset[str] = frozenset(),
     preserve_line_breaks: bool = False,
+    max_heading_level: int = 3,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -1305,8 +1312,11 @@ def convert_document(
     profile.allow_html = allow_html
     profile.preserve_line_breaks = preserve_line_breaks
     if cluster_headings:
-        # Replace the fixed-cutoff thresholds with gap-partitioned size bands.
-        profile.heading_thresholds = cluster_heading_bands(profile.size_histogram, profile.body_size)
+        # Replace the fixed-cutoff thresholds with gap-partitioned size bands,
+        # capped at max_heading_level (deeper levels only exist here, #146).
+        profile.heading_thresholds = cluster_heading_bands(
+            profile.size_histogram, profile.body_size, max_level=max_heading_level
+        )
     recurring_furniture = find_recurring_furniture(doc) if subtract_running_furniture else frozenset()
     toc = doc.get_toc()
 
@@ -1658,6 +1668,14 @@ def main() -> int:
         action="store_true",
         help="Keep intentional layout line breaks (poetry, addresses) as hard breaks (opt-in, #156)",
     )
+    parser.add_argument(
+        "--max-heading-level",
+        type=int,
+        default=3,
+        choices=range(1, 7),
+        metavar="N",
+        help="Cap clustered heading depth at N (1-6); only affects output with --cluster-headings (#146)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -1676,6 +1694,7 @@ def main() -> int:
         cluster_headings=args.cluster_headings,
         subtract_running_furniture=args.subtract_furniture,
         preserve_line_breaks=args.preserve_line_breaks,
+        max_heading_level=args.max_heading_level,
     )
     return 0
 

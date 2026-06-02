@@ -173,6 +173,7 @@ def convert_pdf_bytes(
                 subtract_running_furniture=opts.subtract_running_furniture,
                 allow_html=frozenset(opts.allow_html),
                 preserve_line_breaks=opts.preserve_line_breaks,
+                max_heading_level=opts.max_heading_level,
             )
 
         md_text = md_path.read_text(encoding="utf-8")

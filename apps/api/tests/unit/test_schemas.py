@@ -23,7 +23,16 @@ def test_pdf_to_md_options_defaults():
     assert opts.subtract_running_furniture is False
     assert opts.allow_html == frozenset()
     assert opts.preserve_line_breaks is False
+    assert opts.max_heading_level == 3
     assert opts.lang == "pt-BR"
+
+
+def test_pdf_to_md_options_max_heading_level_range():
+    assert PdfToMdOptions(max_heading_level=6).max_heading_level == 6
+    with pytest.raises(ValidationError):
+        PdfToMdOptions(max_heading_level=7)
+    with pytest.raises(ValidationError):
+        PdfToMdOptions(max_heading_level=0)
 
 
 def test_pdf_to_md_options_allow_html_accepts_capped_tag():

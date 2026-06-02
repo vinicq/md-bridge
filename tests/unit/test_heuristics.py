@@ -495,3 +495,81 @@ def test_hard_break_different_indent_not_broken(mod):
     profile.preserve_line_breaks = True
     block = _lb_block(mod, [("Short line one", 72.0), ("Short line two", 100.0)])
     assert "  \n" not in mod.render_paragraph(block, profile)
+
+
+# --- #146: heading levels H4-H6 (clustered, capped by max_level) --------------
+
+
+def test_cluster_bands_six_distinct_sizes_max_six(mod):
+    hist = {11.0: 1000, 13.0: 10, 16.0: 10, 20.0: 10, 26.0: 10, 32.0: 10, 40.0: 10}
+    th = mod.cluster_heading_bands(hist, 11.0, max_level=6)
+    levels = [_level(mod, th, s) for s in (40.0, 32.0, 26.0, 20.0, 16.0, 13.0)]
+    assert None not in levels
+    assert set(levels) == {1, 2, 3, 4, 5, 6}
+    assert _level(mod, th, 40.0) == 1
+    assert _level(mod, th, 13.0) == 6
+
+
+def test_cluster_bands_default_cap_is_three(mod):
+    hist = {11.0: 1000, 13.0: 10, 16.0: 10, 20.0: 10, 26.0: 10, 32.0: 10, 40.0: 10}
+    th = mod.cluster_heading_bands(hist, 11.0)  # default max_level=3
+    levels = {_level(mod, th, s) for s in (40.0, 32.0, 26.0, 20.0, 16.0, 13.0)}
+    assert None not in levels
+    assert levels <= {1, 2, 3}
+    assert _level(mod, th, 40.0) == 1
+
+
+def test_cluster_bands_flat_two_sizes_capped_independent_of_max(mod):
+    hist = {11.0: 1000, 14.0: 30, 20.0: 20}
+    for cap in (3, 6):
+        th = mod.cluster_heading_bands(hist, 11.0, max_level=cap)
+        assert _level(mod, th, 20.0) == 1
+        assert _level(mod, th, 14.0) == 2
+        assert _level(mod, th, 13.0) is None  # no third level synthesized
+
+
+def test_cluster_bands_half_point_collapse_survives_depth(mod):
+    th = mod.cluster_heading_bands({11.0: 1000, 12.8: 40, 13.0: 40, 20.0: 20}, 11.0, max_level=6)
+    assert _level(mod, th, 12.8) == _level(mod, th, 13.0)
+
+
+def test_heading_level_reaches_four_five_six(mod):
+    profile = _profile(mod)
+    profile.heading_thresholds = {1: 30.0, 2: 24.0, 3: 19.0, 4: 15.0, 5: 12.5, 6: 11.5}
+    assert profile.heading_level(31.0) == 1
+    assert profile.heading_level(15.5) == 4
+    assert profile.heading_level(12.6) == 5
+    assert profile.heading_level(11.6) == 6
+    assert profile.heading_level(11.0) is None
+
+
+def test_heading_level_legacy_three_dict_unchanged(mod):
+    profile = _profile(mod)  # legacy {1,2,3}
+    assert profile.heading_level(24.0) == 1
+    assert profile.heading_level(14.0) == 2
+    assert profile.heading_level(12.5) == 3
+    assert profile.heading_level(11.0) is None
+
+
+def test_classify_block_deep_heading_level(mod):
+    profile = _profile(mod)
+    profile.heading_thresholds = {1: 30.0, 2: 24.0, 3: 19.0, 4: 15.0, 5: 12.5, 6: 11.5}
+    assert mod.classify_block(_make_block(mod, "Deep subsection", 12.6), profile) == "heading5"
+
+
+def test_assemble_emits_deep_heading_hashes(mod):
+    import markdown
+
+    profile = _profile(mod)
+    profile.heading_thresholds = {1: 30.0, 2: 24.0, 3: 19.0, 4: 15.0, 5: 12.5, 6: 11.5}
+    items = [
+        ("block", _make_block(mod, "Four", 15.5)),
+        ("block", _make_block(mod, "Five", 12.6)),
+        ("block", _make_block(mod, "Six", 11.6)),
+    ]
+    md = mod.assemble_markdown(items, profile)
+    assert "#### Four" in md
+    assert "##### Five" in md
+    assert "###### Six" in md
+    html = markdown.markdown(md)
+    assert "<h4>Four</h4>" in html and "<h5>Five</h5>" in html and "<h6>Six</h6>" in html
