@@ -169,6 +169,7 @@ def convert_pdf_bytes(
                 extract_images=False,
                 front_matter=opts.front_matter,
                 detect_blockquotes=opts.detect_blockquotes,
+                cluster_headings=opts.cluster_headings,
             )
 
         md_text = md_path.read_text(encoding="utf-8")

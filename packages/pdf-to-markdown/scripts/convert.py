@@ -20,7 +20,7 @@ import io
 import re
 import sys
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -188,6 +188,8 @@ class DocProfile:
     list_base_x0: float = 72.0  # typical first-level bullet/numbered left margin
     indent_unit: float = 18.0  # nesting indent step
     detect_blockquotes: bool = False  # opt-in: sustained-indent body block -> quote (#147)
+    cluster_headings: bool = False  # opt-in: gap-partition font sizes into heading bands (#188)
+    size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
         for level in (1, 2, 3):
@@ -200,6 +202,55 @@ class DocProfile:
             return 0
         n = int(round(max(0.0, x0 - self.list_base_x0) / self.indent_unit))
         return min(max(n, 0), 5)
+
+
+def cluster_heading_bands(size_histogram: dict[float, int], body_size: float) -> dict[int, float]:
+    """Map font sizes above body to H1/H2/H3 thresholds by partitioning the
+    distinct sizes at their largest gaps (#188).
+
+    Deterministic by construction: no RNG, no dependency. Sizes close together
+    (a tiny gap) land in the same band instead of being split by a fixed
+    cutoff, which is what fixes sibling heading sizes getting mislabeled. A
+    band's threshold is the midpoint to the next band's ceiling, so the cut
+    sits in the real empty space between size clusters.
+    """
+    candidates = sorted({s for s in size_histogram if s > body_size + 0.5}, reverse=True)
+    if not candidates:
+        # No heading-size text: keep the legacy fallback ladder.
+        h1, h2, h3 = body_size + 6, body_size + 3, body_size + 1.5
+        return {1: h1 - 0.5, 2: h2 - 0.5, 3: h3 - 0.5}
+
+    # Partition the sorted-desc distinct sizes into at most 3 contiguous bands
+    # by cutting at the most significant gaps. A gap counts as significant only
+    # if it stands out from the largest gap, so close siblings never cut.
+    bands: list[list[float]] = [candidates]
+    if len(candidates) > 1:
+        gaps = sorted(
+            ((candidates[i] - candidates[i + 1], i) for i in range(len(candidates) - 1)),
+            key=lambda g: (-g[0], g[1]),  # largest gap first; tie -> lower index (larger size)
+        )
+        significant = max(0.5, gaps[0][0] * 0.25)
+        cut_after = sorted(i for gap, i in gaps[:2] if gap >= significant)
+        if cut_after:
+            bands = []
+            start = 0
+            for ci in cut_after:
+                bands.append(candidates[start:ci + 1])
+                start = ci + 1
+            bands.append(candidates[start:])
+
+    unreachable = candidates[0] + 100.0
+    thresholds: dict[int, float] = {}
+    for level in (1, 2, 3):
+        if level <= len(bands):
+            floor = min(bands[level - 1])
+            if level < len(bands):
+                thresholds[level] = (floor + max(bands[level])) / 2
+            else:
+                thresholds[level] = floor - 0.5
+        else:
+            thresholds[level] = unreachable  # fewer than 3 bands: level never matches
+    return thresholds
 
 
 def build_profile(doc: fitz.Document) -> DocProfile:
@@ -274,6 +325,7 @@ def build_profile(doc: fitz.Document) -> DocProfile:
         body_x0=body_x0,
         list_base_x0=list_base_x0,
         indent_unit=18.0,
+        size_histogram=dict(sizes),
     )
 
 
@@ -825,10 +877,24 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             out_parts.append("\n>\n".join(blockquote_run))
             blockquote_run.clear()
 
+    # Consecutive heading blocks of the same level merge into one heading
+    # (#188), so a heading split across PDF blocks on one page is rejoined.
+    # Only active under cluster_headings; otherwise each heading emits alone.
+    heading_run: list[str] = []
+    heading_run_level = 0
+
+    def flush_heading() -> None:
+        nonlocal heading_run_level
+        if heading_run:
+            out_parts.append(f"{'#' * heading_run_level} {' '.join(heading_run)}")
+            heading_run.clear()
+        heading_run_level = 0
+
     for kind, payload in items:
         if kind == "table":
             flush_numbered()
             flush_blockquote()
+            flush_heading()
             list_marker_x0 = None
             if payload:
                 out_parts.append(payload)
@@ -836,6 +902,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
         if kind == "image":
             flush_numbered()
             flush_blockquote()
+            flush_heading()
             list_marker_x0 = None
             out_parts.append(payload)
             continue
@@ -859,6 +926,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                 and block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
             ):
                 flush_blockquote()
+                flush_heading()
                 indent = list_cont_indent + "    "
                 cont_block = "\n".join(indent + ln for ln in code_lines)
                 if numbered_run:
@@ -870,6 +938,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                 continue
             flush_numbered()
             flush_blockquote()
+            flush_heading()
             list_marker_x0 = None
             code_body = "\n".join(code_lines)
             lang = detect_language(code_body)
@@ -898,6 +967,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             # first, or the next consecutive quote would fuse across the list
             # boundary (#174 state-corruption guard).
             flush_blockquote()
+            flush_heading()
             cont_line = list_cont_indent + text_clean
             if numbered_run:
                 numbered_run.append("")
@@ -914,12 +984,25 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             flush_numbered()
         if cls != "blockquote":
             flush_blockquote()
+        if not cls.startswith("heading"):
+            flush_heading()
 
         if cls.startswith("heading"):
             list_marker_x0 = None
             level = int(cls[-1])
             heading_text = re.sub(r"\*+", "", text_clean).strip()
-            out_parts.append(f"{'#' * level} {heading_text}")
+            if profile.cluster_headings:
+                # Merge a heading split across consecutive same-level blocks on
+                # one page into a single heading (#188). A different level or
+                # any non-heading block (above) flushes the open run first.
+                if heading_run and heading_run_level == level:
+                    heading_run.append(heading_text)
+                else:
+                    flush_heading()
+                    heading_run_level = level
+                    heading_run.append(heading_text)
+            else:
+                out_parts.append(f"{'#' * level} {heading_text}")
         elif cls == "bullet":
             stripped = text_clean.lstrip()
             for ch in BULLET_CHARS:
@@ -962,6 +1045,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
 
     flush_numbered()
     flush_blockquote()
+    flush_heading()
     return "\n\n".join(out_parts)
 
 
@@ -1009,10 +1093,15 @@ def convert_document(
     extract_images: bool = False,
     front_matter: bool = True,
     detect_blockquotes: bool = False,
+    cluster_headings: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
     profile.detect_blockquotes = detect_blockquotes
+    profile.cluster_headings = cluster_headings
+    if cluster_headings:
+        # Replace the fixed-cutoff thresholds with gap-partitioned size bands.
+        profile.heading_thresholds = cluster_heading_bands(profile.size_histogram, profile.body_size)
     toc = doc.get_toc()
 
     if debug:
@@ -1345,6 +1434,11 @@ def main() -> int:
         action="store_true",
         help="Classify sustained-indent body blocks as blockquotes (opt-in, #147)",
     )
+    parser.add_argument(
+        "--cluster-headings",
+        action="store_true",
+        help="Map font sizes to heading levels by gap-partitioned bands and merge multi-line headings (opt-in, #188)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -1360,6 +1454,7 @@ def main() -> int:
         extract_images=args.with_images,
         front_matter=not args.no_front_matter,
         detect_blockquotes=args.detect_blockquotes,
+        cluster_headings=args.cluster_headings,
     )
     return 0
 
