@@ -440,7 +440,7 @@ review work on md-bridge ([emoji key](https://allcontributors.org/docs/en/emoji-
     </tr>
     <tr>
       <td align="center" valign="top" width="16.66%"><a href="https://github.com/pink"><img src="https://avatars.githubusercontent.com/u/7690638?v=4?s=80" width="80px;" alt="Sean Kallungal"/><br /><sub><b>Sean Kallungal</b></sub></a><br /><a href="https://github.com/vinicq/md-bridge/commits?author=pink" title="Code">💻</a></td>
-      <td align="center" valign="top" width="16.66%"><a href="https://github.com/lvupupui"><img src="https://avatars.githubusercontent.com/u/276037412?v=4?s=80" width="80px;" alt="lvupupui"/><br /><sub><b>lvupupui</b></sub></a><br /><a href="https://github.com/vinicq/md-bridge/commits?author=lvupupui" title="Code">💻</a></td>
+      <td align="center" valign="top" width="16.66%"><a href="https://github.com/lvupupui"><img src="https://avatars.githubusercontent.com/u/276037412?v=4?s=80" width="80px;" alt="lvupupui"/><br /><sub><b>lvupupui</b></sub></a><br /><a href="https://github.com/vinicq/md-bridge/commits?author=lvupupui" title="Code">💻</a> <a href="https://github.com/vinicq/md-bridge/commits?author=lvupupui" title="Tests">⚠️</a> <a href="#translation-lvupupui" title="Translation">🌍</a></td>
     </tr>
   </tbody>
 </table>
