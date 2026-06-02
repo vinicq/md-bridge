@@ -772,10 +772,10 @@ def convert_page(
 
 
 def render_blockquote(block: Block) -> str:
-    """Render a block as a single-level CommonMark blockquote: `> ` on each
-    non-empty line. Framing blank lines come from the outer join, so nothing
-    is added here. Multi-paragraph quotes (#174) will extend this to join
-    paragraph groups with a bare `>` separator line.
+    """Render ONE block as a single quoted paragraph: `> ` on each non-empty
+    line. Framing blank lines come from the outer join. Multi-paragraph quotes
+    are assembled in `assemble_markdown`, which joins consecutive quote blocks
+    with a bare `>` separator line (#174).
     """
     quoted = [f"> {render_line(line).strip()}" for line in block.lines if line.text.strip()]
     return "\n".join(quoted)
@@ -814,15 +814,28 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             numbered_run.clear()
         numbered_loose_pending = False
 
+    # Consecutive blockquote blocks are one quote with multiple paragraphs
+    # (#174). Each PDF paragraph is its own Block, so we buffer the rendered
+    # paragraphs and join them with a bare `>` line (CommonMark 5.1) on flush,
+    # emitting one <blockquote> instead of several.
+    blockquote_run: list[str] = []
+
+    def flush_blockquote() -> None:
+        if blockquote_run:
+            out_parts.append("\n>\n".join(blockquote_run))
+            blockquote_run.clear()
+
     for kind, payload in items:
         if kind == "table":
             flush_numbered()
+            flush_blockquote()
             list_marker_x0 = None
             if payload:
                 out_parts.append(payload)
             continue
         if kind == "image":
             flush_numbered()
+            flush_blockquote()
             list_marker_x0 = None
             out_parts.append(payload)
             continue
@@ -845,6 +858,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                 list_marker_x0 is not None
                 and block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
             ):
+                flush_blockquote()
                 indent = list_cont_indent + "    "
                 cont_block = "\n".join(indent + ln for ln in code_lines)
                 if numbered_run:
@@ -855,6 +869,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                     out_parts.append(cont_block)
                 continue
             flush_numbered()
+            flush_blockquote()
             list_marker_x0 = None
             code_body = "\n".join(code_lines)
             lang = detect_language(code_body)
@@ -879,6 +894,10 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             and list_marker_x0 is not None
             and block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
         ):
+            # A pending quote run cut off by a list continuation must close
+            # first, or the next consecutive quote would fuse across the list
+            # boundary (#174 state-corruption guard).
+            flush_blockquote()
             cont_line = list_cont_indent + text_clean
             if numbered_run:
                 numbered_run.append("")
@@ -888,9 +907,13 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                 out_parts.append(cont_line)
             continue
 
-        # Any non-numbered block ends the current ordered-list run.
+        # Any non-numbered block ends the current ordered-list run; any
+        # non-quote block ends the current blockquote run. A consecutive quote
+        # must NOT self-flush (it accumulates), hence the guard.
         if cls != "numbered":
             flush_numbered()
+        if cls != "blockquote":
+            flush_blockquote()
 
         if cls.startswith("heading"):
             list_marker_x0 = None
@@ -921,10 +944,11 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             list_cont_indent = "  " * nesting + "    "
             list_marker_x0 = block.bbox[0]
         elif cls == "blockquote":
-            # Reached only when no list is open (or the block is not indented
-            # past the marker): emit a standalone single-level quote (#147).
+            # Accumulate into the current quote run; consecutive quote blocks
+            # become one <blockquote> with multiple paragraphs (#174). The run
+            # is flushed by any non-quote block (above) or at end of items.
             list_marker_x0 = None
-            out_parts.append(render_blockquote(block))
+            blockquote_run.append(render_blockquote(block))
         elif cls == "small":
             # Markdown has no clean small-text semantic, and raw <small> breaks
             # pure-Markdown consumers (RAG, plain viewers, indexers). Emit the
@@ -937,6 +961,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             out_parts.append(text_clean)
 
     flush_numbered()
+    flush_blockquote()
     return "\n\n".join(out_parts)
 
 
