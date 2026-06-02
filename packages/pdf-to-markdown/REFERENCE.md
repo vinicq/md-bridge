@@ -2,6 +2,8 @@
 
 Reference material for the `pdf-to-markdown` package. Use it after running `convert.py` to verify conversion quality and decide what to edit manually.
 
+The canonical Markdown dialect the converters target (CommonMark 0.31.2 plus a named GFM and Pandoc subset) is declared in [ADR-001](../../docs/architecture/adr-001-markdown-dialect.md).
+
 ## What Markdown can and cannot represent
 
 | Category | Examples in Word/PDF | Mappable to Markdown? |

@@ -85,6 +85,16 @@ For brand-new ideas, open the issue with a sketch (Excalidraw, plain
 PNG, even ASCII) and the maintainer will decide whether it slots into
 an existing F-section or warrants a fresh design pass.
 
+### Features that touch Markdown syntax
+
+Anything that changes which Markdown syntax the converters produce or
+accept (tables, task lists, footnotes, math, raw HTML) is measured
+against the canonical dialect declared in
+[ADR-001](docs/architecture/adr-001-markdown-dialect.md): CommonMark
+0.31.2 plus a named GFM and Pandoc subset. Cite the ADR in the proposal.
+In scope if it aligns with the declared dialect; otherwise it needs an
+ADR amendment first.
+
 ## Your first pull request
 
 If you have never opened a pull request on GitHub before, this section is

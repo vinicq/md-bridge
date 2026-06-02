@@ -88,6 +88,9 @@ others are natural fits behind the same heuristic-pipeline pattern.
   toggle that persists the choice in `localStorage`.
 - **Interactive API docs** at `/docs` (Swagger UI) and `/redoc`, plus a
   walkthrough in [`docs/API.md`](docs/API.md).
+- **Declared Markdown dialect**: CommonMark 0.31.2 plus a named GFM and Pandoc
+  subset, set in [ADR-001](docs/architecture/adr-001-markdown-dialect.md). Both
+  converters target it, so the output is predictable for downstream tools.
 
 ## Demo flow
 
