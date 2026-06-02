@@ -573,3 +573,71 @@ def test_assemble_emits_deep_heading_hashes(mod):
     assert "###### Six" in md
     html = markdown.markdown(md)
     assert "<h4>Four</h4>" in html and "<h5>Five</h5>" in html and "<h6>Six</h6>" in html
+
+
+# --- #148: footnote pairing ---------------------------------------------------
+
+
+def _fn_block(mod, text, *, size=9.0, y0=700.0):
+    bbox = (72.0, y0, 372.0, y0 + size + 2)
+    span = mod.Span(text=text, size=size, font="Body", flags=0, bbox=bbox)
+    line = mod.Line(spans=[span], bbox=bbox)
+    return mod.Block(lines=[line], bbox=bbox)
+
+
+def test_parse_footnote_definition_at_bottom_small_font(mod):
+    profile = _profile(mod)  # small_size = 10.0
+    block = _fn_block(mod, "3 See the appendix for fuller details.")
+    assert mod.parse_footnote_definition(block, profile, 792.0) == (
+        3,
+        "See the appendix for fuller details.",
+    )
+
+
+def test_parse_footnote_top_of_page_rejected(mod):
+    profile = _profile(mod)
+    block = _fn_block(mod, "3 See the appendix for fuller details.", y0=80.0)
+    assert mod.parse_footnote_definition(block, profile, 792.0) is None
+
+
+def test_parse_footnote_bare_page_number_rejected(mod):
+    profile = _profile(mod)
+    assert mod.parse_footnote_definition(_fn_block(mod, "3"), profile, 792.0) is None
+
+
+def test_parse_footnote_running_furniture_rejected(mod):
+    profile = _profile(mod)
+    assert mod.parse_footnote_definition(_fn_block(mod, "Page 3 of 77"), profile, 792.0) is None
+
+
+def test_parse_footnote_body_size_rejected(mod):
+    profile = _profile(mod)
+    block = _fn_block(mod, "3 a normal numbered paragraph in the body text", size=11.0)
+    assert mod.parse_footnote_definition(block, profile, 792.0) is None  # not small font
+
+
+def test_render_span_superscript_rewrites_known_footnote(mod):
+    sp = mod.Span(text="3", size=11.0, font="Body", flags=mod.FLAG_SUPERSCRIPT, bbox=(0, 0, 5, 12))
+    assert mod.render_span(sp, frozenset({3})) == "[^3]"
+
+
+def test_render_span_superscript_unknown_number_stays_caret(mod):
+    sp = mod.Span(text="3", size=11.0, font="Body", flags=mod.FLAG_SUPERSCRIPT, bbox=(0, 0, 5, 12))
+    assert mod.render_span(sp, frozenset({5})) == "^3^"
+
+
+def test_render_span_superscript_default_empty_set_stays_caret(mod):
+    sp = mod.Span(text="3", size=11.0, font="Body", flags=mod.FLAG_SUPERSCRIPT, bbox=(0, 0, 5, 12))
+    assert mod.render_span(sp) == "^3^"
+
+
+def test_render_line_rewrites_superscript_footnote_ref(mod):
+    body = mod.Span(text="see note", size=11.0, font="Body", flags=0, bbox=(0, 0, 50, 12))
+    ref = mod.Span(text="3", size=8.0, font="Body", flags=mod.FLAG_SUPERSCRIPT, bbox=(50, 0, 55, 12))
+    line = mod.Line(spans=[body, ref], bbox=(0, 0, 55, 12))
+    assert mod.render_line(line, frozenset({3})) == "see note[^3]"
+
+
+def test_render_footnote_tail_sorted(mod):
+    tail = mod.render_footnote_tail({3: "third footnote text", 1: "first footnote text"})
+    assert tail == "[^1]: first footnote text\n[^3]: third footnote text"
