@@ -2,10 +2,16 @@
  *
  * The renderer stacks this on top of default.css, so this file only carries the
  * overrides that distinguish the theme. This is a minimal placeholder that sets
- * the family's signature (tighter page margins for a denser layout); the full
+ * the family's signature (a denser body type for a compact read); the full
  * typographic system is tracked in #22. Keep the stacking contract: never
- * restate default.css here. */
+ * restate default.css here.
+ *
+ * Note for #22: a CSS `@page { margin }` override is a no-op in this renderer —
+ * Chromium's print path passes explicit page margins that win over @page. Use
+ * body/typography overrides (which do take effect) until #22 reworks the print
+ * margin handling in the converter. */
 
-@page {
-  margin: 1.5cm;
+body {
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
