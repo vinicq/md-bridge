@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import io
+import logging
 import re
 import sys
 from collections import Counter
@@ -27,6 +28,8 @@ from pathlib import Path
 import fitz  # PyMuPDF
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+log = logging.getLogger(__name__)
 
 FLAG_SUPERSCRIPT = 1 << 0
 FLAG_ITALIC = 1 << 1
@@ -79,6 +82,32 @@ _MD_INLINE_ESCAPE = re.compile(r"([\\`*_\[\]])")
 def escape_markdown_inline(text: str) -> str:
     """Backslash-escape inline Markdown punctuation in literal body text."""
     return _MD_INLINE_ESCAPE.sub(r"\\\1", text)
+
+
+# Inline, semantic, non-scripting tags the allow-list may ever contain (#154).
+# Kept identical to the schema cap in apps/api/app/schemas/convert.py; a test
+# asserts they match. Anything else (script/style/iframe/a/img/...) is never
+# emittable, so an opt-in HTML policy can never become a script-injection hole.
+ALLOWED_HTML_TAGS = frozenset({"sup", "sub", "small", "kbd", "abbr"})
+
+
+def emit_html(tag: str, inner: str, allow_html: frozenset[str]) -> str:
+    """Single sanctioned chokepoint for any raw HTML the converter might emit.
+
+    Returns `<tag>inner</tag>` only when `tag` is both requested in `allow_html`
+    AND inside the hard `ALLOWED_HTML_TAGS` cap. Otherwise it drops the tag,
+    returns `inner` unchanged, and logs a warning.
+
+    The converter emits pure Markdown by default (#141/#142), so there is no
+    production caller yet (#154): this reserves the contract and the one place
+    a future tag-with-no-Markdown-equivalent must route through. The cap is
+    re-checked here so a direct script/CLI call cannot smuggle a tag past the
+    API-layer validator.
+    """
+    if tag in allow_html and tag in ALLOWED_HTML_TAGS:
+        return f"<{tag}>{inner}</{tag}>"
+    log.warning("dropped disallowed HTML tag <%s> (not in allow_html)", tag)
+    return inner
 
 
 def normalize_ordered_marker(text: str, *, first: bool) -> tuple[str, str]:
@@ -190,6 +219,7 @@ class DocProfile:
     indent_unit: float = 18.0  # nesting indent step
     detect_blockquotes: bool = False  # opt-in: sustained-indent body block -> quote (#147)
     cluster_headings: bool = False  # opt-in: gap-partition font sizes into heading bands (#188)
+    allow_html: frozenset = frozenset()  # opt-in HTML tags the emitter may keep (#154)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
@@ -1168,11 +1198,13 @@ def convert_document(
     detect_blockquotes: bool = False,
     cluster_headings: bool = False,
     subtract_running_furniture: bool = False,
+    allow_html: frozenset[str] = frozenset(),
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
     profile.detect_blockquotes = detect_blockquotes
     profile.cluster_headings = cluster_headings
+    profile.allow_html = allow_html
     if cluster_headings:
         # Replace the fixed-cutoff thresholds with gap-partitioned size bands.
         profile.heading_thresholds = cluster_heading_bands(profile.size_histogram, profile.body_size)

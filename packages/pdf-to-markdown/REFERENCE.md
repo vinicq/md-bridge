@@ -110,10 +110,16 @@ The current converter (`scripts/convert.py`) already covers items 1, 2, 3 (most)
 
 Block quotes are detected **opt-in**: pass `--detect-blockquotes` to `convert.py` (or `{"detect_blockquotes": true}` in the API options). A body-size block inset from the margin on every line becomes a `>` quote. It ships off by default because a list continuation is also an indented body block; when the flag is on, an indented block under an open list still binds to the item as content, not a quote.
 
+## HTML emission policy (#154)
+
+The converter emits pure Markdown by default and never writes raw HTML tags: superscript becomes Pandoc `^x^`, strikethrough GFM `~~text~~`, small-font captions plain text. A grep of any output for `<tag>` returns nothing.
+
+Raw HTML is opt-in and capped. The `allow_html` option takes a set of tag names; only tags both requested and inside the hard cap (`sup`, `sub`, `small`, `kbd`, `abbr`) are ever emitted. Anything else (`script`, `style`, `iframe`, `a`, `img`, ...) is rejected at the API with `422 invalid_options`. Every potential HTML emission routes through one helper, `emit_html(tag, inner, allow_html)`, which drops a disallowed tag and logs a warning. Today no conversion path emits HTML even with `allow_html` set; the option reserves the contract and the single chokepoint for a future feature that needs a tag with no Markdown equivalent.
+
 ## What this package does NOT do
 
 - **OCR** for scanned PDFs. Run Tesseract with `por`/`eng` first; check `inspect_pdf.py` output. Zero fonts means the PDF is scanned.
 - **Math formula recognition**: PyMuPDF returns formula characters as plain text. Reformulate manually if precision matters.
-- **Footnote correlation**: small text at the page bottom is rendered inline as `<small>` instead of being collected as `[^n]` footnotes. Manual rework if needed.
+- **Footnote correlation**: small text at the page bottom is rendered inline as plain text (the `<small>` wrapper was dropped in #141); correlation to `[^n]` footnotes is not implemented. Manual rework if needed.
 - **Merged-cell tables**: extracted as best-effort flat tables. Complex cases need manual restructuring.
 - **Multi-column layouts**: blocks come in PyMuPDF's reading order, which can interleave for academic two-column papers.

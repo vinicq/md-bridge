@@ -21,7 +21,18 @@ def test_pdf_to_md_options_defaults():
     assert opts.detect_blockquotes is False
     assert opts.cluster_headings is False
     assert opts.subtract_running_furniture is False
+    assert opts.allow_html == frozenset()
     assert opts.lang == "pt-BR"
+
+
+def test_pdf_to_md_options_allow_html_accepts_capped_tag():
+    opts = PdfToMdOptions(allow_html={"sup"})
+    assert opts.allow_html == frozenset({"sup"})
+
+
+def test_pdf_to_md_options_allow_html_rejects_dangerous_tag():
+    with pytest.raises(ValidationError):
+        PdfToMdOptions(allow_html={"script"})
 
 
 def test_pdf_to_md_options_rejects_unknown_field():

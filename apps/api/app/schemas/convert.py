@@ -3,9 +3,15 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 SupportedLang = Literal["pt-BR", "en", "es", "de", "fr", "it"]
+
+# Inline, semantic, non-scripting tags the converter may ever emit (#154).
+# Kept identical to ALLOWED_HTML_TAGS in the vendored converter; a test asserts
+# they match. Everything else (script/style/iframe/a/img/...) is rejected here
+# so an opt-in HTML policy can never become a script-injection vector.
+ALLOWED_HTML_TAGS = frozenset({"sup", "sub", "small", "kbd", "abbr"})
 
 
 class PdfToMdOptions(BaseModel):
@@ -17,7 +23,19 @@ class PdfToMdOptions(BaseModel):
     detect_blockquotes: bool = False
     cluster_headings: bool = False
     subtract_running_furniture: bool = False
+    allow_html: frozenset[str] = frozenset()
     lang: SupportedLang = "pt-BR"
+
+    @field_validator("allow_html")
+    @classmethod
+    def _cap_allow_html(cls, v: frozenset[str]) -> frozenset[str]:
+        bad = v - ALLOWED_HTML_TAGS
+        if bad:
+            raise ValueError(
+                f"allow_html may only contain {sorted(ALLOWED_HTML_TAGS)}; "
+                f"rejected: {sorted(bad)}"
+            )
+        return v
 
 
 class MdToPdfOptions(BaseModel):
