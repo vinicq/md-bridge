@@ -187,6 +187,7 @@ class DocProfile:
     body_x0: float = 72.0  # typical paragraph left margin (PDF points)
     list_base_x0: float = 72.0  # typical first-level bullet/numbered left margin
     indent_unit: float = 18.0  # nesting indent step
+    detect_blockquotes: bool = False  # opt-in: sustained-indent body block -> quote (#147)
 
     def heading_level(self, size: float) -> int | None:
         for level in (1, 2, 3):
@@ -545,8 +546,29 @@ def is_all_bold(block: Block) -> bool:
     return has_any
 
 
+def is_blockquote(block: Block, profile: DocProfile) -> bool:
+    """A pull-quote candidate: body-size text indented past the deeper of the
+    body and list margins on EVERY non-empty line (sustained indent).
+
+    The sustained-indent rule is deliberate. A normal paragraph indents only
+    its first line, and a list continuation indents under the item marker; both
+    are excluded here so the only thing left is a block that sits wholly inset
+    from the margin, which is how PDFs render quoted passages (#147).
+    """
+    size = block.dominant_size
+    if size < profile.body_size - 0.5:
+        return False  # captions / footnotes are not quotes
+    if profile.heading_level(size):
+        return False
+    lines = [ln for ln in block.lines if ln.text.strip()]
+    if not lines:
+        return False
+    threshold = max(profile.body_x0, profile.list_base_x0) + profile.indent_unit
+    return all(ln.bbox[0] >= threshold for ln in lines)
+
+
 def classify_block(block: Block, profile: DocProfile) -> str:
-    """Return one of: heading1, heading2, heading3, bullet, numbered, code, paragraph, small."""
+    """Return one of: heading1, heading2, heading3, bullet, numbered, code, blockquote, paragraph, small."""
     size = block.dominant_size
     text = block.text.strip()
 
@@ -566,6 +588,13 @@ def classify_block(block: Block, profile: DocProfile) -> str:
 
     if mono_ratio(block) >= MONO_RATIO_THRESHOLD:
         return "code"
+
+    # Pull-quote: a body-size block inset from the margin on every line. Off by
+    # default (#147); list continuations (#167/#197) are also indented body
+    # blocks, so precedence is resolved in assemble_markdown where the open-list
+    # context is known. Here we only label the candidate.
+    if profile.detect_blockquotes and is_blockquote(block, profile):
+        return "blockquote"
 
     # Section-label heuristic: short block (<= 2 lines, <= 80 chars), at body size,
     # using a font different from the body font → likely a styled section label (H3).
@@ -742,6 +771,16 @@ def convert_page(
     return assemble_markdown(typed_items, profile)
 
 
+def render_blockquote(block: Block) -> str:
+    """Render a block as a single-level CommonMark blockquote: `> ` on each
+    non-empty line. Framing blank lines come from the outer join, so nothing
+    is added here. Multi-paragraph quotes (#174) will extend this to join
+    paragraph groups with a bare `>` separator line.
+    """
+    quoted = [f"> {render_line(line).strip()}" for line in block.lines if line.text.strip()]
+    return "\n".join(quoted)
+
+
 def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> str:
     """Join page items (tables, images, text blocks) into Markdown.
 
@@ -828,12 +867,15 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
 
         text_clean = HEADING_DOTS_RE.sub("", text_rendered)
 
-        # A paragraph indented past the open item's marker continues that item.
-        # Emit it aligned to the item content; a blank line (the run's internal
-        # blank, or the outer "\n\n" join for bullets) makes the item loose so
-        # the renderer nests the paragraph inside the <li> (#167).
+        # A paragraph (or a blockquote candidate) indented past the open item's
+        # marker continues that item. Continuation WINS over a quote: an
+        # indented body block under an open list is item content, not a pull
+        # quote (#147 precedence vs #167/#197). Emit it aligned to the item
+        # content; a blank line (the run's internal blank, or the outer "\n\n"
+        # join for bullets) makes the item loose so the renderer nests the
+        # paragraph inside the <li> (#167).
         if (
-            cls == "paragraph"
+            cls in ("paragraph", "blockquote")
             and list_marker_x0 is not None
             and block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
         ):
@@ -878,6 +920,11 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                 numbered_run.append(f"{'  ' * nesting}{text_clean}")
             list_cont_indent = "  " * nesting + "    "
             list_marker_x0 = block.bbox[0]
+        elif cls == "blockquote":
+            # Reached only when no list is open (or the block is not indented
+            # past the marker): emit a standalone single-level quote (#147).
+            list_marker_x0 = None
+            out_parts.append(render_blockquote(block))
         elif cls == "small":
             # Markdown has no clean small-text semantic, and raw <small> breaks
             # pure-Markdown consumers (RAG, plain viewers, indexers). Emit the
@@ -936,9 +983,11 @@ def convert_document(
     debug: bool = False,
     extract_images: bool = False,
     front_matter: bool = True,
+    detect_blockquotes: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
+    profile.detect_blockquotes = detect_blockquotes
     toc = doc.get_toc()
 
     if debug:
@@ -1154,6 +1203,8 @@ def is_block_paragraph(block: str) -> bool:
         return False
     if s.startswith("```"):
         return False
+    if s.startswith(">"):
+        return False  # blockquote (#147): structural, never fused into prose
     if NUMBERED_RE.match(s):
         return False
     # A running header/footer is not prose; keep it out of the merge so it is
@@ -1264,6 +1315,11 @@ def main() -> int:
     parser.add_argument("--page-break", action="store_true", help="Insert --- between pages")
     parser.add_argument("--with-images", action="store_true", help="Extract images to ./images/<pdf>/ and reference them in the .md")
     parser.add_argument("--no-front-matter", action="store_true", help="Skip YAML front matter")
+    parser.add_argument(
+        "--detect-blockquotes",
+        action="store_true",
+        help="Classify sustained-indent body blocks as blockquotes (opt-in, #147)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -1278,6 +1334,7 @@ def main() -> int:
         debug=args.debug,
         extract_images=args.with_images,
         front_matter=not args.no_front_matter,
+        detect_blockquotes=args.detect_blockquotes,
     )
     return 0
 
