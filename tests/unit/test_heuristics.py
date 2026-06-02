@@ -383,6 +383,50 @@ def test_detect_language_json(mod):
     assert mod.detect_language('{"name": "ok", "value": 1}') == "json"
 
 
+def test_detect_language_bash(mod):
+    assert mod.detect_language("#!/bin/bash\necho hi") == "bash"
+    assert mod.detect_language("#!/usr/bin/env bash\nset -e") == "bash"
+    assert mod.detect_language("$ git push origin main") == "bash"
+    # A bare builtin in prose must not register as bash.
+    assert mod.detect_language("cd into the project folder and run it") == ""
+
+
+def test_detect_language_dockerfile(mod):
+    df = "FROM python:3.12-slim\nRUN pip install .\nCMD [\"app\"]"
+    assert mod.detect_language(df) == "dockerfile"
+    # FROM alone (prose) without a second instruction does not register.
+    assert mod.detect_language("FROM the very beginning of the story") == ""
+
+
+def test_detect_language_go(mod):
+    assert mod.detect_language("package main\n\nfunc main() {}") == "go"
+    assert mod.detect_language("func handler(w http.ResponseWriter) {}") == "go"
+    # Prose starting with "package" must not register.
+    assert mod.detect_language("package the files before shipping them") == ""
+
+
+def test_detect_language_rust(mod):
+    assert mod.detect_language("fn main() {\n    let mut x = 1;\n}") == "rust"
+    assert mod.detect_language("pub fn add(a: i32) -> i32 { a }") == "rust"
+    assert mod.detect_language("use std::collections::HashMap;") == "rust"
+
+
+def test_detect_language_typescript(mod):
+    assert mod.detect_language("interface User {\n  name: string\n}") == "typescript"
+    assert mod.detect_language("type Id = number") == "typescript"
+    # "interface" as a prose word must not register.
+    assert mod.detect_language("interface with the legacy system carefully") == ""
+
+
+def test_detect_language_yaml(mod):
+    assert mod.detect_language("---\nname: build\non: push") == "yaml"
+    assert mod.detect_language("name: build\nversion: 1.0") == "yaml"
+    # A single "key: value"-looking prose line does not register.
+    assert mod.detect_language("Note: see the appendix for details") == ""
+
+
 def test_detect_language_empty_when_no_match(mod):
     assert mod.detect_language("just some prose here") == ""
     assert mod.detect_language("") == ""
+    # Prose that brushes the new rules must still fall through to no language.
+    assert mod.detect_language("Warning: this section is long but readable") == ""
