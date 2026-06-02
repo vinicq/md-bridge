@@ -60,6 +60,102 @@ def test_classify_block_small_text(mod):
     assert mod.classify_block(block, profile) == "small"
 
 
+# --- #188: font-size clustering for heading bands ----------------------------
+
+
+def _level(mod, thresholds, size):
+    p = _profile(mod)
+    p.heading_thresholds = thresholds
+    return p.heading_level(size)
+
+
+def test_cluster_bands_single_size_above_body(mod):
+    th = mod.cluster_heading_bands({11.0: 1000, 16.0: 50}, 11.0)
+    assert _level(mod, th, 16.0) == 1
+    assert _level(mod, th, 11.0) is None
+
+
+def test_cluster_bands_two_sizes(mod):
+    th = mod.cluster_heading_bands({11.0: 1000, 14.0: 30, 20.0: 20}, 11.0)
+    assert _level(mod, th, 20.0) == 1
+    assert _level(mod, th, 14.0) == 2
+    assert _level(mod, th, 13.0) is None
+
+
+def test_cluster_bands_close_siblings_share_level(mod):
+    # The bug this fixes: 12.8 and 13.0 sit a hair apart and must land in the
+    # same band, not be split by a fixed cutoff.
+    th = mod.cluster_heading_bands({11.0: 1000, 12.8: 40, 13.0: 40, 20.0: 20}, 11.0)
+    assert _level(mod, th, 12.8) == _level(mod, th, 13.0)
+    assert _level(mod, th, 20.0) == 1
+    assert _level(mod, th, 13.0) == 2
+
+
+def test_cluster_bands_caps_at_three(mod):
+    th = mod.cluster_heading_bands(
+        {11.0: 1000, 13.0: 10, 16.0: 10, 22.0: 10, 28.0: 10, 34.0: 10}, 11.0
+    )
+    levels = {_level(mod, th, s) for s in (34.0, 28.0, 22.0, 16.0, 13.0)}
+    assert None not in levels
+    assert levels <= {1, 2, 3}
+    assert _level(mod, th, 34.0) == 1
+
+
+def test_cluster_bands_deterministic(mod):
+    hist = {11.0: 1000, 14.0: 10, 20.0: 10, 26.0: 10}
+    outs = [mod.cluster_heading_bands(hist, 11.0) for _ in range(5)]
+    assert all(o == outs[0] for o in outs)
+
+
+def test_cluster_bands_no_sizes_above_body(mod):
+    th = mod.cluster_heading_bands({11.0: 1000}, 11.0)
+    assert set(th) == {1, 2, 3}
+    assert _level(mod, th, 11.0) is None
+
+
+def test_heading_run_merges_same_level_consecutive(mod):
+    profile = _profile(mod)
+    profile.cluster_headings = True
+    items = [
+        ("block", _make_block(mod, "Test Analysis and Design", 14.0)),
+        ("block", _make_block(mod, "Techniques", 14.0)),
+    ]
+    assert mod.assemble_markdown(items, profile) == "## Test Analysis and Design Techniques"
+
+
+def test_heading_run_different_level_not_merged(mod):
+    profile = _profile(mod)
+    profile.cluster_headings = True
+    items = [
+        ("block", _make_block(mod, "Big Title", 24.0)),
+        ("block", _make_block(mod, "Subsection", 14.0)),
+    ]
+    assert mod.assemble_markdown(items, profile) == "# Big Title\n\n## Subsection"
+
+
+def test_heading_run_broken_by_body_block(mod):
+    profile = _profile(mod)
+    profile.cluster_headings = True
+    items = [
+        ("block", _make_block(mod, "First Heading", 14.0)),
+        ("block", _make_block(mod, "Body sentence sitting in between the two.", 11.0)),
+        ("block", _make_block(mod, "Second Heading", 14.0)),
+    ]
+    md = mod.assemble_markdown(items, profile)
+    assert "## First Heading" in md
+    assert "## Second Heading" in md
+    assert "First Heading Second Heading" not in md
+
+
+def test_heading_run_off_by_default(mod):
+    profile = _profile(mod)  # cluster_headings defaults False
+    items = [
+        ("block", _make_block(mod, "Test Analysis and Design", 14.0)),
+        ("block", _make_block(mod, "Techniques", 14.0)),
+    ]
+    assert mod.assemble_markdown(items, profile) == "## Test Analysis and Design\n\n## Techniques"
+
+
 def _multiline_block(mod, lines_x0, *, size=11.0, font="Body"):
     """Block whose lines each carry their own x0, to model sustained indent
     (all lines inset) versus a first-line-only indent (a normal paragraph)."""
