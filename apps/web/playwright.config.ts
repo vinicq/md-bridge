@@ -30,14 +30,26 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: [['list']],
+  // Visual baselines live beside the spec under e2e/__screenshots__/ with the
+  // project + platform suffix Playwright appends, so a Linux baseline never
+  // collides with a local dev one.
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFileName}/{arg}-{projectName}-{platform}{ext}',
+  expect: {
+    // 0.5%: strict enough to catch a real layout/colour regression, loose
+    // enough to forgive sub-pixel font-rendering noise between CI runs (#16).
+    toHaveScreenshot: { maxDiffPixelRatio: 0.005 },
+  },
   use: {
     baseURL: 'http://127.0.0.1:5173',
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    // The functional suite runs on all three browsers but never on the visual
+    // spec; the visual baselines are Chromium-only and run in their own project.
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: '**/visual.spec.ts' },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testIgnore: '**/visual.spec.ts' },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] }, testIgnore: '**/visual.spec.ts' },
+    { name: 'visual', use: { ...devices['Desktop Chrome'] }, testMatch: '**/visual.spec.ts' },
   ],
   webServer: [
     {

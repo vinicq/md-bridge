@@ -1,0 +1,105 @@
+name: Update visual snapshots
+
+# Rebuilds the visual regression baselines on a PR branch when a maintainer
+# comments `/update-snapshots`. This is the only sanctioned way to refresh the
+# baselines: they must be generated under Linux on CI so font rendering matches
+# the visual-regression job, never committed from a local machine (#16).
+#
+# Flow: designer reviews the diff artefact from the failed Visual regression
+# run, confirms the change is intentional, then a maintainer comments
+# `/update-snapshots`. This job regenerates the Chromium baselines and pushes
+# them to the PR branch; the next Visual regression run then passes.
+#
+# Same-repo branches only. A PR from a fork cannot be pushed to by the default
+# token; for those, regenerate locally in the Linux Playwright container or push
+# from a maintainer checkout.
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-snapshots-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Regenerate visual baselines
+    if: >-
+      github.event.issue.pull_request != null &&
+      github.event.comment.user.type != 'Bot' &&
+      startsWith(github.event.comment.body, '/update-snapshots') &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER' ||
+       github.event.comment.author_association == 'COLLABORATOR')
+    runs-on: ubuntu-latest
+    # Same image as the visual-regression job so regenerated baselines match the
+    # environment they are later diffed in. Keep the tag in sync with both.
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
+    steps:
+      - name: Resolve the PR head branch
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          data=$(gh pr view "$PR_NUMBER" -R "$REPO" \
+            --json headRefName,headRepository,headRepositoryOwner,isCrossRepository)
+          cross=$(echo "$data" | jq -r '.isCrossRepository')
+          ref=$(echo "$data" | jq -r '.headRefName')
+          if [ "$cross" = "true" ]; then
+            gh pr comment "$PR_NUMBER" -R "$REPO" --body \
+              "\`/update-snapshots\` cannot push to a fork branch from CI. Regenerate the baselines locally in the Linux Playwright container (\`npx playwright test --project=visual --update-snapshots\`) and push them, or ask a maintainer to."
+            echo "Cross-repo PR; cannot push. Exiting."
+            exit 1
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the PR branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          ref: ${{ steps.pr.outputs.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create the API virtualenv (booted as the E2E web server)
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3-venv
+          python3 -m venv apps/api/.venv
+          apps/api/.venv/bin/pip install --upgrade pip
+          apps/api/.venv/bin/pip install -e apps/api
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci || npm install
+
+      - name: Regenerate visual baselines
+        working-directory: apps/web
+        env:
+          CI: "1"
+        run: npx playwright test --project=visual --update-snapshots
+
+      - name: Commit and push refreshed baselines
+        env:
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/e2e/__screenshots__
+          if git diff --cached --quiet; then
+            gh pr comment "$PR_NUMBER" -R "$REPO" --body \
+              "\`/update-snapshots\`: no baseline changes — the rendered output already matches. Nothing to commit."
+            exit 0
+          fi
+          git commit -m "ci(web): refresh visual regression baselines (#16)"
+          git push origin "HEAD:${{ steps.pr.outputs.ref }}"
+          gh pr comment "$PR_NUMBER" -R "$REPO" --body \
+            "Refreshed the visual regression baselines on this branch. The Visual regression check will re-run on the new commit."

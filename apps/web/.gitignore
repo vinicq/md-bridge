@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 audit-results/
+
+# Visual regression baselines are Linux-only and generated on CI (#16).
+# Local dev runs produce platform-suffixed snapshots that must not be committed.
+e2e/__screenshots__/**/*-win32.png
+e2e/__screenshots__/**/*-darwin.png
+test-results/
