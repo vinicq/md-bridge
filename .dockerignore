@@ -42,5 +42,7 @@ output
 # Docs and planning that don't need to live inside the image
 ARCHITECTURE.md
 
-# Tests at repo root (only relevant to dev, not the runtime image)
-tests
+# The root `tests/` dir is intentionally kept in the build context: the API
+# Dockerfile's `test` target does `COPY tests /app/tests`. The lean `runtime`
+# target never copies it, so the production image stays free of tests while the
+# `--profile test` runner can build from a clean cache.

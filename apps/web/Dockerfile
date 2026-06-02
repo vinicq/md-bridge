@@ -1,12 +1,18 @@
 # syntax=docker/dockerfile:1.7
 
 # ---- Stage 1: install dependencies ----------------------------------------
-FROM node:26-alpine@sha256:7c6af15abe4e3de859690e7db171d0d711bf37d27528eddfe625b2fe89e097f8 AS deps
+# Pinned to node 24 (the major CI and local dev use). Do NOT bump to node 26:
+# vitest's jsdom env leaves window.localStorage undefined there, failing every
+# DOM test. CI runs vitest directly (not this image), so that regression would
+# only surface when someone builds the `--profile test` runner by hand.
+FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS deps
 WORKDIR /web
 
-# Cache npm deps separately from source changes.
+# Cache npm deps separately from source changes. Use `npm ci` so the image
+# resolves the exact lockfile versions (reproducible, matches CI and local),
+# rather than letting `npm install` drift to newer ranges inside the container.
 COPY apps/web/package.json apps/web/package-lock.json /web/
-RUN npm install --no-audit --no-fund --no-progress
+RUN npm ci --no-audit --no-fund --no-progress
 
 # ---- Stage 2: source -------------------------------------------------------
 # Shared by build and test so the source layer is materialized once.
