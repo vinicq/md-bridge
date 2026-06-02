@@ -18,6 +18,7 @@ def test_pdf_to_md_options_defaults():
     assert opts.page_break is False
     assert opts.with_images is False
     assert opts.front_matter is True
+    assert opts.detect_blockquotes is False
     assert opts.lang == "pt-BR"
 
 

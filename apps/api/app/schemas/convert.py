@@ -14,6 +14,7 @@ class PdfToMdOptions(BaseModel):
     page_break: bool = False
     with_images: bool = False
     front_matter: bool = True
+    detect_blockquotes: bool = False
     lang: SupportedLang = "pt-BR"
 
 

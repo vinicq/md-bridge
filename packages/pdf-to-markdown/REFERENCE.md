@@ -106,7 +106,9 @@ After running `convert.py <pdf> -o <md>`, open the `.md` and walk through this l
 
 ## What `convert.py` already handles automatically
 
-The current converter (`scripts/convert.py`) already covers items 1, 2, 3 (most), 4, 5, 6, 7 (hyperlinks), 8 (monospace-flagged spans wrapped as `` `inline` `` and blocks ≥70% mono fenced with language inference for python/javascript/sql/html/json), 9 (header/footer filtering, paragraph merge, dot-leader stripping), 10 (front matter from PDF metadata). The remaining parts of 8 (block quotes, formulas) and the more nuanced parts of 11 require manual review per document.
+The current converter (`scripts/convert.py`) already covers items 1, 2, 3 (most), 4, 5, 6, 7 (hyperlinks), 8 (monospace-flagged spans wrapped as `` `inline` `` and blocks ≥70% mono fenced with language inference for python/javascript/sql/html/json), 9 (header/footer filtering, paragraph merge, dot-leader stripping), 10 (front matter from PDF metadata). The remaining parts of 8 (formulas) and the more nuanced parts of 11 require manual review per document.
+
+Block quotes are detected **opt-in**: pass `--detect-blockquotes` to `convert.py` (or `{"detect_blockquotes": true}` in the API options). A body-size block inset from the margin on every line becomes a `>` quote. It ships off by default because a list continuation is also an indented body block; when the flag is on, an indented block under an open list still binds to the item as content, not a quote.
 
 ## What this package does NOT do
 

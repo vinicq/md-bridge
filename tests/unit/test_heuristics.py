@@ -60,6 +60,50 @@ def test_classify_block_small_text(mod):
     assert mod.classify_block(block, profile) == "small"
 
 
+def _multiline_block(mod, lines_x0, *, size=11.0, font="Body"):
+    """Block whose lines each carry their own x0, to model sustained indent
+    (all lines inset) versus a first-line-only indent (a normal paragraph)."""
+    lines = []
+    for text, x0 in lines_x0:
+        bbox = (x0, 0.0, x0 + 100, size + 2)
+        span = mod.Span(text=text, size=size, font=font, flags=0, bbox=bbox)
+        lines.append(mod.Line(spans=[span], bbox=bbox))
+    block_x0 = min(x0 for _, x0 in lines_x0)
+    return mod.Block(lines=lines, bbox=(block_x0, 0.0, block_x0 + 100, (size + 2) * len(lines)))
+
+
+def test_classify_blockquote_sustained_indent_when_enabled(mod):
+    # body_x0=72, indent_unit=18 -> threshold 90; both lines sit at 108.
+    profile = _profile(mod)
+    profile.detect_blockquotes = True
+    block = _multiline_block(mod, [("A quoted passage that", 108.0), ("runs across two lines.", 108.0)])
+    assert mod.classify_block(block, profile) == "blockquote"
+
+
+def test_classify_blockquote_off_by_default(mod):
+    # Same inset block, flag left at its default: stays a plain paragraph.
+    profile = _profile(mod)
+    block = _multiline_block(mod, [("A quoted passage that", 108.0), ("runs across two lines.", 108.0)])
+    assert mod.classify_block(block, profile) == "paragraph"
+
+
+def test_classify_blockquote_first_line_indent_only_stays_paragraph(mod):
+    # A first-line indent is how ordinary paragraphs start; only the first line
+    # is inset, so it must not read as a quote even with the flag on.
+    profile = _profile(mod)
+    profile.detect_blockquotes = True
+    block = _multiline_block(mod, [("First line is indented,", 108.0), ("the rest sits at margin.", 72.0)])
+    assert mod.classify_block(block, profile) == "paragraph"
+
+
+def test_classify_blockquote_does_not_steal_bullets(mod):
+    # An inset bullet is still a bullet: the bullet check precedes the quote one.
+    profile = _profile(mod)
+    profile.detect_blockquotes = True
+    block = _multiline_block(mod, [("• an inset bullet", 108.0)])
+    assert mod.classify_block(block, profile) == "bullet"
+
+
 def test_classify_block_paragraph_default(mod):
     profile = _profile(mod)
     block = _make_block(mod, "Just a normal sentence in the body.", 11.0)
