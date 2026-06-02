@@ -139,14 +139,13 @@ Render Markdown into a PDF through headless Chromium.
 
 ```json
 {
+  "theme": "academic",
   "lang": "en"
 }
 ```
 
+- `theme` (default `"default"`): slug of a registered theme (see `GET /api/themes`). The renderer stacks the selected theme's stylesheet on top of the base `default.css`; `"default"` renders the base alone. An unknown slug returns `400 unknown_theme`.
 - `lang` (default `"pt-BR"`): written into `<html lang>`.
-
-The renderer always uses the bundled A4 stylesheet at
-`packages/markdown-to-pdf/templates/default.css`.
 
 ### Example: render and save
 
@@ -173,7 +172,41 @@ content-disposition: attachment; filename="notes.pdf"
 | ------ | --------------- | --------------------------------------------------- |
 | 400    | `wrong_file_type` | uploaded file does not end in `.md`               |
 | 400    | `invalid_markdown` | upload is not valid UTF-8                        |
+| 400    | `unknown_theme` | `options.theme` is not a registered slug            |
 | 500    | `render_failed` | Chromium crashed or a CSS template is missing       |
+
+---
+
+## `GET /api/themes`
+
+List the registered Markdown → PDF themes.
+
+### Response (`200 OK`)
+
+```json
+[
+  { "slug": "default", "name": "Default", "description": "Neutral, legible A4 base used when no theme is selected.", "family": "general" },
+  { "slug": "academic", "name": "Academic", "description": "Serif, paper-like layout...", "family": "academic" }
+]
+```
+
+`default` is always first. Pass any `slug` as `options.theme` on `POST /api/md-to-pdf`.
+
+---
+
+## `GET /api/themes/{slug}/css`
+
+Return a theme's own stylesheet as `text/css`, for inline display in a theme catalogue.
+
+### Response (`200 OK`)
+
+`text/css; charset=utf-8`. For `default` this is the base stylesheet; for any other theme it is the overlay that stacks on top of the base.
+
+### Common errors
+
+| status | code            | when                                |
+| ------ | --------------- | ----------------------------------- |
+| 400    | `unknown_theme` | `slug` is not a registered theme    |
 
 ---
 

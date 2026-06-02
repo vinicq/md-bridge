@@ -10,21 +10,10 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from app.config import MD_TO_PDF_TEMPLATES
 from app.errors import ApiError
 from app.schemas.convert import MdToPdfOptions
 from app.services.packages_loader import md_to_pdf_module
-
-
-def _default_css_paths() -> list[Path]:
-    default_css = MD_TO_PDF_TEMPLATES / "default.css"
-    if not default_css.exists():
-        raise ApiError(
-            500,
-            "missing_template",
-            f"default theme stylesheet not found at {default_css}",
-        )
-    return [default_css]
+from app.services.themes import css_paths_for
 
 
 @contextmanager
@@ -40,7 +29,9 @@ def render_md_bytes(
     options: MdToPdfOptions | None = None,
 ) -> bytes:
     opts = options or MdToPdfOptions()
-    css_paths = _default_css_paths()
+    # Resolve the theme before any work; an unknown slug raises 400 unknown_theme
+    # here rather than rendering with the wrong stylesheet.
+    css_paths = css_paths_for(opts.theme)
     mod = md_to_pdf_module()
 
     with _tempdir() as tmp:

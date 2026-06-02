@@ -44,7 +44,19 @@ class PdfToMdOptions(BaseModel):
 class MdToPdfOptions(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    # Theme slug selecting which stylesheet the renderer stacks (#23). Defaults
+    # to "default"; an unknown slug is rejected at the service with 400
+    # unknown_theme. Validity is checked against the live registry rather than a
+    # static enum so a newly added template needs no schema change.
+    theme: str = "default"
     lang: SupportedLang = "pt-BR"
+
+
+class ThemeInfo(BaseModel):
+    slug: str
+    name: str
+    description: str
+    family: str
 
 
 class FrontMatter(BaseModel):

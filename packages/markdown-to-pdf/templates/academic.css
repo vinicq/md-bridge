@@ -1,0 +1,11 @@
+/* academic — placeholder overlay over default.css.
+ *
+ * The renderer stacks this on top of default.css, so this file only carries the
+ * overrides that distinguish the theme. This is a minimal placeholder that sets
+ * the family's signature (a serif body for a paper-like read); the full
+ * typographic system — heading scale, code blocks, tables, print tuning — is
+ * tracked in #22. Keep the stacking contract: never restate default.css here. */
+
+body {
+  font-family: Georgia, "Times New Roman", Cambria, serif;
+}
