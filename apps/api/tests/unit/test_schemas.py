@@ -20,6 +20,7 @@ def test_pdf_to_md_options_defaults():
     assert opts.front_matter is True
     assert opts.detect_blockquotes is False
     assert opts.cluster_headings is False
+    assert opts.subtract_running_furniture is False
     assert opts.lang == "pt-BR"
 
 

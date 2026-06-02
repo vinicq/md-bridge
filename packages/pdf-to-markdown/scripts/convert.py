@@ -21,6 +21,7 @@ import re
 import sys
 from collections import Counter
 from dataclasses import dataclass, field
+from math import ceil
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -759,6 +760,71 @@ def is_header_footer(bbox: tuple, page_height: float, page_width: float) -> bool
     return y1 < page_height * 0.05 or y0 > page_height * 0.96
 
 
+# Recurrent header/footer subtraction (#187). Opt-in, additive: the blunt
+# is_header_footer strip above stays the default; this removes furniture that
+# leaks OUTSIDE the narrow blunt band (e.g. a running "Page N of M" footer that
+# sits above the bottom 4%) by detecting text that recurs across pages.
+FURNITURE_BAND_RATIO = 0.10  # top/bottom band scanned for running furniture
+# 10%, not the issue's "~7%": real footers (e.g. the ISTQB syllabus) sit around
+# 9% of page height. The band only feeds the recurrence filter, and a one-off
+# line in it is always kept, so a generous band is safe: only lines that recur
+# across pages are subtracted.
+FURNITURE_RECURRENCE = 0.60  # a line is furniture if it recurs on >= 60% of pages
+FURNITURE_MIN_PAGES = 3  # never subtract on docs shorter than this (no cover-title nuke)
+
+
+def normalize_furniture(text: str) -> str:
+    """Normalize a band line for cross-page matching: lowercase, collapse
+    whitespace, mask digit runs so "Page 3 of 77" and "Page 4 of 77" both
+    become "page # of #" and count as the same recurring line.
+    """
+    s = re.sub(r"\s+", " ", text.strip().lower())
+    return re.sub(r"\d+", "#", s)
+
+
+def in_furniture_band(bbox: tuple, page_height: float) -> bool:
+    _, y0, _, y1 = bbox
+    return y1 <= page_height * FURNITURE_BAND_RATIO or y0 >= page_height * (1 - FURNITURE_BAND_RATIO)
+
+
+def select_recurring(page_line_sets: list[set[str]], page_count: int) -> frozenset[str]:
+    """Given the set of normalized band lines per page, return the lines that
+    recur on enough pages to be furniture. Deterministic (Counter + frozenset,
+    membership-tested downstream). Short docs subtract nothing.
+    """
+    if page_count < FURNITURE_MIN_PAGES:
+        return frozenset()
+    counts: Counter[str] = Counter()
+    for page_set in page_line_sets:
+        counts.update(page_set)
+    threshold = max(FURNITURE_MIN_PAGES, ceil(page_count * FURNITURE_RECURRENCE))
+    return frozenset(text for text, count in counts.items() if count >= threshold)
+
+
+def find_recurring_furniture(doc: fitz.Document) -> frozenset[str]:
+    """Scan the top/bottom band of every page, collect the normalized lines,
+    and return the ones that recur often enough to be running headers/footers.
+    A line that appears on only one page (a cover title, a one-off note in the
+    band) never qualifies, so it survives conversion.
+    """
+    page_line_sets: list[set[str]] = []
+    for page in doc:
+        page_height = page.rect.height
+        band: set[str] = set()
+        for block in page.get_text("dict").get("blocks", []):
+            if block.get("type") != 0:
+                continue
+            for line in block.get("lines", []):
+                lbbox = line.get("bbox")
+                if not lbbox or not in_furniture_band(lbbox, page_height):
+                    continue
+                norm = normalize_furniture("".join(s.get("text", "") for s in line.get("spans", [])))
+                if norm:
+                    band.add(norm)
+        page_line_sets.append(band)
+    return select_recurring(page_line_sets, doc.page_count)
+
+
 def convert_page(
     page: fitz.Page,
     profile: DocProfile,
@@ -766,6 +832,7 @@ def convert_page(
     images_dir: Path | None = None,
     pdf_stem: str = "",
     skip_header_footer: bool = True,
+    recurring_furniture: frozenset[str] = frozenset(),
 ) -> str:
     table_finder = page.find_tables()
     tables = list(table_finder)
@@ -800,6 +867,12 @@ def convert_page(
             continue
         if skip_header_footer and is_header_footer(block.bbox, page_height, page_width):
             continue
+        if (
+            recurring_furniture
+            and in_furniture_band(block.bbox, page_height)
+            and any(normalize_furniture(line.text) in recurring_furniture for line in block.lines)
+        ):
+            continue  # running header/footer detected by cross-page recurrence (#187)
         if block_in_any_bbox(block.bbox, table_bboxes):
             continue
         parsed_blocks.append(block)
@@ -1094,6 +1167,7 @@ def convert_document(
     front_matter: bool = True,
     detect_blockquotes: bool = False,
     cluster_headings: bool = False,
+    subtract_running_furniture: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -1102,6 +1176,7 @@ def convert_document(
     if cluster_headings:
         # Replace the fixed-cutoff thresholds with gap-partitioned size bands.
         profile.heading_thresholds = cluster_heading_bands(profile.size_histogram, profile.body_size)
+    recurring_furniture = find_recurring_furniture(doc) if subtract_running_furniture else frozenset()
     toc = doc.get_toc()
 
     if debug:
@@ -1128,7 +1203,8 @@ def convert_document(
     out_pages: list[str] = []
     for page in doc:
         page_md = convert_page(
-            page, profile, images_dir=images_dir, pdf_stem=pdf_stem
+            page, profile, images_dir=images_dir, pdf_stem=pdf_stem,
+            recurring_furniture=recurring_furniture,
         )
         if page_md.strip():
             out_pages.append(page_md)
@@ -1287,7 +1363,9 @@ PARAGRAPH_END = (".", "!", "?", ":", ";", "\"", "”", "’", ")", "]", "}", "�
 # These lines are not prose. Before #141 the <small> wrapper kept them out of
 # the wrapped-paragraph merge; now that small blocks render as plain text, this
 # content test fills the same role so a footer is never fused into an adjacent
-# paragraph. Comprehensive header/footer removal is tracked in #187.
+# paragraph. The opt-in #187 pass subtracts band furniture that recurs across
+# pages; this regex still guards stragglers (short docs, below-threshold, or
+# furniture outside the 7% band) from being fused into prose.
 _PAGE_FURNITURE_RE = re.compile(r"\bpage\s+\d+\s+of\s+\d+\b", re.IGNORECASE)
 
 
@@ -1439,6 +1517,11 @@ def main() -> int:
         action="store_true",
         help="Map font sizes to heading levels by gap-partitioned bands and merge multi-line headings (opt-in, #188)",
     )
+    parser.add_argument(
+        "--subtract-furniture",
+        action="store_true",
+        help="Subtract running headers/footers that recur across pages (opt-in, #187)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -1455,6 +1538,7 @@ def main() -> int:
         front_matter=not args.no_front_matter,
         detect_blockquotes=args.detect_blockquotes,
         cluster_headings=args.cluster_headings,
+        subtract_running_furniture=args.subtract_furniture,
     )
     return 0
 
