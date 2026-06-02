@@ -35,9 +35,16 @@ export default defineConfig({
   // collides with a local dev one.
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFileName}/{arg}-{projectName}-{platform}{ext}',
   expect: {
-    // 0.5%: strict enough to catch a real layout/colour regression, loose
-    // enough to forgive sub-pixel font-rendering noise between CI runs (#16).
-    toHaveScreenshot: { maxDiffPixelRatio: 0.005 },
+    toHaveScreenshot: {
+      // maxDiffPixelRatio (how many pixels may differ) forgives sub-pixel font
+      // anti-aliasing noise between runs; threshold (how different a single
+      // pixel must be, in YIQ, to count) is tightened from the 0.2 default so a
+      // real colour-token change registers instead of slipping under the
+      // per-pixel tolerance. Together they catch layout and colour regressions
+      // while staying stable on identical renders (#16).
+      maxDiffPixelRatio: 0.005,
+      threshold: 0.15,
+    },
   },
   use: {
     baseURL: 'http://127.0.0.1:5173',
