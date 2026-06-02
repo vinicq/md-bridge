@@ -47,6 +47,20 @@ jobs:
         working-directory: apps/web
         run: npm ci || npm install
 
+      - name: Verify Playwright version matches the container image
+        working-directory: apps/web
+        # The baselines are rendered by the browser build in the container, so
+        # the @playwright/test version and the image tag must share a major.minor.
+        # A Dependabot bump that forgets the image tag surfaces here as a red
+        # check instead of as silent font drift in every baseline.
+        run: |
+          pkg=$(node -p "require('@playwright/test/package.json').version")
+          echo "Installed @playwright/test: $pkg (image: v1.60.0-noble)"
+          case "$pkg" in
+            1.60.*) ;;
+            *) echo "::error::@playwright/test $pkg does not match the v1.60.0-noble image. Bump the container tag in visual-regression.yml and update-snapshots.yml to match, then regenerate the baselines."; exit 1 ;;
+          esac
+
       - name: Run visual snapshots
         working-directory: apps/web
         env:

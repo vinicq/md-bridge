@@ -490,6 +490,13 @@ fork has to regenerate baselines locally in the Linux Playwright container
 (`npx playwright test --project=visual --update-snapshots`) and push them, or
 ask a maintainer to.
 
+The diff has a known blind spot: a colour-token change whose new value is close
+to the old one in YIQ space (a small per-pixel delta) can stay under the
+threshold and pass. The guard reliably catches layout shifts and strong colour
+changes, not subtle re-tints. So a PR that changes a design token still owes the
+before/after screenshots in its body — the visual check is a backstop, not a
+replacement for that review.
+
 ### Updating Lighthouse budgets
 
 The Lighthouse CI workflow protects the web app from accidental bundle and
