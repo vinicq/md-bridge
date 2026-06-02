@@ -22,6 +22,7 @@ def test_pdf_to_md_options_defaults():
     assert opts.cluster_headings is False
     assert opts.subtract_running_furniture is False
     assert opts.allow_html == frozenset()
+    assert opts.preserve_line_breaks is False
     assert opts.lang == "pt-BR"
 
 

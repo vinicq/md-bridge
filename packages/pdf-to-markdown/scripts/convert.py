@@ -220,6 +220,7 @@ class DocProfile:
     detect_blockquotes: bool = False  # opt-in: sustained-indent body block -> quote (#147)
     cluster_headings: bool = False  # opt-in: gap-partition font sizes into heading bands (#188)
     allow_html: frozenset = frozenset()  # opt-in HTML tags the emitter may keep (#154)
+    preserve_line_breaks: bool = False  # opt-in: keep intentional layout line breaks (#156)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
@@ -975,6 +976,53 @@ def render_blockquote(block: Block) -> str:
     return "\n".join(quoted)
 
 
+LINE_BREAK_MAX_LEN = 60.0  # a source line shorter than this can be an intentional break (#156)
+
+
+def _dominant_line_font(line: Line) -> str:
+    fonts: Counter[str] = Counter()
+    for s in line.spans:
+        fonts[s.font] += len(s.text)
+    return fonts.most_common(1)[0][0] if fonts else ""
+
+
+def _is_hard_break(prev_line: Line, next_line: Line, prev_rendered: str) -> bool:
+    """A line break is intentional (poetry, postal address) when the two lines
+    share font, size and left indent, the earlier line is short, and the next
+    line does not read as a wrap continuation (#156)."""
+    if len(prev_rendered) >= LINE_BREAK_MAX_LEN:
+        return False  # long line: a wrap, not a deliberate break
+    if _dominant_line_font(prev_line) != _dominant_line_font(next_line):
+        return False
+    if abs(prev_line.dominant_size - next_line.dominant_size) > 0.5:
+        return False
+    if abs(prev_line.bbox[0] - next_line.bbox[0]) > 2.0:
+        return False
+    # _should_merge_into_previous is True exactly when the next line continues a
+    # wrapped sentence (lowercase start, leading and/or/but, prev trailing
+    # comma/hyphen) -- the case where a break is NOT intentional.
+    if _should_merge_into_previous(prev_rendered, render_line(next_line).strip()):
+        return False
+    return True
+
+
+def render_paragraph(block: Block, profile: DocProfile) -> str:
+    """Space-join the block's rendered lines (default), or insert CommonMark
+    hard breaks (`  \\n`) between intentional same-font, same-indent short lines
+    when `profile.preserve_line_breaks` is on. Off by default keeps output
+    byte-identical (#156)."""
+    lines = [ln for ln in block.lines if ln.text.strip()]
+    rendered = [render_line(ln).strip() for ln in lines]
+    if not profile.preserve_line_breaks:
+        return " ".join(rendered).strip()
+    parts: list[str] = []
+    for i, text in enumerate(rendered):
+        parts.append(text)
+        if i + 1 < len(rendered):
+            parts.append("  \n" if _is_hard_break(lines[i], lines[i + 1], text) else " ")
+    return "".join(parts).strip()
+
+
 def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> str:
     """Join page items (tables, images, text blocks) into Markdown.
 
@@ -1092,6 +1140,16 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             continue
 
         text_clean = HEADING_DOTS_RE.sub("", text_rendered)
+        # Hard-break-aware text for STANDALONE paragraph/small blocks only (#156).
+        # List continuations, headings, bullets and numbered items keep the
+        # space-joined text_clean: a layout line break inside a list item would
+        # push later lines out of the <li>. Identical to text_clean when the
+        # flag is off, so the default path and the golden stay byte-identical.
+        para_clean = (
+            HEADING_DOTS_RE.sub("", render_paragraph(block, profile))
+            if profile.preserve_line_breaks
+            else text_clean
+        )
 
         # A paragraph (or a blockquote candidate) indented past the open item's
         # marker continues that item. Continuation WINS over a quote: an
@@ -1180,10 +1238,10 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             # text as a plain paragraph and drop the size hint (#141). Opt-in
             # raw-HTML preservation is the job of the allow-list policy (#154).
             list_marker_x0 = None
-            out_parts.append(text_clean)
+            out_parts.append(para_clean)
         else:
             list_marker_x0 = None
-            out_parts.append(text_clean)
+            out_parts.append(para_clean)
 
     flush_numbered()
     flush_blockquote()
@@ -1238,12 +1296,14 @@ def convert_document(
     cluster_headings: bool = False,
     subtract_running_furniture: bool = False,
     allow_html: frozenset[str] = frozenset(),
+    preserve_line_breaks: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
     profile.detect_blockquotes = detect_blockquotes
     profile.cluster_headings = cluster_headings
     profile.allow_html = allow_html
+    profile.preserve_line_breaks = preserve_line_breaks
     if cluster_headings:
         # Replace the fixed-cutoff thresholds with gap-partitioned size bands.
         profile.heading_thresholds = cluster_heading_bands(profile.size_histogram, profile.body_size)
@@ -1593,6 +1653,11 @@ def main() -> int:
         action="store_true",
         help="Subtract running headers/footers that recur across pages (opt-in, #187)",
     )
+    parser.add_argument(
+        "--preserve-line-breaks",
+        action="store_true",
+        help="Keep intentional layout line breaks (poetry, addresses) as hard breaks (opt-in, #156)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -1610,6 +1675,7 @@ def main() -> int:
         detect_blockquotes=args.detect_blockquotes,
         cluster_headings=args.cluster_headings,
         subtract_running_furniture=args.subtract_furniture,
+        preserve_line_breaks=args.preserve_line_breaks,
     )
     return 0
 

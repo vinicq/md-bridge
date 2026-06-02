@@ -139,3 +139,31 @@ def test_code_block_continuation_nests_in_item():
     # Nested code is an indented block, so it carries no language class — the
     # hint-drop contract for the continuation case.
     assert "language-" not in first_item
+
+
+def _multiline_block(texts, x0):
+    lines = [
+        mod.Line(
+            spans=[mod.Span(text=t, size=11.0, font="Body", flags=0, bbox=(x0, 0.0, x0 + 300, 12.0))],
+            bbox=(x0, 0.0, x0 + 300, 12.0),
+        )
+        for t in texts
+    ]
+    return mod.Block(lines=lines, bbox=(x0, 0.0, x0 + 300, 12.0 * len(texts)))
+
+
+def test_continuation_has_no_hard_breaks_when_preserve_line_breaks_on():
+    # #156 ON-path guard: hard breaks (`  \n`) must not leak into a list
+    # continuation; later lines would fall out of the <li>. The continuation
+    # keeps the space-joined form regardless of the flag.
+    profile = _profile()
+    profile.preserve_line_breaks = True
+    items = [
+        ("block", _block("• A bullet item.", 72.0)),
+        ("block", _multiline_block(["Roses are red", "Violets are blue"], 90.0)),
+    ]
+    md = mod.assemble_markdown(items, profile)
+    assert "  \n" not in md
+    html = markdown.markdown(md)
+    assert html.count("<li>") == 1
+    assert "Roses are red Violets are blue" in md
