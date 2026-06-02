@@ -1,0 +1,11 @@
+/* business — placeholder overlay over default.css.
+ *
+ * The renderer stacks this on top of default.css, so this file only carries the
+ * overrides that distinguish the theme. This is a minimal placeholder that sets
+ * the family's signature (a clean sans-serif body for reports); the full
+ * typographic system is tracked in #22. Keep the stacking contract: never
+ * restate default.css here. */
+
+body {
+  font-family: "Helvetica Neue", Arial, "Segoe UI", sans-serif;
+}

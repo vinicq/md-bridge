@@ -42,6 +42,20 @@ def test_md_to_pdf_returns_pdf(client, chromium_ready):
     assert resp.content[:5] == b"%PDF-"
 
 
+def test_md_to_pdf_unknown_theme_returns_400(client):
+    # An unknown theme is rejected at the service before any rendering, so this
+    # needs no Chromium. Uses the documented error envelope.
+    import json
+
+    resp = client.post(
+        "/api/md-to-pdf",
+        files={"file": ("doc.md", SAMPLE_MD, "text/markdown")},
+        data={"options": json.dumps({"theme": "no-such-theme"})},
+    )
+    assert resp.status_code == 400, resp.text
+    assert resp.json()["error"]["code"] == "unknown_theme"
+
+
 def test_md_to_pdf_rejects_non_md(client):
     resp = client.post(
         "/api/md-to-pdf",

@@ -28,6 +28,12 @@ def test_pdf_to_md_options_defaults():
     assert opts.lang == "pt-BR"
 
 
+def test_md_to_pdf_options_theme_defaults_to_default():
+    from app.schemas.convert import MdToPdfOptions
+
+    assert MdToPdfOptions().theme == "default"
+
+
 def test_pdf_to_md_options_max_heading_level_range():
     assert PdfToMdOptions(max_heading_level=6).max_heading_level == 6
     with pytest.raises(ValidationError):
@@ -64,8 +70,10 @@ def test_md_to_pdf_options_defaults():
 
 
 def test_md_to_pdf_options_rejects_unknown_field():
+    # `theme` is now a real field (#23); use a genuinely unknown key to keep
+    # asserting the extra="forbid" guard.
     with pytest.raises(ValidationError):
-        MdToPdfOptions.model_validate({"theme": "editorial"})
+        MdToPdfOptions.model_validate({"no_such_option": "editorial"})
 
 
 def test_pdf_to_md_response_default_collections():

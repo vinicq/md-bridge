@@ -12,9 +12,10 @@ from pydantic import ValidationError
 
 from app.config import MAX_UPLOAD_BYTES
 from app.errors import ApiError
-from app.schemas.convert import MdToPdfOptions, PdfToMdOptions, PdfToMdResponse
+from app.schemas.convert import MdToPdfOptions, PdfToMdOptions, PdfToMdResponse, ThemeInfo
 from app.services.md_to_pdf import render_md_bytes
 from app.services.pdf_to_md import convert_pdf_bytes
+from app.services.themes import get_theme, list_themes
 
 router = APIRouter(tags=["convert"])
 log = logging.getLogger(__name__)
@@ -295,3 +296,43 @@ async def md_to_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{out_name}"'},
     )
+
+
+@router.get(
+    "/api/themes",
+    response_model=list[ThemeInfo],
+    summary="List the Markdown → PDF themes",
+    description=(
+        "Returns every registered theme as `{slug, name, description, family}`. "
+        "Pass a slug as `options.theme` on `POST /api/md-to-pdf` to select it."
+    ),
+)
+async def get_themes() -> list[ThemeInfo]:
+    return [ThemeInfo(**t.to_dict()) for t in list_themes()]
+
+
+@router.get(
+    "/api/themes/{slug}/css",
+    summary="Get a theme's raw CSS",
+    description="Returns the theme's own stylesheet as `text/css` for inline display.",
+    responses={
+        200: {"description": "The theme stylesheet.", "content": {"text/css": {}}},
+        400: {
+            "description": "Unknown theme slug.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "error": {
+                            "code": "unknown_theme",
+                            "message": "Theme 'whatever' is not registered.",
+                        }
+                    }
+                }
+            },
+        },
+    },
+)
+async def get_theme_css(slug: str) -> Response:
+    theme = get_theme(slug)  # raises 400 unknown_theme for an unregistered slug
+    css = theme.css_path.read_text(encoding="utf-8")
+    return Response(content=css, media_type="text/css; charset=utf-8")

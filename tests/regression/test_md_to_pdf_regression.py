@@ -45,21 +45,29 @@ def chromium_ready():
         pytest.skip(f"Playwright chromium unavailable: {exc}")
 
 
-def test_md_to_pdf_renders_minimal(md_to_pdf_mod, chromium_ready):
+@pytest.mark.parametrize("theme", ["default", "academic", "business", "minimal"])
+def test_md_to_pdf_renders_each_theme(theme, md_to_pdf_mod, chromium_ready):
+    # Every registered theme renders the standard sample to a valid PDF (#23).
+    # The PDF binary is not stable byte-for-byte, so the regression stays
+    # structural (magic + size), matching the rest of this suite. CSS paths are
+    # resolved from the templates dir directly (the registry's own resolution is
+    # unit-tested under the API venv; this root suite avoids the FastAPI import
+    # chain), mirroring the renderer's stack-on-default contract.
     from app.config import MD_TO_PDF_TEMPLATES
 
-    css = MD_TO_PDF_TEMPLATES / "default.css"
-    assert css.exists(), f"default.css missing at {css}"
+    default_css = MD_TO_PDF_TEMPLATES / "default.css"
+    css_paths = [default_css] if theme == "default" else [default_css, MD_TO_PDF_TEMPLATES / f"{theme}.css"]
+    assert all(p.exists() for p in css_paths), f"missing css for theme {theme}: {css_paths}"
 
     with tempfile.TemporaryDirectory(prefix="regress-md2pdf-") as raw:
         md_path = Path(raw) / "doc.md"
         pdf_path = Path(raw) / "doc.pdf"
         md_path.write_text(SAMPLE_MD, encoding="utf-8")
-        md_to_pdf_mod.convert(md_path, pdf_path, [css], lang="pt-BR")
+        md_to_pdf_mod.convert(md_path, pdf_path, css_paths, lang="pt-BR")
         data = pdf_path.read_bytes()
 
-    assert data.startswith(b"%PDF-"), "output is not a PDF"
-    assert len(data) > 1024, f"PDF too small to be plausible: {len(data)} bytes"
+    assert data.startswith(b"%PDF-"), f"theme {theme}: output is not a PDF"
+    assert len(data) > 1024, f"theme {theme}: PDF too small ({len(data)} bytes)"
 
 
 COMPLEX_FM_MD = """---
