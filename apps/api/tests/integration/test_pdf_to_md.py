@@ -25,6 +25,37 @@ def test_pdf_to_md_returns_markdown(client, istqb_pdf: Path):
     assert stats["headings"] + stats["bullets"] + stats["tables"] > 0, "expected some structure"
 
 
+# Real-world fixture corpus (#28). Each spans a distinct PDF generation path;
+# provenance and licences are documented in apps/api/tests/fixtures/SOURCES.md.
+FIXTURE_CORPUS = [
+    "wikipedia-markdown-en",
+    "wikipedia-pdf-en",
+    "wikipedia-markdown-ja",
+    "arxiv-2207.09238-formal-algorithms-transformers",
+]
+
+
+@pytest.mark.parametrize("stem", FIXTURE_CORPUS)
+def test_pdf_to_md_corpus_has_structure(client, stem: str):
+    # No silent skips: every committed fixture must convert to non-empty
+    # markdown that carries at least one structural element. A heuristic change
+    # that flattens a whole class of inputs fails here, not in production.
+    pdf = Path(__file__).resolve().parents[1] / "fixtures" / f"{stem}.pdf"
+    assert pdf.exists(), f"missing corpus fixture: {pdf}"
+    with pdf.open("rb") as fh:
+        resp = client.post(
+            "/api/pdf-to-md",
+            files={"file": (pdf.name, fh, "application/pdf")},
+        )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["md"].strip(), f"{stem}: markdown should not be empty"
+    stats = body["stats"]
+    assert stats["headings"] + stats["bullets"] + stats["tables"] > 0, (
+        f"{stem}: expected some structure, got {stats}"
+    )
+
+
 def test_pdf_to_md_rejects_non_pdf(client):
     resp = client.post(
         "/api/pdf-to-md",
