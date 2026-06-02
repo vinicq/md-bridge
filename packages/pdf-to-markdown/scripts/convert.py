@@ -1365,7 +1365,7 @@ PARAGRAPH_END = (".", "!", "?", ":", ";", "\"", "”", "’", ")", "]", "}", "�
 # content test fills the same role so a footer is never fused into an adjacent
 # paragraph. The opt-in #187 pass subtracts band furniture that recurs across
 # pages; this regex still guards stragglers (short docs, below-threshold, or
-# furniture outside the 7% band) from being fused into prose.
+# furniture outside the band) from being fused into prose.
 _PAGE_FURNITURE_RE = re.compile(r"\bpage\s+\d+\s+of\s+\d+\b", re.IGNORECASE)
 
 
