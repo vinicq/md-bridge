@@ -616,6 +616,27 @@ def test_parse_footnote_body_size_rejected(mod):
     assert mod.parse_footnote_definition(block, profile, 792.0) is None  # not small font
 
 
+def test_parse_footnote_body_size_ordered_list_in_band_rejected(mod):
+    # An ordered-list item at body size in the bottom band is rejected by the
+    # small-font gate, so common list/footnote ambiguity never reaches the regex.
+    profile = _profile(mod)
+    block = _fn_block(mod, "1) Install the runtime and start the service first.", size=11.0)
+    assert mod.parse_footnote_definition(block, profile, 792.0) is None
+
+
+def test_parse_footnote_small_font_ordered_list_in_band_is_accepted(mod):
+    # Characterization of the known limitation (#148): a small-font ordered-list
+    # item that also lands in the bottom band is indistinguishable from a
+    # footnote by geometry + font alone and is treated as one. This is the
+    # reason the feature is opt-in; the docstring documents the same tradeoff.
+    profile = _profile(mod)
+    block = _fn_block(mod, "1) Install the runtime and start the service first.")
+    assert mod.parse_footnote_definition(block, profile, 792.0) == (
+        1,
+        "Install the runtime and start the service first.",
+    )
+
+
 def test_render_span_superscript_rewrites_known_footnote(mod):
     sp = mod.Span(text="3", size=11.0, font="Body", flags=mod.FLAG_SUPERSCRIPT, bbox=(0, 0, 5, 12))
     assert mod.render_span(sp, frozenset({3})) == "[^3]"

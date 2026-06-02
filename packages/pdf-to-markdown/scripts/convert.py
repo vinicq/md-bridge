@@ -927,7 +927,14 @@ def parse_footnote_definition(
     """A small-font block in the bottom band opening with `N <prose>` is a
     footnote definition; returns (number, text), else None. The geometry +
     small-font gates exclude body-size numbered-list items, and the prose-length
-    and page-furniture guards exclude bare page numbers like "Page 3" (#148)."""
+    and page-furniture guards exclude bare page numbers like "Page 3" (#148).
+
+    Known limitation: a numbered-list item that is itself small-font AND lands in
+    the bottom band is indistinguishable from a footnote by these gates and is
+    treated as one. The geometry gate is the sole list/footnote discriminator, so
+    a small-font ordered list at the foot of a page misfires. This is the reason
+    the whole feature is opt-in; the common case (body-size lists, body-size
+    bottom content) is unaffected because the small-font gate rejects it."""
     if block.bbox[1] <= page_height * FOOTNOTE_BAND_RATIO:
         return None
     if block.dominant_size > profile.small_size:

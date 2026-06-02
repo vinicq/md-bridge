@@ -41,7 +41,7 @@ def _pdf_with_footnotes() -> bytes:
         )
         y += 22
     # Bottom-band definitions, spaced apart so each lands in its own block.
-    for def_y, text in zip((690, 720, 750), DEFS):
+    for def_y, text in zip((690, 720, 750), DEFS, strict=True):
         page.insert_text((72, def_y), text, fontsize=7)
     try:
         return doc.tobytes()
