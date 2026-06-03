@@ -97,6 +97,10 @@ jobs:
           REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # The Playwright container runs as root over checkout files git treats
+          # as dubiously owned, so plain git commands fail with "not in a git
+          # directory" (#248). Mark the workspace safe before any git call.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add apps/web/e2e/__screenshots__
