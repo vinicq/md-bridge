@@ -2,6 +2,13 @@ export interface PdfToMdOptions {
   page_break?: boolean
   with_images?: boolean
   front_matter?: boolean
+  detect_blockquotes?: boolean
+  cluster_headings?: boolean
+  subtract_running_furniture?: boolean
+  allow_html?: string[]
+  preserve_line_breaks?: boolean
+  max_heading_level?: number
+  footnote_pairing?: boolean
   lang?: string
 }
 

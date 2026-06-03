@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { BatchPanel } from '../components/BatchPanel'
 import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
+import { OptionsPanel, type OptionField } from '../components/OptionsPanel'
 import { Toast } from '../components/Toast'
 import { useBatchConvert, type BatchItem } from '../hooks/useBatchConvert'
 import { useBatchZip } from '../hooks/useBatchZip'
 import { useInspect } from '../hooks/useInspect'
 import { useTranslation } from '../i18n'
-import { convertPdfToMd, type PdfToMdResponse } from '../lib/api'
+import { convertPdfToMd, type PdfToMdOptions, type PdfToMdResponse } from '../lib/api'
 import { DiagnosticPanel } from '../components/DiagnosticPanel'
 
 // The API blocks a scanned PDF with 422 ocr_required (it also returns this in
@@ -32,9 +33,22 @@ export function PdfToMd() {
   const { t } = useTranslation()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string } | null>(null)
+  // Extraction options forwarded to the converter. Defaults mirror the backend
+  // schema (front matter on, everything else off, heading cap 3). Options apply
+  // to the next conversion; the convert closure below reads the latest value.
+  const [options, setOptions] = useState<PdfToMdOptions>({
+    front_matter: true,
+    page_break: false,
+    with_images: false,
+    detect_blockquotes: false,
+    cluster_headings: false,
+    preserve_line_breaks: false,
+    footnote_pairing: false,
+    max_heading_level: 3,
+  })
 
   const batch = useBatchConvert<PdfToMdResponse>({
-    convert: (file, signal) => convertPdfToMd(file, {}, signal),
+    convert: (file, signal) => convertPdfToMd(file, options, signal),
     // 10-minute ceiling so a backgrounded tab cannot leave an item stuck in
     // flight forever (issue #138). Removing this line restores the old
     // no-timeout behavior.
@@ -85,7 +99,39 @@ export function PdfToMd() {
 
   const handleFiles = (files: File[]) => batch.add(files)
 
+  const onOption = (id: string, value: boolean | string) => {
+    setOptions((prev) => ({
+      ...prev,
+      [id]: id === 'max_heading_level' ? Number(value) : value,
+    }))
+  }
+
+  const op = t.optionsPanel
+  const optionFields: OptionField[] = [
+    { id: 'front_matter', kind: 'toggle', label: op.frontMatter.label, tooltip: op.frontMatter.tip },
+    { id: 'page_break', kind: 'toggle', label: op.pageBreak.label, tooltip: op.pageBreak.tip },
+    { id: 'with_images', kind: 'toggle', label: op.withImages.label, tooltip: op.withImages.tip },
+    { id: 'detect_blockquotes', kind: 'toggle', label: op.blockquotes.label, tooltip: op.blockquotes.tip },
+    { id: 'cluster_headings', kind: 'toggle', label: op.clusterHeadings.label, tooltip: op.clusterHeadings.tip },
+    { id: 'preserve_line_breaks', kind: 'toggle', label: op.preserveLineBreaks.label, tooltip: op.preserveLineBreaks.tip },
+    { id: 'footnote_pairing', kind: 'toggle', label: op.footnotePairing.label, tooltip: op.footnotePairing.tip },
+    {
+      id: 'max_heading_level',
+      kind: 'select',
+      label: op.maxHeadingLevel.label,
+      tooltip: op.maxHeadingLevel.tip,
+      // Heading depth only applies to font-size heading detection; gray it out
+      // until that toggle is on so it never reads as an inert control.
+      disabled: !options.cluster_headings,
+      options: [1, 2, 3, 4, 5, 6].map((n) => ({ value: String(n), label: String(n) })),
+    },
+  ]
+
   const onConvertAll = async () => {
+    // Options are read by the convert closure at run time, so the queued files
+    // convert with whatever is set when the user clicks. To re-convert with a
+    // changed option, clear and re-add (the batch's existing idiom); the
+    // "Convert all" button is correctly disabled once nothing is queued.
     await batch.runAll()
     setToast({ kind: 'ok', message: t.pdfToMd.success })
   }
@@ -110,6 +156,13 @@ export function PdfToMd() {
             acceptLabel="PDF"
             onFiles={handleFiles}
             multiple
+            disabled={batch.running}
+          />
+          <OptionsPanel
+            legend={op.legend}
+            fields={optionFields}
+            values={options as Record<string, boolean | string | number>}
+            onChange={onOption}
             disabled={batch.running}
           />
           <DiagnosticPanel
