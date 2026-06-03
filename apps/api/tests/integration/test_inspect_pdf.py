@@ -15,7 +15,7 @@ def test_inspect_pdf_returns_diagnostics(client, istqb_pdf: Path):
     assert body["body_size_pt"] > 0
     assert isinstance(body["heading_sizes_pt"], list)
     assert isinstance(body["fonts"], list)
-    assert body["fonts"], "expected at least one font in a digitally-generated PDF"
+    assert len(body["fonts"]) >= 1, "expected at least one font in a digitally-generated PDF"
     assert isinstance(body["tagged"], bool)
     assert isinstance(body["needs_ocr"], bool)
 
