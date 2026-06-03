@@ -1,17 +1,48 @@
-/* minimal — placeholder overlay over default.css.
+/* minimal — clean, low-chrome, comfortable for drafts and editing (#22).
  *
- * The renderer stacks this on top of default.css, so this file only carries the
- * overrides that distinguish the theme. This is a minimal placeholder that sets
- * the family's signature (a denser body type for a compact read); the full
- * typographic system is tracked in #22. Keep the stacking contract: never
- * restate default.css here.
+ * Stacks on top of default.css; only the identity overrides live here. Override
+ * a single token by redefining it in a stylesheet stacked after this one.
  *
- * Note for #22: a CSS `@page { margin }` override is a no-op in this renderer —
- * Chromium's print path passes explicit page margins that win over @page. Use
- * body/typography overrides (which do take effect) until #22 reworks the print
- * margin handling in the converter. */
+ * Renderer note: this converter prints through headless Chromium, which ignores
+ * CSS `@page` margins (the page margin is fixed by the renderer). The original
+ * brief asked for wider page margins; until the converter exposes a per-theme
+ * margin, "minimal" leans on generous in-flow whitespace and the removal of
+ * rule lines and chrome rather than a wider page box. Tracked for a converter
+ * follow-up (#243). */
+
+:root {
+  --minimal-body-font: "Helvetica Neue", "Segoe UI", Arial, "Liberation Sans", sans-serif;
+  --minimal-ink: #2a2a2a;
+}
 
 body {
-  font-size: 0.92rem;
-  line-height: 1.4;
+  font-family: var(--minimal-body-font);
+  color: var(--minimal-ink);
+  line-height: 1.7;
+  text-align: left;   /* left-aligned reads as a working draft, not a finished page */
+  hyphens: none;
 }
+
+p { margin: 0 0 1em; }
+
+/* No chrome: drop heading rules and de-emphasise the hierarchy into weight and
+   spacing instead of borders. */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--minimal-body-font);
+  color: var(--minimal-ink);
+  font-weight: 600;
+  border-bottom: none;
+}
+h1 { border-bottom: none; padding-bottom: 0; }
+
+/* Tables: horizontal rules only, no boxed cells. */
+th, td { border: none; border-bottom: 1px solid #e2e2e2; }
+th { background: transparent; }
+
+/* Quotes and rules: quiet. */
+blockquote {
+  border-left: 2px solid #d8d8d8;
+  background: transparent;
+  color: #555;
+}
+hr { border-top: 1px solid #ececec; }

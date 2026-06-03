@@ -17,7 +17,7 @@ def test_get_theme_returns_metadata():
     t = themes.get_theme("academic")
     assert t.slug == "academic"
     assert t.name == "Academic"
-    assert t.family == "academic"
+    assert t.family == "serif"
     assert t.css_path.name == "academic.css"
 
 

@@ -1,11 +1,62 @@
-/* academic — placeholder overlay over default.css.
+/* academic — serif, justified, numbered headings, paper-like (#22).
  *
- * The renderer stacks this on top of default.css, so this file only carries the
- * overrides that distinguish the theme. This is a minimal placeholder that sets
- * the family's signature (a serif body for a paper-like read); the full
- * typographic system — heading scale, code blocks, tables, print tuning — is
- * tracked in #22. Keep the stacking contract: never restate default.css here. */
+ * Stacks on top of default.css; this file carries only the overrides that give
+ * the theme its identity. Override a single token by redefining it in your own
+ * stylesheet stacked after this one.
+ *
+ * Renderer note: this converter prints through headless Chromium, which ignores
+ * CSS `@page` margins (the page margin is fixed by the renderer) and does not
+ * render `@page` margin-box running headers/footers. So a running footer page
+ * number and per-theme page margins are not expressible here yet; the heading
+ * numbering below uses CSS counters, which Chromium does honour. Tracked for a
+ * converter follow-up (#243). */
+
+:root {
+  --academic-body-font: Georgia, Cambria, "Times New Roman", "Liberation Serif", serif;
+  --academic-heading-font: Georgia, Cambria, "Times New Roman", serif;
+  --academic-ink: #1a1a1a;
+  --academic-rule: #8a8a8a;
+}
 
 body {
-  font-family: Georgia, "Times New Roman", Cambria, serif;
+  font-family: var(--academic-body-font);
+  color: var(--academic-ink);
+  line-height: 1.6;
+  text-align: justify;
+  hyphens: auto;
 }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--academic-heading-font);
+  color: var(--academic-ink);
+  font-weight: 700;
+}
+
+/* The document title (h1) stays unnumbered; section headings carry a decimal
+   outline numbering driven by CSS counters (Chromium-safe). */
+body { counter-reset: h2sec; }
+h2 { counter-reset: h3sec; }
+h2::before {
+  counter-increment: h2sec;
+  content: counter(h2sec) "\00a0\00a0";
+}
+h3::before {
+  counter-increment: h3sec;
+  content: counter(h2sec) "." counter(h3sec) "\00a0\00a0";
+}
+
+h1 {
+  font-weight: 700;
+  border-bottom: 1px solid var(--academic-rule);
+  text-align: center;
+  padding-bottom: .35em;
+}
+h2 { border-bottom: none; }
+
+blockquote {
+  font-style: italic;
+  border-left-width: 3px;
+  background: transparent;
+}
+
+th { background: #efeae0; }
