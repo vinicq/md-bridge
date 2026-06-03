@@ -56,3 +56,12 @@ def md_to_pdf_mod():
     from app.services.packages_loader import md_to_pdf_module
 
     return md_to_pdf_module()
+
+
+@pytest.fixture(scope="session")
+def md_to_docx_mod():
+    # Loaded via packages_loader, which strips the script's import-time stdout
+    # rebind so it does not close pytest's capture buffer (#60).
+    from app.services.packages_loader import md_to_docx_module
+
+    return md_to_docx_module()

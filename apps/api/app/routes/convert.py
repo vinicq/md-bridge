@@ -12,10 +12,21 @@ from pydantic import ValidationError
 
 from app.config import MAX_UPLOAD_BYTES
 from app.errors import ApiError
-from app.schemas.convert import MdToPdfOptions, PdfToMdOptions, PdfToMdResponse, ThemeInfo
+from app.schemas.convert import (
+    FormatInfo,
+    MdToDocxOptions,
+    MdToPdfOptions,
+    PdfToMdOptions,
+    PdfToMdResponse,
+    ThemeInfo,
+)
+from app.services.formats import list_formats
+from app.services.md_to_docx import render_md_to_docx_bytes
 from app.services.md_to_pdf import render_md_bytes
 from app.services.pdf_to_md import convert_pdf_bytes
 from app.services.themes import get_theme, list_themes
+
+DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 router = APIRouter(tags=["convert"])
 log = logging.getLogger(__name__)
@@ -336,3 +347,66 @@ async def get_theme_css(slug: str) -> Response:
     theme = get_theme(slug)  # raises 400 unknown_theme for an unregistered slug
     css = theme.css_path.read_text(encoding="utf-8")
     return Response(content=css, media_type="text/css; charset=utf-8")
+
+
+@router.post(
+    "/api/md-to-docx",
+    summary="Render a Markdown file into a Word document (.docx)",
+    description=(
+        "Converts Markdown to a deterministic .docx: headings, bold/italic/inline "
+        "code, lists, block quotes, fenced code, and tables map onto Word "
+        "elements. Same input, same bytes, every run."
+    ),
+    response_description="A binary DOCX (Office Open XML).",
+    responses={
+        200: {
+            "description": "Rendered DOCX.",
+            "content": {DOCX_MIME: {"schema": {"type": "string", "format": "binary"}}},
+        },
+        400: {"description": "Wrong file type or non-UTF-8 markdown."},
+        413: {"description": "Upload exceeds the 500 MB cap."},
+        422: {"description": "Malformed `options` payload."},
+        500: {"description": "Conversion failed."},
+    },
+)
+async def md_to_docx(
+    file: UploadFile = File(..., description="The Markdown file to convert."),
+    options: str | None = Form(
+        default=None,
+        description='Optional JSON string. Example: `{"lang": "en"}`.',
+    ),
+) -> Response:
+    opts = _read_options(options, MdToDocxOptions)
+    md_bytes = await _read_upload(file, ".md", "Markdown")
+    started = time.perf_counter()
+    docx_bytes = await asyncio.to_thread(
+        render_md_to_docx_bytes, md_bytes, filename=file.filename or "document.md", options=opts
+    )
+    elapsed_ms = int((time.perf_counter() - started) * 1000)
+    log.info(
+        "md-to-docx filename=%s bytes=%d duration_ms=%d",
+        file.filename,
+        len(md_bytes),
+        elapsed_ms,
+    )
+    out_name = (file.filename or "document.md").rsplit(".", 1)[0] + ".docx"
+    return Response(
+        content=docx_bytes,
+        media_type=DOCX_MIME,
+        headers={"Content-Disposition": f'attachment; filename="{out_name}"'},
+    )
+
+
+@router.get(
+    "/api/formats",
+    response_model=list[FormatInfo],
+    summary="List the conversion format pairs",
+    description=(
+        "Returns every format pair md-bridge knows about, shipped or planned, "
+        "as `{slug, label, source, target, input_mime, output_mime, status, "
+        "endpoint}`. Shipped pairs carry an `endpoint`; planned pairs have "
+        "`endpoint: null` and a `status` of `roadmap` or `wanted`."
+    ),
+)
+async def get_formats() -> list[FormatInfo]:
+    return [FormatInfo(**f.to_dict()) for f in list_formats()]
