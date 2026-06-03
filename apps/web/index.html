@@ -5,6 +5,28 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>md-bridge · PDF and Markdown converter</title>
+    <script>
+      // Apply the saved (or system) theme synchronously, before first paint, so
+      // there is no flash of the wrong theme and `data-theme` is present on the
+      // very first frame. The ThemeProvider re-applies the same value in an
+      // effect; this just front-runs it. Must mirror detectInitialTheme in
+      // src/theme/index.tsx (same storage key and fallback). Fixes the webkit
+      // race where specs read data-theme before the post-paint effect (#246).
+      (function () {
+        try {
+          var stored = localStorage.getItem('md-bridge:theme')
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+          document.documentElement.setAttribute('data-theme', theme)
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

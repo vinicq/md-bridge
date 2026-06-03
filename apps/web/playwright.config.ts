@@ -28,7 +28,11 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
   workers: 1,
-  retries: 0,
+  // Local runs stay strict (0) so a real flake surfaces immediately; CI retries
+  // twice to absorb residual timing jitter (a flaky test reports `flaky`, not a
+  // blocking `failed`). The root cause of the known webkit data-theme race is
+  // fixed by the pre-paint theme guard in index.html; this is the safety net (#246).
+  retries: process.env.CI ? 2 : 0,
   reporter: [['list']],
   // Visual baselines live beside the spec under e2e/__screenshots__/ with the
   // project + platform suffix Playwright appends, so a Linux baseline never
