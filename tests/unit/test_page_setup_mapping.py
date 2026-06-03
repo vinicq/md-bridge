@@ -81,6 +81,25 @@ def test_build_running_template_returns_none_when_all_slots_empty(mod):
     assert mod.build_running_template({"left": "", "center": "", "right": ""}, {}) is None
 
 
+def test_front_matter_value_is_not_re_scanned_for_tokens(mod):
+    # A title that itself contains {{page}} must stay literal text in a {{title}}
+    # slot — substituted values are never re-interpreted as tokens (#243 review).
+    fm = {"title": "{{page}}"}
+    kw = mod.resolve_pdf_kwargs({"header": {"left": "{{title}}"}}, fm)
+    assert 'class="pageNumber"' not in kw["header_template"]
+    # The literal braces survive (escaped text), not a forged counter.
+    assert "{{page}}" in kw["header_template"]
+
+
+def test_tight_margin_with_footer_holds_the_running_floor(mod):
+    # tight (1.5cm) sits exactly at the floor; with a footer present the bottom
+    # margin must stay >= 1.5cm so Chromium does not clip the band. (The presets
+    # never go below the floor, so the strictly-below clamp branch is defensive
+    # for a future explicit-margin option, not reachable here.)
+    kw = mod.resolve_pdf_kwargs({"margins": "tight", "footer": {"center": "{{page}}"}}, {})
+    assert float(kw["margin"]["bottom"].rstrip("cm")) >= 1.5
+
+
 def test_no_template_css_carries_a_dead_at_page_rule():
     # Chromium ignores @page margins / margin-boxes, so a stray @page rule is a
     # silent no-op. Keep the templates free of it (the dead block was removed in

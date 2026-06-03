@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import io
+import re
 import sys
 from pathlib import Path
 
@@ -144,6 +145,10 @@ _RUNNING_MARGIN_FLOOR_CM = 1.5
 
 PAGE_SIZES = ("A4", "Letter", "Legal")
 
+# The running-content tokens, matched in a single pass so substituted values are
+# never re-interpreted as tokens.
+_RUNNING_TOKEN_RE = re.compile(r"\{\{(title|author|date|page|pages)\}\}")
+
 
 def _cm_value(margin: str) -> float:
     return float(margin.rstrip("cm")) if margin.endswith("cm") else float(margin)
@@ -172,20 +177,20 @@ def build_running_template(slots: dict, fm: dict) -> str | None:
         return None
 
     subs = {
-        "{{title}}": escape_html(str(fm.get("title") or "")),
-        "{{author}}": escape_html(_author_text(fm.get("author"))),
-        "{{date}}": escape_html(str(fm.get("date") or "")),
-        "{{page}}": '<span class="pageNumber"></span>',
-        "{{pages}}": '<span class="totalPages"></span>',
+        "title": escape_html(str(fm.get("title") or "")),
+        "author": escape_html(_author_text(fm.get("author"))),
+        "date": escape_html(str(fm.get("date") or "")),
+        "page": '<span class="pageNumber"></span>',
+        "pages": '<span class="totalPages"></span>',
     }
 
     def render(text: str) -> str:
-        out = escape_html(text)
-        # Re-expand the token placeholders after escaping the literal text, so a
-        # token's HTML (the spans) is not double-escaped.
-        for token, value in subs.items():
-            out = out.replace(escape_html(token), value)
-        return out
+        # Single pass: escape the literal slot text, then replace every token in
+        # one left-to-right sweep. Substituted values are NOT re-scanned, so a
+        # front-matter value that itself contains e.g. `{{page}}` stays literal
+        # text and cannot forge a page counter into a title slot (#243 review).
+        escaped = escape_html(text)
+        return _RUNNING_TOKEN_RE.sub(lambda m: subs[m.group(1)], escaped)
 
     return (
         '<div style="font-size:9px;width:100%;color:#888;'
