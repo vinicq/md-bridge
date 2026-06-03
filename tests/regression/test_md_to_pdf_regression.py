@@ -3,8 +3,11 @@
 PDF binaries are not stable byte-for-byte across runs (timestamps, fonts,
 metadata), so the regression here is structural: each fixture markdown renders
 to a non-empty PDF that starts with the `%PDF-` magic and is at least 1 KB.
-Visual changes are caught by the per-PDF golden files of pdf-to-md round-trip
-elsewhere in the suite.
+
+This gate does not inspect the rendered appearance, so it does not catch a
+theme's print-CSS changes (heading numbering, accent colours, table rules).
+Those are checked manually against the committed reference renders under
+`docs/design/themes/`; an automated PDF visual regression is a follow-up.
 """
 from __future__ import annotations
 
