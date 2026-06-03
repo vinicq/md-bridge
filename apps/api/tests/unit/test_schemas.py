@@ -76,6 +76,25 @@ def test_md_to_pdf_options_rejects_unknown_field():
         MdToPdfOptions.model_validate({"no_such_option": "editorial"})
 
 
+def test_pdf_to_md_options_panel_payload_round_trips():
+    # The exact options shape the web OptionsPanel forwards (#59). Locks the
+    # frontend <-> schema contract: every exposed field is accepted together.
+    payload = {
+        "front_matter": False,
+        "page_break": True,
+        "with_images": True,
+        "detect_blockquotes": True,
+        "cluster_headings": True,
+        "preserve_line_breaks": True,
+        "footnote_pairing": True,
+        "max_heading_level": 4,
+    }
+    opts = PdfToMdOptions.model_validate(payload)
+    assert opts.front_matter is False
+    assert opts.cluster_headings is True
+    assert opts.max_heading_level == 4
+
+
 def test_pdf_to_md_response_default_collections():
     resp = PdfToMdResponse(md="# hi")
     assert resp.front_matter == FrontMatter()

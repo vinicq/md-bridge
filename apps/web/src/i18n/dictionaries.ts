@@ -70,6 +70,17 @@ interface Dictionary {
     subtitle: string
     back: string
   }
+  optionsPanel: {
+    legend: string
+    frontMatter: { label: string; tip: string }
+    pageBreak: { label: string; tip: string }
+    withImages: { label: string; tip: string }
+    blockquotes: { label: string; tip: string }
+    clusterHeadings: { label: string; tip: string }
+    preserveLineBreaks: { label: string; tip: string }
+    footnotePairing: { label: string; tip: string }
+    maxHeadingLevel: { label: string; tip: string }
+  }
   about: {
     title: string
     intro: string
@@ -221,6 +232,41 @@ const en: Dictionary = {
     title: 'Theme library',
     subtitle: 'The full theme catalogue is on the way. For now, pick a theme from the converter.',
     back: '← Back to Markdown to PDF',
+  },
+  optionsPanel: {
+    legend: 'Conversion options',
+    frontMatter: {
+      label: 'Add front matter',
+      tip: 'Write the title, author, and date as a YAML block at the top of the Markdown.',
+    },
+    pageBreak: {
+      label: 'Mark page breaks',
+      tip: 'Insert a horizontal rule (---) where each PDF page ends.',
+    },
+    withImages: {
+      label: 'Extract images',
+      tip: 'Save embedded images and link them from the Markdown. The hosted demo does not serve the image files back.',
+    },
+    blockquotes: {
+      label: 'Detect block quotes',
+      tip: 'Treat consistently indented passages as block quotes.',
+    },
+    clusterHeadings: {
+      label: 'Detect headings by font size',
+      tip: 'Group font sizes into heading levels and merge headings split across lines.',
+    },
+    preserveLineBreaks: {
+      label: 'Keep line breaks',
+      tip: 'Preserve intentional line breaks, like poetry or addresses, as hard breaks.',
+    },
+    footnotePairing: {
+      label: 'Pair footnotes',
+      tip: 'Link footer footnotes to their reference marks in the text.',
+    },
+    maxHeadingLevel: {
+      label: 'Deepest heading level',
+      tip: "Limit how deep detected headings go (1–6). Applies only when 'Detect headings by font size' is on.",
+    },
   },
   about: {
     title: 'About md-bridge',
@@ -395,6 +441,41 @@ const pt: Dictionary = {
     subtitle: 'O catálogo completo de temas está a caminho. Por enquanto, escolha um tema no conversor.',
     back: '← Voltar para Markdown para PDF',
   },
+  optionsPanel: {
+    legend: 'Opções de conversão',
+    frontMatter: {
+      label: 'Adicionar front matter',
+      tip: 'Escreve título, autor e data como um bloco YAML no topo do Markdown.',
+    },
+    pageBreak: {
+      label: 'Marcar quebras de página',
+      tip: 'Insere uma régua (---) onde cada página do PDF termina.',
+    },
+    withImages: {
+      label: 'Extrair imagens',
+      tip: 'Salva as imagens embutidas e referencia no Markdown. A demo hospedada não devolve os arquivos de imagem.',
+    },
+    blockquotes: {
+      label: 'Detectar citações',
+      tip: 'Trata trechos com recuo consistente como citações.',
+    },
+    clusterHeadings: {
+      label: 'Detectar títulos por tamanho de fonte',
+      tip: 'Agrupa tamanhos de fonte em níveis de título e une títulos quebrados em linhas.',
+    },
+    preserveLineBreaks: {
+      label: 'Manter quebras de linha',
+      tip: 'Preserva quebras de linha intencionais, como poesia ou endereços, como quebras rígidas.',
+    },
+    footnotePairing: {
+      label: 'Parear notas de rodapé',
+      tip: 'Liga as notas de rodapé às marcas de referência no texto.',
+    },
+    maxHeadingLevel: {
+      label: 'Nível de título mais profundo',
+      tip: "Limita a profundidade dos títulos detectados (1–6). Só vale com 'Detectar títulos por tamanho de fonte' ligado.",
+    },
+  },
   about: {
     title: 'Sobre o md-bridge',
     intro:
@@ -567,6 +648,41 @@ const es: Dictionary = {
     title: 'Biblioteca de temas',
     subtitle: 'El catálogo completo de temas está en camino. Por ahora, elige un tema en el conversor.',
     back: '← Volver a Markdown a PDF',
+  },
+  optionsPanel: {
+    legend: 'Opciones de conversión',
+    frontMatter: {
+      label: 'Añadir front matter',
+      tip: 'Escribe el título, el autor y la fecha como un bloque YAML al inicio del Markdown.',
+    },
+    pageBreak: {
+      label: 'Marcar saltos de página',
+      tip: 'Inserta una regla (---) donde termina cada página del PDF.',
+    },
+    withImages: {
+      label: 'Extraer imágenes',
+      tip: 'Guarda las imágenes incrustadas y las enlaza desde el Markdown. La demo alojada no devuelve los archivos de imagen.',
+    },
+    blockquotes: {
+      label: 'Detectar citas',
+      tip: 'Trata los pasajes con sangría constante como citas.',
+    },
+    clusterHeadings: {
+      label: 'Detectar encabezados por tamaño de fuente',
+      tip: 'Agrupa los tamaños de fuente en niveles de encabezado y une encabezados partidos en líneas.',
+    },
+    preserveLineBreaks: {
+      label: 'Conservar saltos de línea',
+      tip: 'Conserva los saltos de línea intencionales, como poesía o direcciones, como saltos duros.',
+    },
+    footnotePairing: {
+      label: 'Emparejar notas al pie',
+      tip: 'Vincula las notas al pie con sus marcas de referencia en el texto.',
+    },
+    maxHeadingLevel: {
+      label: 'Nivel de encabezado más profundo',
+      tip: "Limita la profundidad de los encabezados detectados (1–6). Solo aplica con 'Detectar encabezados por tamaño de fuente' activado.",
+    },
   },
   about: {
     title: 'Acerca de md-bridge',
