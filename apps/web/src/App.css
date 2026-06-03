@@ -135,3 +135,5 @@
 .prose h2 {
   margin-top: var(--s-8);
 }
+
+/* #248 workflow validation probe — throwaway, do not merge. */
