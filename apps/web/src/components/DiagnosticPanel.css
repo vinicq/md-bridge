@@ -63,3 +63,32 @@
   margin: var(--s-2) 0 0;
   padding-left: var(--s-4);
 }
+
+/* Strip layout (#15): a horizontal banner above the source-PDF pane. The pairs
+   sit inline and wrap; the secondary metrics (body size, heading sizes) drop at
+   narrow widths so Pages / Tagged / OCR stay readable. */
+.diag--strip {
+  container-type: inline-size;
+}
+
+.diag--strip .diag__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-4);
+}
+
+.diag--strip .diag__grid > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+
+.diag--strip .diag__warn {
+  margin: var(--s-3) 0 0;
+}
+
+@container (max-width: 520px) {
+  .diag--strip .diag__cell--secondary {
+    display: none;
+  }
+}

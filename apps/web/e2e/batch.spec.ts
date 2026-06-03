@@ -41,7 +41,12 @@ test('Batch: two PDFs queue up, run sequentially, each downloadable', async ({ p
   const firstDownload = list.locator('.batch__row').first().getByRole('button', {
     name: /download \.md/i,
   })
-  const dl = page.waitForEvent('download')
+  // Filter to the .md download: with the source-PDF preview (#15), headless
+  // Chromium (which lacks the inline PDF viewer) emits a download for the
+  // previewed PDF blob, so the page can produce more than one download event.
+  const dl = page.waitForEvent('download', {
+    predicate: (d) => d.suggestedFilename().endsWith('.md'),
+  })
   await firstDownload.click()
   const file = await dl
   expect(file.suggestedFilename()).toMatch(/\.md$/)
@@ -94,7 +99,11 @@ test('Batch: Download all bundles the done items into a single .zip', async ({ p
   await page.getByRole('button', { name: /convert all/i }).click()
   await expect(page.locator('.batch__row--done')).toHaveCount(2, { timeout: 30_000 })
 
-  const dl = page.waitForEvent('download')
+  // Filter to the .zip bundle: the source-PDF preview (#15) can emit a separate
+  // PDF-blob download in headless Chromium (no inline viewer).
+  const dl = page.waitForEvent('download', {
+    predicate: (d) => d.suggestedFilename().endsWith('.zip'),
+  })
   await page.getByRole('button', { name: /download all \(2\)/i }).click()
   const file = await dl
   expect(file.suggestedFilename()).toBe('markdown.zip')

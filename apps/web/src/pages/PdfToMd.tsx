@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { BatchPanel } from '../components/BatchPanel'
+import { ComparePanes } from '../components/ComparePanes'
 import { DropZone } from '../components/DropZone'
-import { MarkdownPreview } from '../components/MarkdownPreview'
 import { OptionsPanel, type OptionField } from '../components/OptionsPanel'
 import { Toast } from '../components/Toast'
 import { useBatchConvert, type BatchItem } from '../hooks/useBatchConvert'
@@ -10,6 +10,7 @@ import { useInspect } from '../hooks/useInspect'
 import { useTranslation } from '../i18n'
 import { convertPdfToMd, type PdfToMdOptions, type PdfToMdResponse } from '../lib/api'
 import { DiagnosticPanel } from '../components/DiagnosticPanel'
+import './PdfToMd.css'
 
 // The API blocks a scanned PDF with 422 ocr_required (it also returns this in
 // the error detail, but the hook keeps only code+message, so the CTA target is
@@ -62,24 +63,42 @@ export function PdfToMd() {
     }),
   })
 
-  // Auto-select the most recently finished item so the preview follows the
-  // run. Derived during render so the user's explicit selection wins when it
-  // is still valid, and the most recent successful conversion shows otherwise.
-  const fallbackId = [...batch.items].reverse().find((it) => it.status === 'done')?.id ?? null
+  // The previewed item drives both panes (#15). The user's explicit selection
+  // wins when valid; otherwise fall back to the most recent finished item, then
+  // to the first item, so the source PDF shows on drop even before converting.
+  const lastDoneId = [...batch.items].reverse().find((it) => it.status === 'done')?.id ?? null
+  const previewFallbackId = lastDoneId ?? batch.items[0]?.id ?? null
   const effectiveSelectedId =
-    selectedId && batch.items.some((it) => it.id === selectedId) ? selectedId : fallbackId
-
-  // Run inspect on the first file so the diagnostic panel still has something
-  // to show (helps the user judge if OCR is needed before kicking off the run).
-  const firstName = batch.items[0]?.file.name
-  useEffect(() => {
-    const first = batch.items[0]?.file
-    if (first) void inspect.run(first)
-    else inspect.reset()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firstName])
+    selectedId && batch.items.some((it) => it.id === selectedId) ? selectedId : previewFallbackId
 
   const selected = batch.items.find((it) => it.id === effectiveSelectedId) ?? null
+
+  // Inspect the previewed file (not always the first), so the diagnostic strip
+  // describes the PDF currently on screen (#15). Keyed on the item id, not the
+  // file name, so two batch items sharing a name (e.g. report.pdf from different
+  // folders) still re-inspect when the selection moves between them.
+  useEffect(() => {
+    if (selected?.file) void inspect.run(selected.file)
+    else inspect.reset()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveSelectedId])
+
+  // Source-PDF blob URL for the preview pane, revoked on item change and on
+  // unmount so a long batch session does not leak object URLs (#15). Creating
+  // and revoking the URL synchronizes with an external resource (the object URL
+  // table); storing it in state is how the iframe learns the new src. Keyed on
+  // the item id (not the file name) so homonymous batch items get distinct URLs.
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  useEffect(() => {
+    const file = selected?.file
+    const url = file ? URL.createObjectURL(file) : null
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPdfUrl(url)
+    return () => {
+      if (url) URL.revokeObjectURL(url)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveSelectedId])
 
   // Path A (issue #139): a pure scan comes back as a 422 ocr_required error.
   // Surface it as a prominent, focusable banner with a "how to enable OCR" CTA
@@ -96,6 +115,12 @@ export function PdfToMd() {
 
   // Path B: a borderline result still converts but extracted little text.
   const selectedWarnings = selected?.result?.warnings ?? []
+
+  // The previewed item itself failed for lack of a text layer: the PDF pane
+  // shows a short placeholder instead of a misleading scanned-image render. The
+  // detailed, focusable alert stays on the output side (no duplicate role=alert).
+  const previewSourceError =
+    selected?.status === 'error' && selected?.error?.code === 'ocr_required'
 
   const handleFiles = (files: File[]) => batch.add(files)
 
@@ -143,14 +168,14 @@ export function PdfToMd() {
   }
 
   return (
-    <div className="page container">
+    <div className="page container pdf2md-page">
       <header className="page__head">
         <h1>{t.pdfToMd.title}</h1>
         <p>{t.pdfToMd.subtitle}</p>
       </header>
 
-      <div className="grid-2">
-        <div className="stack">
+      <div className="pdf2md">
+        <div className="pdf2md__controls stack">
           <DropZone
             accept=".pdf,application/pdf"
             acceptLabel="PDF"
@@ -164,11 +189,6 @@ export function PdfToMd() {
             values={options as Record<string, boolean | string | number>}
             onChange={onOption}
             disabled={batch.running}
-          />
-          <DiagnosticPanel
-            data={inspect.data}
-            loading={inspect.status === 'loading'}
-            error={inspect.status === 'error' ? inspect.error?.message : null}
           />
           <BatchPanel
             items={batch.items}
@@ -187,7 +207,7 @@ export function PdfToMd() {
           />
         </div>
 
-        <div>
+        <div className="pdf2md__output stack">
           {ocrRequiredItem ? (
             <section className="alert alert--error" role="alert" aria-labelledby="ocr-required-h">
               <span className="alert__icon" aria-hidden="true">⚠</span>
@@ -209,11 +229,6 @@ export function PdfToMd() {
             </section>
           ) : null}
 
-          <MarkdownPreview
-            markdown={selected?.result?.md ?? ''}
-            empty={t.pdfToMd.previewEmpty}
-          />
-
           {!ocrRequiredItem && selectedWarnings.length ? (
             <section className="alert alert--warn" role="alert" aria-labelledby="warnings-h">
               <span className="alert__icon" aria-hidden="true">⚠</span>
@@ -234,6 +249,20 @@ export function PdfToMd() {
               </div>
             </section>
           ) : null}
+
+          <DiagnosticPanel
+            layout="strip"
+            data={inspect.data}
+            loading={inspect.status === 'loading'}
+            error={inspect.status === 'error' ? inspect.error?.message : null}
+          />
+
+          <ComparePanes
+            pdfUrl={pdfUrl}
+            pdfName={selected?.file.name ?? null}
+            markdown={selected?.result?.md ?? ''}
+            sourceError={previewSourceError}
+          />
         </div>
       </div>
       {toast && <Toast {...toast} onDismiss={() => setToast(null)} />}

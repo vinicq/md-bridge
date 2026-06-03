@@ -12,7 +12,11 @@ test.beforeEach(async ({ context }) => {
 })
 
 async function downloadHead(page: import('@playwright/test').Page): Promise<string> {
-  const downloadPromise = page.waitForEvent('download')
+  // Filter to the .md download: the source-PDF preview (#15) can emit a PDF-blob
+  // download in headless Chromium, which lacks the inline PDF viewer.
+  const downloadPromise = page.waitForEvent('download', {
+    predicate: (d) => d.suggestedFilename().endsWith('.md'),
+  })
   await page.getByRole('button', { name: /download \.md/i }).click()
   const download = await downloadPromise
   const stream = await download.createReadStream()

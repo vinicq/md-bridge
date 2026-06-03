@@ -6,36 +6,40 @@ interface DiagnosticPanelProps {
   data: InspectPdfResponse | null
   loading?: boolean
   error?: string | null
+  // `card` (default) is the sidebar block; `strip` lays the pairs out inline as
+  // a horizontal banner above the source-PDF pane (#15).
+  layout?: 'card' | 'strip'
 }
 
-export function DiagnosticPanel({ data, loading, error }: DiagnosticPanelProps) {
+export function DiagnosticPanel({ data, loading, error, layout = 'card' }: DiagnosticPanelProps) {
   const { t } = useTranslation()
+  const variant = layout === 'strip' ? ' diag--strip' : ''
   if (error) {
     return (
-      <aside className="diag diag--error" role="alert">
+      <aside className={`diag diag--error${variant}`} role="alert">
         {error}
       </aside>
     )
   }
   if (loading) {
-    return <aside className="diag diag--muted">{t.diag.loading}</aside>
+    return <aside className={`diag diag--muted${variant}`}>{t.diag.loading}</aside>
   }
   if (!data) {
-    return <aside className="diag diag--muted">{t.diag.empty}</aside>
+    return <aside className={`diag diag--muted${variant}`}>{t.diag.empty}</aside>
   }
 
   return (
-    <aside className="diag" aria-label={t.diag.title}>
+    <aside className={`diag${variant}`} aria-label={t.diag.title}>
       <dl className="diag__grid">
         <div>
           <dt>{t.diag.pages}</dt>
           <dd>{data.pages}</dd>
         </div>
-        <div>
+        <div className="diag__cell--secondary">
           <dt>{t.diag.body}</dt>
           <dd>{data.body_size_pt.toFixed(1)} pt</dd>
         </div>
-        <div>
+        <div className="diag__cell--secondary">
           <dt>{t.diag.headings}</dt>
           <dd>
             {data.heading_sizes_pt.length === 0

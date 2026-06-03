@@ -15,6 +15,13 @@ html {
   --theme-ok:   #2e7d4a;
   --theme-warn: #b8860b;
 
+  /* The source-PDF preview pane (#15) stays light in both themes: native PDF
+     viewers do not invert, and filtering the iframe would corrupt embedded
+     images. The frame must read as a border against the page on both sides
+     (WCAG 1.4.11), so the dark theme overrides it to a lighter tone below. */
+  --theme-pdf-surface: #fdfaf3;
+  --theme-pdf-frame:   #d8d2c5;
+
   --theme-accent:       #c8362f;
   --theme-accent-soft: #f1d8d5;
   /* Darker accent for accent-text on the accent-soft tint: #c8362f on
@@ -45,6 +52,10 @@ html[data-theme="dark"] {
   --theme-surface-3: #2a2a2a;     /* borders, dividers           */
   --theme-surface-4: #b0a896;     /* soft text, subtle fg        */
   --theme-surface-5: #f0ebe1;     /* inverse ink (for buttons)   */
+
+  /* PDF surface stays light (inherited from base); the frame goes lighter so it
+     keeps >= 3:1 against the dark page it sits on (#15). */
+  --theme-pdf-frame: #b0a896;
 
   --theme-accent:       #ff8a80;
   --theme-accent-soft: #3a1a1a;
