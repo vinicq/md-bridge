@@ -41,6 +41,32 @@ class PdfToMdOptions(BaseModel):
         return v
 
 
+class RunningContent(BaseModel):
+    """Header or footer text for the three margin-box slots (#243).
+
+    Each slot accepts plain text plus the tokens {{title}}, {{author}}, {{date}}
+    (substituted from front matter, never the print clock) and {{page}},
+    {{pages}} (filled by the renderer). Empty slots render nothing.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    left: str = ""
+    center: str = ""
+    right: str = ""
+
+
+class PageSetupOptions(BaseModel):
+    """Per-request page geometry and running content for Markdown -> PDF (#243)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    page_size: Literal["A4", "Letter", "Legal"] = "A4"
+    margins: Literal["tight", "normal", "loose"] = "normal"
+    header: RunningContent | None = None
+    footer: RunningContent | None = None
+
+
 class MdToPdfOptions(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -50,6 +76,9 @@ class MdToPdfOptions(BaseModel):
     # static enum so a newly added template needs no schema change.
     theme: str = "default"
     lang: SupportedLang = "pt-BR"
+    # Page geometry + running header/footer (#243). `None` preserves the historic
+    # output exactly: A4, 2.5/2/2.5/2 cm margins, no header/footer.
+    page_setup: PageSetupOptions | None = None
 
 
 class MdToDocxOptions(BaseModel):

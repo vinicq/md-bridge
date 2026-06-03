@@ -50,8 +50,19 @@ def render_md_bytes(
 
         md_path.write_text(md_text, encoding="utf-8")
 
+        # Map the page-setup options onto the plain dict the converter expects.
+        # None stays None, which the converter treats as the historic defaults.
+        page_setup = None
+        if opts.page_setup is not None:
+            page_setup = {
+                "page_size": opts.page_setup.page_size,
+                "margins": opts.page_setup.margins,
+                "header": opts.page_setup.header.model_dump() if opts.page_setup.header else None,
+                "footer": opts.page_setup.footer.model_dump() if opts.page_setup.footer else None,
+            }
+
         try:
-            mod.convert(md_path, pdf_path, css_paths, lang=opts.lang)
+            mod.convert(md_path, pdf_path, css_paths, lang=opts.lang, page_setup=page_setup)
         except Exception as exc:
             raise ApiError(
                 500,

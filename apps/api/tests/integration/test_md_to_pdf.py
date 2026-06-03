@@ -88,3 +88,82 @@ def test_md_to_pdf_survives_yaml_bomb_front_matter(client, chromium_ready):
     )
     assert resp.status_code == 200, resp.text
     assert resp.content[:5] == b"%PDF-"
+
+
+# --- #243: page setup (page size, margins, running header/footer) -----------
+
+PT = 72.0 / 2.54  # points per cm; PyMuPDF page.rect is in points
+PAGE_PT = {"A4": (595, 842), "Letter": (612, 792), "Legal": (612, 1008)}
+
+
+def _render(client, md: bytes, options: dict | None = None):
+    import json
+
+    data = {"options": json.dumps(options)} if options else None
+    resp = client.post("/api/md-to-pdf", files={"file": ("doc.md", md, "text/markdown")}, data=data)
+    return resp
+
+
+def test_page_setup_letter_changes_the_page_dimensions(client, chromium_ready):
+    import fitz
+
+    resp = _render(client, SAMPLE_MD, {"page_setup": {"page_size": "Letter"}})
+    assert resp.status_code == 200, resp.text
+    doc = fitz.open(stream=resp.content, filetype="pdf")
+    w, h = doc[0].rect.width, doc[0].rect.height
+    assert abs(w - PAGE_PT["Letter"][0]) < 2 and abs(h - PAGE_PT["Letter"][1]) < 2, (w, h)
+
+
+def test_default_page_is_a4(client, chromium_ready):
+    import fitz
+
+    resp = _render(client, SAMPLE_MD)
+    doc = fitz.open(stream=resp.content, filetype="pdf")
+    w, h = doc[0].rect.width, doc[0].rect.height
+    assert abs(w - PAGE_PT["A4"][0]) < 2 and abs(h - PAGE_PT["A4"][1]) < 2, (w, h)
+
+
+def test_footer_page_number_renders_in_the_output(client, chromium_ready):
+    import fitz
+
+    resp = _render(client, SAMPLE_MD, {"page_setup": {"footer": {"center": "{{page}} / {{pages}}"}}})
+    assert resp.status_code == 200, resp.text
+    doc = fitz.open(stream=resp.content, filetype="pdf")
+    text = doc[0].get_text()
+    # Chromium fills pageNumber/totalPages: page 1 of 1 -> "1 / 1" in the footer band.
+    assert "1 / 1" in text or "1/1" in text.replace(" ", ""), text[-200:]
+
+
+def test_header_substitutes_front_matter_title(client, chromium_ready):
+    import fitz
+
+    md = b"""---\ntitle: "Quarterly Report"\n---\n\n# Body\n\nText.\n"""
+    resp = _render(client, md, {"page_setup": {"header": {"left": "{{title}}"}}})
+    assert resp.status_code == 200, resp.text
+    doc = fitz.open(stream=resp.content, filetype="pdf")
+    assert "Quarterly Report" in doc[0].get_text()
+
+
+def test_page_setup_render_is_content_deterministic(client, chromium_ready):
+    # page.pdf embeds a creation timestamp so bytes are not stable; assert the
+    # content is: same page count, dimensions, and text across two runs (#243).
+    import fitz
+
+    opts = {"page_setup": {"page_size": "Letter", "footer": {"center": "{{page}}"}}}
+    a = _render(client, SAMPLE_MD, opts)
+    b = _render(client, SAMPLE_MD, opts)
+    da, db = fitz.open(stream=a.content, filetype="pdf"), fitz.open(stream=b.content, filetype="pdf")
+    assert da.page_count == db.page_count
+    assert [p.rect.width for p in da] == [p.rect.width for p in db]
+    assert [p.get_text() for p in da] == [p.get_text() for p in db]
+
+
+def test_invalid_page_size_is_422(client):
+    # Outside the Literal -> schema rejects before any render; no Chromium needed.
+    resp = _render(client, SAMPLE_MD, {"page_setup": {"page_size": "A3"}})
+    assert resp.status_code == 422, resp.text
+
+
+def test_unknown_page_setup_field_is_422(client):
+    resp = _render(client, SAMPLE_MD, {"page_setup": {"bogus": 1}})
+    assert resp.status_code == 422, resp.text
