@@ -11,6 +11,8 @@ export interface ThemePickerProps {
   /** "Browse all themes" link text and target (F2, may be a placeholder route). */
   browseLabel: string
   browseHref: string
+  /** Disable selection (e.g. while a conversion is running). */
+  disabled?: boolean
 }
 
 // A swatch hint driven by the theme's typographic family rather than a live
@@ -26,9 +28,10 @@ export function ThemePicker({
   label,
   browseLabel,
   browseHref,
+  disabled = false,
 }: ThemePickerProps) {
   return (
-    <fieldset className="theme-picker">
+    <fieldset className="theme-picker" disabled={disabled}>
       <legend className="theme-picker__legend">{label}</legend>
 
       <div className="theme-picker__grid">

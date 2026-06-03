@@ -8,6 +8,16 @@
   container-type: inline-size;
 }
 
+/* While a conversion runs the picker is locked so a mid-run switch cannot be
+   silently dropped; dim it and block pointer interaction. */
+.theme-picker:disabled {
+  opacity: 0.6;
+}
+
+.theme-picker:disabled .theme-tile {
+  cursor: not-allowed;
+}
+
 .theme-picker__legend {
   padding: 0;
   margin-bottom: var(--s-3);

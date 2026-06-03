@@ -9,6 +9,7 @@ import { Home } from './pages/Home'
 import { LanguageWorkshop } from './pages/LanguageWorkshop'
 import { MdToPdf } from './pages/MdToPdf'
 import { PdfToMd } from './pages/PdfToMd'
+import { Themes } from './pages/Themes'
 
 const router = createBrowserRouter([
   {
@@ -19,6 +20,7 @@ const router = createBrowserRouter([
       { path: 'convert/pdf-to-md', Component: PdfToMd },
       { path: 'convert/md-to-pdf', Component: MdToPdf },
       { path: 'about', Component: About },
+      { path: 'themes', Component: Themes },
       { path: 'contribute/i18n', Component: LanguageWorkshop },
     ],
   },

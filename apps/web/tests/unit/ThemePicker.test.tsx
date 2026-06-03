@@ -10,7 +10,7 @@ const THEMES: Theme[] = [
   { slug: 'business', name: 'Business', description: 'Accent.', family: 'sans' },
 ]
 
-function renderPicker(value: string, onChange = vi.fn()) {
+function renderPicker(value: string, onChange = vi.fn(), disabled = false) {
   render(
     <ThemePicker
       themes={THEMES}
@@ -19,6 +19,7 @@ function renderPicker(value: string, onChange = vi.fn()) {
       label="Theme"
       browseLabel="Browse all themes →"
       browseHref="/themes"
+      disabled={disabled}
     />,
   )
   return onChange
@@ -44,6 +45,14 @@ describe('ThemePicker', () => {
     const onChange = renderPicker('default')
     await userEvent.click(screen.getByRole('radio', { name: /business/i }))
     expect(onChange).toHaveBeenCalledWith('business')
+  })
+
+  it('locks selection when disabled (e.g. while converting)', async () => {
+    const onChange = renderPicker('default', vi.fn(), true)
+    const business = screen.getByRole('radio', { name: /business/i })
+    expect(business).toBeDisabled()
+    await userEvent.click(business)
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('points the browse link at the deep library route', () => {

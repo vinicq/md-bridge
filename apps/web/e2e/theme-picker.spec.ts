@@ -51,4 +51,10 @@ test('theme picker lists the API themes, persists the choice, and re-renders on 
   // The choice survives a reload.
   await page.reload()
   await expect(page.getByRole('radio', { name: /academic/i })).toBeChecked()
+
+  // The "Browse all themes" link resolves to the placeholder library page,
+  // not a 404 (the F2 deep catalogue is a future issue).
+  await page.getByRole('link', { name: /browse all themes/i }).click()
+  await expect(page).toHaveURL(/\/themes$/)
+  await expect(page.getByRole('heading', { name: /theme library/i })).toBeVisible()
 })

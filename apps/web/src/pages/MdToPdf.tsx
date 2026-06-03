@@ -124,6 +124,7 @@ export function MdToPdf() {
         label={t.themePicker.label}
         browseLabel={t.themePicker.browse}
         browseHref="/themes"
+        disabled={batch.running}
       />
 
       <div className="grid-2">
