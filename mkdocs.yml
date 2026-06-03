@@ -61,6 +61,26 @@ nav:
 
 plugins:
   - search
+  # Trilingual docs (#29). Suffix structure: a page translates by adding a
+  # `<name>.<locale>.md` sibling (e.g. getting-started.pt.md); pages without a
+  # translation fall back to English, so the site never 404s a language. The
+  # header gets a language selector from the `name` fields below.
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: pt
+          name: Português
+          build: true
+        - locale: es
+          name: Español
+          build: true
 
 markdown_extensions:
   - admonition

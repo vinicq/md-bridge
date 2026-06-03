@@ -45,7 +45,9 @@ jobs:
           cache: pip
 
       - name: Install MkDocs Material
-        run: python -m pip install --quiet 'mkdocs-material>=9.5'
+        # mkdocs-static-i18n powers the trilingual docs (#29): EN at the root,
+        # PT under /pt/, ES under /es/, with a header language selector.
+        run: python -m pip install --quiet 'mkdocs-material>=9.5' 'mkdocs-static-i18n>=1.2'
 
       - name: Stage top-level docs inside the docs tree
         # MkDocs reads from docs/ only, so we mirror the canonical sources
