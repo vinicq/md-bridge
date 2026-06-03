@@ -1,11 +1,58 @@
-/* business — placeholder overlay over default.css.
+/* business — sans-serif, branded accent, strong hierarchy (#22).
  *
- * The renderer stacks this on top of default.css, so this file only carries the
- * overrides that distinguish the theme. This is a minimal placeholder that sets
- * the family's signature (a clean sans-serif body for reports); the full
- * typographic system is tracked in #22. Keep the stacking contract: never
- * restate default.css here. */
+ * Stacks on top of default.css; only the identity overrides live here. Override
+ * a single token (e.g. the accent) by redefining it in a stylesheet stacked
+ * after this one.
+ *
+ * Renderer note: this converter prints through headless Chromium, which does
+ * not render `@page` margin-box running headers/footers. The "header strip" is
+ * therefore a static title band at the top of the document (the h1 block), not
+ * a repeating page header, and a running footer page number is not expressible
+ * yet. Tracked for a converter follow-up (#243). */
+
+:root {
+  --business-accent: #c8362f;
+  --business-ink: #1a1a1a;
+  --business-body-font: "Helvetica Neue", "Segoe UI", Arial, "Liberation Sans", sans-serif;
+}
 
 body {
-  font-family: "Helvetica Neue", Arial, "Segoe UI", sans-serif;
+  font-family: var(--business-body-font);
+  color: var(--business-ink);
+  line-height: 1.5;
+  text-align: left;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--business-body-font);
+}
+
+/* Title band: a solid accent rule under a left-aligned h1, reading as a memo
+   masthead. (A repeating page header needs renderer support; see the note.) */
+h1 {
+  color: var(--business-accent);
+  text-align: left;
+  border-bottom: 3px solid var(--business-accent);
+  padding-bottom: .3em;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  color: var(--business-ink);
+  border-left: 4px solid var(--business-accent);
+  padding-left: .5em;
+}
+
+a { color: var(--business-accent); }
+
+th {
+  background: var(--business-accent);
+  color: #ffffff;
+  border-color: var(--business-accent);
+}
+
+blockquote {
+  border-left-color: var(--business-accent);
+  background: #fbf0ef;
+  color: #444;
 }

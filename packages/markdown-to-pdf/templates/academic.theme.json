@@ -1,6 +1,6 @@
 {
   "name": "Academic",
-  "description": "Serif, paper-like layout for syllabi, papers, and reports. Placeholder design; full styling tracked in #22.",
-  "family": "academic",
-  "version": "0.1.0"
+  "description": "Serif, justified body with decimal section numbering. Suits papers, syllabi, and reports.",
+  "family": "serif",
+  "version": "1.0.0"
 }

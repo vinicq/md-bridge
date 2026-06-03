@@ -15,6 +15,19 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Added
+
+- **Theme system for Markdown → PDF.** A request can now pick a visual
+  theme through `options.theme`; `GET /api/themes` lists the registered
+  themes and `GET /api/themes/{slug}/css` serves a theme's stylesheet.
+  Three themes ship alongside the neutral `default`: **academic** (serif,
+  justified body, decimal section numbering), **business** (sans-serif,
+  red accent masthead and table headers), and **minimal** (low-chrome
+  draft layout, rule-only tables). Each theme is a CSS overlay stacked on
+  `default.css`, so it carries only its own identity and inherits a
+  complete base layout. An unknown slug returns `400 unknown_theme`.
+  (#23 registry + endpoints, #22 CSS templates)
+
 ## [0.3.0] — 2026-06-01
 
 Minor release. Two converter behaviour changes lead the headline: the OCR
