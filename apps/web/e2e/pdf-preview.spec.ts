@@ -3,7 +3,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-const ISTQB = path.resolve(here, '..', '..', 'api', 'tests', 'fixtures', 'istqb-ctal-ta-syllabus-en.pdf')
+const FIXTURES = path.resolve(here, '..', '..', 'api', 'tests', 'fixtures')
+const ISTQB = path.join(FIXTURES, 'istqb-ctal-ta-syllabus-en.pdf') // 77 pages
+const CODE_SAMPLE = path.join(FIXTURES, 'code-sample.pdf') // 1 page
 
 test.beforeEach(async ({ context }) => {
   await context.addInitScript(() => {
@@ -34,6 +36,27 @@ test('desktop: source PDF and converted Markdown show side by side', async ({ pa
   await expect(page.locator('.compare__pane--md h1, .compare__pane--md h2').first()).toBeVisible({
     timeout: 60_000,
   })
+})
+
+test('the previewed item drives the diagnostic strip (not always the first)', async ({ page }) => {
+  // Regression for the #15 behavior change: inspect runs on the previewed item,
+  // not items[0]. Drop two PDFs with different page counts; selecting the second
+  // must move the strip to describe it.
+  await page.setViewportSize({ width: 1280, height: 1000 })
+  await page.goto('/convert/pdf-to-md')
+  await page.locator('input[type="file"]').setInputFiles([ISTQB, CODE_SAMPLE])
+
+  // The Pages value in the strip is the precise signal: ISTQB is 77, the sample is 1.
+  const pagesValue = page
+    .locator('.diag--strip .diag__grid > div')
+    .filter({ hasText: /pages/i })
+    .locator('dd')
+  // The first item (ISTQB, 77 pages) previews by default.
+  await expect(pagesValue).toHaveText('77', { timeout: 30_000 })
+
+  // Selecting the 1-page sample moves the strip to it.
+  await page.locator('.batch__file[title="code-sample.pdf"]').click()
+  await expect(pagesValue).toHaveText('1', { timeout: 30_000 })
 })
 
 test('mobile: tabs swap between the PDF and Markdown panes', async ({ page }) => {

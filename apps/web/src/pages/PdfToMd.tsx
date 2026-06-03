@@ -74,20 +74,20 @@ export function PdfToMd() {
   const selected = batch.items.find((it) => it.id === effectiveSelectedId) ?? null
 
   // Inspect the previewed file (not always the first), so the diagnostic strip
-  // describes the PDF currently on screen (#15).
-  const selectedName = selected?.file.name
+  // describes the PDF currently on screen (#15). Keyed on the item id, not the
+  // file name, so two batch items sharing a name (e.g. report.pdf from different
+  // folders) still re-inspect when the selection moves between them.
   useEffect(() => {
     if (selected?.file) void inspect.run(selected.file)
     else inspect.reset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedName])
+  }, [effectiveSelectedId])
 
   // Source-PDF blob URL for the preview pane, revoked on item change and on
   // unmount so a long batch session does not leak object URLs (#15). Creating
   // and revoking the URL synchronizes with an external resource (the object URL
   // table); storing it in state is how the iframe learns the new src. Keyed on
-  // the file name, not the File object, so a re-render with an equal selection
-  // does not churn the URL.
+  // the item id (not the file name) so homonymous batch items get distinct URLs.
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   useEffect(() => {
     const file = selected?.file
@@ -98,7 +98,7 @@ export function PdfToMd() {
       if (url) URL.revokeObjectURL(url)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedName])
+  }, [effectiveSelectedId])
 
   // Path A (issue #139): a pure scan comes back as a 422 ocr_required error.
   // Surface it as a prominent, focusable banner with a "how to enable OCR" CTA
