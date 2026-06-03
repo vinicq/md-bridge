@@ -55,10 +55,10 @@ jobs:
           PR_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
         run: |
-          data=$(gh pr view "$PR_NUMBER" -R "$REPO" \
-            --json headRefName,headRepository,headRepositoryOwner,isCrossRepository)
-          cross=$(echo "$data" | jq -r '.isCrossRepository')
-          ref=$(echo "$data" | jq -r '.headRefName')
+          # Use gh's built-in --jq (no external jq; the Playwright image ships
+          # neither gh nor jq, and relying on one fewer binary is more robust).
+          cross=$(gh pr view "$PR_NUMBER" -R "$REPO" --json isCrossRepository --jq '.isCrossRepository')
+          ref=$(gh pr view "$PR_NUMBER" -R "$REPO" --json headRefName --jq '.headRefName')
           if [ "$cross" = "true" ]; then
             gh pr comment "$PR_NUMBER" -R "$REPO" --body \
               "\`/update-snapshots\` cannot push to a fork branch from CI. Regenerate the baselines locally in the Linux Playwright container (\`npx playwright test --project=visual --update-snapshots\`) and push them, or ask a maintainer to."
