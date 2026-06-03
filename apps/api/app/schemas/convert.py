@@ -52,11 +52,30 @@ class MdToPdfOptions(BaseModel):
     lang: SupportedLang = "pt-BR"
 
 
+class MdToDocxOptions(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The DOCX converter takes no tunables yet; the options envelope is kept for
+    # parity with the other pairs and so future fields are non-breaking.
+    lang: SupportedLang = "pt-BR"
+
+
 class ThemeInfo(BaseModel):
     slug: str
     name: str
     description: str
     family: str
+
+
+class FormatInfo(BaseModel):
+    slug: str
+    label: str
+    source: str
+    target: str
+    input_mime: str
+    output_mime: str
+    status: str
+    endpoint: str | None = None
 
 
 class FrontMatter(BaseModel):

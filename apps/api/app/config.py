@@ -11,6 +11,7 @@ PDF_TO_MD_SCRIPT = PACKAGES_DIR / "pdf-to-markdown" / "scripts" / "convert.py"
 PDF_INSPECT_SCRIPT = PACKAGES_DIR / "pdf-to-markdown" / "scripts" / "inspect_pdf.py"
 MD_TO_PDF_SCRIPT = PACKAGES_DIR / "markdown-to-pdf" / "scripts" / "convert.py"
 MD_TO_PDF_TEMPLATES = PACKAGES_DIR / "markdown-to-pdf" / "templates"
+MD_TO_DOCX_SCRIPT = PACKAGES_DIR / "markdown-to-docx" / "scripts" / "convert.py"
 
 # Upload limits
 MAX_UPLOAD_BYTES = 500 * 1024 * 1024  # 500 MB

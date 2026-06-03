@@ -13,7 +13,12 @@ from functools import lru_cache
 from pathlib import Path
 from types import ModuleType
 
-from app.config import MD_TO_PDF_SCRIPT, PDF_INSPECT_SCRIPT, PDF_TO_MD_SCRIPT
+from app.config import (
+    MD_TO_DOCX_SCRIPT,
+    MD_TO_PDF_SCRIPT,
+    PDF_INSPECT_SCRIPT,
+    PDF_TO_MD_SCRIPT,
+)
 
 _STDIO_REBIND_RE = re.compile(
     r"^[ \t]*sys\.std(?:out|err)[ \t]*=[ \t]*io\.TextIOWrapper\(sys\.std(?:out|err)\.buffer.*$",
@@ -65,3 +70,8 @@ def md_to_pdf_module() -> ModuleType:
 @lru_cache(maxsize=1)
 def pdf_inspect_module() -> ModuleType:
     return _load("md_bridge_pkg_pdf_inspect", PDF_INSPECT_SCRIPT)
+
+
+@lru_cache(maxsize=1)
+def md_to_docx_module() -> ModuleType:
+    return _load("md_bridge_pkg_md_to_docx", MD_TO_DOCX_SCRIPT)
