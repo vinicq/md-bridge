@@ -59,6 +59,12 @@ interface Dictionary {
     pastedFilename: string
     success: string
   }
+  themePicker: {
+    // Group label above the theme tiles.
+    label: string
+    // Link to the deep theme library (F2); target may be a placeholder route.
+    browse: string
+  }
   about: {
     title: string
     intro: string
@@ -201,6 +207,10 @@ const en: Dictionary = {
     previewIframeTitle: 'Generated PDF preview',
     pastedFilename: 'pasted.md',
     success: 'PDF ready.',
+  },
+  themePicker: {
+    label: 'Theme',
+    browse: 'Browse all themes →',
   },
   about: {
     title: 'About md-bridge',
@@ -366,6 +376,10 @@ const pt: Dictionary = {
     pastedFilename: 'colado.md',
     success: 'PDF pronto.',
   },
+  themePicker: {
+    label: 'Tema',
+    browse: 'Ver todos os temas →',
+  },
   about: {
     title: 'Sobre o md-bridge',
     intro:
@@ -529,6 +543,10 @@ const es: Dictionary = {
     previewIframeTitle: 'Vista previa del PDF generado',
     pastedFilename: 'pegado.md',
     success: 'PDF listo.',
+  },
+  themePicker: {
+    label: 'Tema',
+    browse: 'Ver todos los temas →',
   },
   about: {
     title: 'Acerca de md-bridge',
