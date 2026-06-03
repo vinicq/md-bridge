@@ -1,20 +1,11 @@
-/* WeasyPrint base theme - neutral, legible, A4 */
-
-@page {
-  size: A4;
-  margin: 2.5cm 2cm;
-
-  @bottom-center {
-    content: counter(page) " / " counter(pages);
-    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    font-size: 9pt;
-    color: #888;
-  }
-}
-
-@page:first {
-  @bottom-center { content: none; }
-}
+/* Chromium base theme - neutral, legible, A4.
+ *
+ * Page geometry (size, margins) and running headers/footers are driven through
+ * the renderer's page.pdf() arguments, not CSS: headless Chromium ignores
+ * `@page` margins and does not render `@page` margin-box running content. A
+ * former `@page { @bottom-center { counter(page) } }` block lived here and was
+ * a silent no-op; it was removed in #243. Per-request page size, margins, and
+ * header/footer now come from options.page_setup. */
 
 html { font-size: 11pt; }
 

@@ -125,8 +125,125 @@ def build_html(body_html: str, fm: dict, lang: str, css_blocks: list[str]) -> st
     )
 
 
-def render_to_pdf(html: str, pdf_path: Path, base_url: Path) -> None:
+# Page-box presets and running-content engine (#243). Chromium ignores CSS
+# @page margins and margin-box running headers/footers, so page geometry and
+# headers/footers are driven through page.pdf() arguments instead.
+
+# Margin presets in cm. `normal` reproduces the historic hardcoded margin, so
+# the default render is byte-for-byte unchanged.
+MARGIN_PRESETS = {
+    "tight": {"top": "1.5cm", "right": "1.5cm", "bottom": "1.5cm", "left": "1.5cm"},
+    "normal": {"top": "2.5cm", "right": "2cm", "bottom": "2.5cm", "left": "2cm"},
+    "loose": {"top": "3.5cm", "right": "3cm", "bottom": "3.5cm", "left": "3cm"},
+}
+_DEFAULT_MARGIN = MARGIN_PRESETS["normal"]
+# A running header/footer renders inside the top/bottom margin; too small a
+# margin clips it silently. Clamp the relevant side to this floor when content
+# is present (Chromium gives the template no room otherwise).
+_RUNNING_MARGIN_FLOOR_CM = 1.5
+
+PAGE_SIZES = ("A4", "Letter", "Legal")
+
+
+def _cm_value(margin: str) -> float:
+    return float(margin.rstrip("cm")) if margin.endswith("cm") else float(margin)
+
+
+def _author_text(value: object) -> str:
+    # Front matter `author` may be a mapping ({name, email}); prefer the name.
+    if isinstance(value, dict):
+        return str(value.get("name") or "")
+    return "" if value is None else str(value)
+
+
+def build_running_template(slots: dict, fm: dict) -> str | None:
+    """Build a Chromium header/footer template from the three slots, or None.
+
+    Tokens: {{title}}/{{author}}/{{date}} are substituted server-side from the
+    front matter (escaped), so the print clock is never used; {{page}}/{{pages}}
+    become Chromium's pageNumber/totalPages spans, filled at render time. The
+    native `.date`/`.title`/`.url` classes are deliberately never emitted — they
+    would pull the non-deterministic print date.
+    """
+    left = (slots or {}).get("left", "") or ""
+    center = (slots or {}).get("center", "") or ""
+    right = (slots or {}).get("right", "") or ""
+    if not (left or center or right):
+        return None
+
+    subs = {
+        "{{title}}": escape_html(str(fm.get("title") or "")),
+        "{{author}}": escape_html(_author_text(fm.get("author"))),
+        "{{date}}": escape_html(str(fm.get("date") or "")),
+        "{{page}}": '<span class="pageNumber"></span>',
+        "{{pages}}": '<span class="totalPages"></span>',
+    }
+
+    def render(text: str) -> str:
+        out = escape_html(text)
+        # Re-expand the token placeholders after escaping the literal text, so a
+        # token's HTML (the spans) is not double-escaped.
+        for token, value in subs.items():
+            out = out.replace(escape_html(token), value)
+        return out
+
+    return (
+        '<div style="font-size:9px;width:100%;color:#888;'
+        'font-family:Arial,Helvetica,sans-serif;padding:0 2cm;'
+        'display:flex;justify-content:space-between;">'
+        f'<span style="text-align:left;">{render(left)}</span>'
+        f'<span style="text-align:center;">{render(center)}</span>'
+        f'<span style="text-align:right;">{render(right)}</span>'
+        '</div>'
+    )
+
+
+def resolve_pdf_kwargs(page_setup: dict | None, fm: dict) -> dict:
+    """Map the page-setup options onto page.pdf() arguments.
+
+    `None` reproduces the historic call exactly (A4, normal margins, no
+    header/footer), so existing renders and goldens do not move. Pure function:
+    no Chromium, unit-tested.
+    """
+    if not page_setup:
+        return {
+            "format": "A4",
+            "print_background": True,
+            "margin": dict(_DEFAULT_MARGIN),
+            "prefer_css_page_size": True,
+        }
+
+    page_size = page_setup.get("page_size", "A4")
+    if page_size not in PAGE_SIZES:
+        page_size = "A4"
+    margin = dict(MARGIN_PRESETS.get(page_setup.get("margins", "normal"), _DEFAULT_MARGIN))
+
+    header_html = build_running_template(page_setup.get("header") or {}, fm)
+    footer_html = build_running_template(page_setup.get("footer") or {}, fm)
+
+    # Clamp the margin side that hosts running content so Chromium does not clip
+    # it. Silent + correct: the PDF is still valid, just with room for the band.
+    if header_html and _cm_value(margin["top"]) < _RUNNING_MARGIN_FLOOR_CM:
+        margin["top"] = f"{_RUNNING_MARGIN_FLOOR_CM}cm"
+    if footer_html and _cm_value(margin["bottom"]) < _RUNNING_MARGIN_FLOOR_CM:
+        margin["bottom"] = f"{_RUNNING_MARGIN_FLOOR_CM}cm"
+
+    kwargs: dict = {
+        "format": page_size,
+        "print_background": True,
+        "margin": margin,
+        "prefer_css_page_size": True,
+    }
+    if header_html or footer_html:
+        kwargs["display_header_footer"] = True
+        kwargs["header_template"] = header_html or "<span></span>"
+        kwargs["footer_template"] = footer_html or "<span></span>"
+    return kwargs
+
+
+def render_to_pdf(html: str, pdf_path: Path, base_url: Path, pdf_kwargs: dict | None = None) -> None:
     base_uri = base_url.resolve().as_uri() + "/"
+    kwargs = pdf_kwargs if pdf_kwargs is not None else resolve_pdf_kwargs(None, {})
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
@@ -138,18 +255,18 @@ def render_to_pdf(html: str, pdf_path: Path, base_url: Path) -> None:
                 " if (!b) { b = document.createElement('base'); document.head.prepend(b); } b.href = href; }",
                 base_uri,
             )
-            page.pdf(
-                path=str(pdf_path),
-                format="A4",
-                print_background=True,
-                margin={"top": "2.5cm", "right": "2cm", "bottom": "2.5cm", "left": "2cm"},
-                prefer_css_page_size=True,
-            )
+            page.pdf(path=str(pdf_path), **kwargs)
         finally:
             browser.close()
 
 
-def convert(md_path: Path, pdf_path: Path, css_paths: list[Path], lang: str = "pt-BR") -> None:
+def convert(
+    md_path: Path,
+    pdf_path: Path,
+    css_paths: list[Path],
+    lang: str = "pt-BR",
+    page_setup: dict | None = None,
+) -> None:
     md_text = md_path.read_text(encoding="utf-8")
     fm, body_md = split_front_matter(md_text)
     body_html = markdown.markdown(body_md, extensions=MD_EXTENSIONS, output_format="html5")
@@ -162,7 +279,11 @@ def convert(md_path: Path, pdf_path: Path, css_paths: list[Path], lang: str = "p
             print(f"[warn] CSS not found: {css}", file=sys.stderr)
 
     html = build_html(body_html, fm, lang, css_blocks)
-    render_to_pdf(html, pdf_path, base_url=md_path.parent)
+    # Token substitution for header/footer reads the same front matter, so the
+    # print clock is never consulted (#243). page_setup=None keeps the historic
+    # page geometry exactly.
+    pdf_kwargs = resolve_pdf_kwargs(page_setup, fm)
+    render_to_pdf(html, pdf_path, base_url=md_path.parent, pdf_kwargs=pdf_kwargs)
     print(f"Wrote {pdf_path}")
 
 
