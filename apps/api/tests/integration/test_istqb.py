@@ -18,7 +18,7 @@ def test_istqb_pdf_inspects(client, istqb_pdf: Path):
     body = resp.json()
     assert body["pages"] >= 10, "ISTQB syllabi are long; expected at least 10 pages"
     assert body["body_size_pt"] > 0
-    assert body["fonts"], "syllabus must declare at least one font"
+    assert len(body["fonts"]) >= 1, "syllabus must declare at least one font"
     assert body["needs_ocr"] is False, "ISTQB syllabi are born digital, not scanned"
 
 

@@ -51,5 +51,8 @@ def _pdf_with_code_blocks() -> bytes:
 )
 def test_each_language_opens_its_fence():
     md = convert_pdf_bytes(_pdf_with_code_blocks(), filename="snippets.pdf").md
+    # A check always runs, even if SAMPLES were ever emptied: the loop alone
+    # would pass vacuously otherwise.
+    assert md, "conversion produced no markdown"
     for _, lang in SAMPLES:
         assert f"```{lang}" in md, f"expected a ```{lang} fence in:\n{md}"

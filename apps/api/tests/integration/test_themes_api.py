@@ -42,7 +42,9 @@ def test_get_theme_css_returns_raw_css(client):
     resp = client.get("/api/themes/default/css")
     assert resp.status_code == 200, resp.text
     assert resp.headers["content-type"].startswith("text/css")
-    assert resp.text.strip(), "css should not be empty"
+    css = resp.text
+    assert css.strip(), "css should not be empty"
+    assert "{" in css and "}" in css, "expected CSS rules, not arbitrary text"
 
 
 def test_get_theme_css_unknown_slug_returns_400(client):

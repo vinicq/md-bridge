@@ -329,8 +329,8 @@ def test_mono_ratio_full_mono(mod):
 def test_mono_ratio_below_threshold_when_prose_dominates(mod):
     spans = [_span(mod, "a", font="Courier"), _span(mod, "bcdefghij", font="Body")]
     block = _multi_block(mod, [spans])
-    # 1 mono / 10 total = 0.1
-    assert mod.mono_ratio(block) == 0.1
+    # 1 mono / 10 total = 0.1 (not exactly representable in float; use approx)
+    assert mod.mono_ratio(block) == pytest.approx(0.1)
 
 
 def test_mono_ratio_zero_for_no_mono(mod):
