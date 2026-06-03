@@ -251,7 +251,10 @@ def _deterministic_bytes(doc: Document) -> bytes:
     doc.save(raw)
     src = zipfile.ZipFile(io.BytesIO(raw.getvalue()))
     out = io.BytesIO()
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as dst:
+    # compresslevel is pinned (not left to the zlib default) so the bytes do not
+    # depend on the platform's zlib build or a future CPython default change.
+    # Level 6 is the historical default and matches the committed golden.
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as dst:
         for info in src.infolist():  # preserves member order
             new = zipfile.ZipInfo(info.filename, date_time=_FIXED_ZIP_DATE)
             new.compress_type = info.compress_type

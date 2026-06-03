@@ -18,8 +18,10 @@ dependencies = [
     "markdown>=3.8.1",
     "playwright>=1.49",
     # python-docx renders Markdown -> DOCX (#60). Pure Python, no native
-    # dependency, so it adds nothing to the Docker image beyond the wheel.
-    "python-docx>=1.1",
+    # dependency, so it adds nothing to the Docker image beyond the wheel. Pinned
+    # below the next major because the committed golden depends on its XML output;
+    # a minor bump is regenerated via --update-golden, a major is reviewed.
+    "python-docx>=1.2,<2",
     # markdown-to-pdf parses YAML front matter with safe_load (#150). PyYAML is
     # already in the tree transitively; declared directly so the runtime image
     # carries it rather than relying on an indirect pin.

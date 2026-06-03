@@ -67,6 +67,17 @@ def test_md_to_docx_rejects_non_markdown(client):
     assert resp.json()["error"]["code"] == "wrong_file_type"
 
 
+def test_shipped_format_endpoints_are_real_routes(client):
+    # Guards against drift: every shipped pair's declared endpoint must be a
+    # route actually registered on the app, so a rename can't silently lie.
+    registered = {route.path for route in client.app.routes}
+    resp = client.get("/api/formats")
+    assert resp.status_code == 200
+    for fmt in resp.json():
+        if fmt["status"] == "shipped":
+            assert fmt["endpoint"] in registered, f"{fmt['slug']} endpoint missing: {fmt['endpoint']}"
+
+
 def test_get_formats_lists_pairs_with_status_and_endpoints(client):
     resp = client.get("/api/formats")
     assert resp.status_code == 200

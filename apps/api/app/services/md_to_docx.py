@@ -20,6 +20,8 @@ def render_md_to_docx_bytes(
     _ = options or MdToDocxOptions()  # reserved; converter takes no tunables yet
     mod = md_to_docx_module()
 
+    # Validate UTF-8 up front so a decode failure surfaces as 400, not as a 500
+    # swallowed by the catch-all below.
     try:
         md_bytes.decode("utf-8")
     except UnicodeDecodeError as exc:
