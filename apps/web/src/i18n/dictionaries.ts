@@ -33,6 +33,16 @@ interface Dictionary {
     download: string
     previewEmpty: string
     success: string
+    // Source-PDF preview pane (#15). `sourceIframeTitle` is the iframe's
+    // accessible name and takes the file name.
+    sourceIframeTitle: (name: string) => string
+    sourcePaneEmpty: string
+    sourcePaneError: string
+    compare: {
+      tablistLabel: string
+      tabPdf: string
+      tabMd: string
+    }
     warnings: {
       // Heading on the warnings alert.
       title: string
@@ -200,6 +210,14 @@ const en: Dictionary = {
     download: 'Download .md',
     previewEmpty: 'The Markdown will appear here after conversion.',
     success: 'Markdown generated.',
+    sourceIframeTitle: (name: string) => `Source PDF: ${name}`,
+    sourcePaneEmpty: 'Drop a PDF to preview it here.',
+    sourcePaneError: 'This PDF has no text layer to convert.',
+    compare: {
+      tablistLabel: 'Source and result view',
+      tabPdf: 'PDF',
+      tabMd: 'Markdown',
+    },
     warnings: {
       title: 'Warnings',
       needs_ocr:
@@ -408,6 +426,14 @@ const pt: Dictionary = {
     download: 'Baixar .md',
     previewEmpty: 'O Markdown aparece aqui depois da conversão.',
     success: 'Markdown gerado.',
+    sourceIframeTitle: (name: string) => `PDF de origem: ${name}`,
+    sourcePaneEmpty: 'Solte um PDF para visualizá-lo aqui.',
+    sourcePaneError: 'Este PDF não tem camada de texto para converter.',
+    compare: {
+      tablistLabel: 'Visão de origem e resultado',
+      tabPdf: 'PDF',
+      tabMd: 'Markdown',
+    },
     warnings: {
       title: 'Avisos',
       needs_ocr:
@@ -616,6 +642,14 @@ const es: Dictionary = {
     download: 'Descargar .md',
     previewEmpty: 'El Markdown aparecerá aquí después de la conversión.',
     success: 'Markdown generado.',
+    sourceIframeTitle: (name: string) => `PDF de origen: ${name}`,
+    sourcePaneEmpty: 'Suelta un PDF para verlo aquí.',
+    sourcePaneError: 'Este PDF no tiene capa de texto para convertir.',
+    compare: {
+      tablistLabel: 'Vista de origen y resultado',
+      tabPdf: 'PDF',
+      tabMd: 'Markdown',
+    },
     warnings: {
       title: 'Advertencias',
       needs_ocr:

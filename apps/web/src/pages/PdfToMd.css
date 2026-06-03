@@ -1,0 +1,28 @@
+/* Three-region layout for /pdf-to-md (#15): a 280px controls column and an
+   output region that holds the diagnostic strip plus the side-by-side
+   PDF/Markdown panes. The default two-column .container (1080px) is too narrow
+   for controls + two readable panes, so this page widens to ~1440px. */
+.page.pdf2md-page {
+  max-width: min(1440px, 100% - 2 * var(--s-6));
+}
+
+.pdf2md {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--s-8);
+  align-items: start;
+}
+
+.pdf2md__controls,
+.pdf2md__output {
+  min-width: 0;
+}
+
+/* Below 1024px the controls move to a full-width band above the output, so the
+   panes keep usable width. ComparePanes keeps both panes side by side here and
+   only collapses to tabs below 768px (its own media query). */
+@media (max-width: 1024px) {
+  .pdf2md {
+    grid-template-columns: 1fr;
+  }
+}
