@@ -117,16 +117,17 @@ export function MdToPdf() {
         <p>{t.mdToPdf.subtitle}</p>
       </header>
 
+      <ThemePicker
+        themes={themes}
+        value={theme}
+        onChange={setTheme}
+        label={t.themePicker.label}
+        browseLabel={t.themePicker.browse}
+        browseHref="/themes"
+      />
+
       <div className="grid-2">
         <div className="stack">
-          <ThemePicker
-            themes={themes}
-            value={theme}
-            onChange={setTheme}
-            label={t.themePicker.label}
-            browseLabel={t.themePicker.browse}
-            browseHref="/themes"
-          />
           <DropZone
             accept=".md,text/markdown"
             acceptLabel="Markdown"

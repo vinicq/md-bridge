@@ -1,8 +1,11 @@
 .theme-picker {
   border: 0;
   padding: 0;
-  margin: 0;
-  min-inline-size: 0; /* let the fieldset shrink inside the grid column */
+  margin: 0 0 var(--s-6);
+  min-inline-size: 0; /* let the fieldset shrink inside its container */
+  /* Drive the tile-grid breakpoints off the picker's own width, not the
+     viewport, so it lays out correctly wherever it is placed (#24). */
+  container-type: inline-size;
 }
 
 .theme-picker__legend {
@@ -15,17 +18,17 @@
 
 .theme-picker__grid {
   display: grid;
-  grid-template-columns: 1fr; /* 1 column below 640px */
+  grid-template-columns: 1fr; /* 1 column when the picker is narrow */
   gap: var(--s-3);
 }
 
-@media (min-width: 640px) {
+@container (min-width: 640px) {
   .theme-picker__grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (min-width: 960px) {
+@container (min-width: 960px) {
   .theme-picker__grid {
     grid-template-columns: repeat(3, 1fr);
   }
