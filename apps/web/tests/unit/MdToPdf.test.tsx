@@ -7,6 +7,10 @@ import { MdToPdf } from '../../src/pages/MdToPdf'
 
 vi.mock('../../src/lib/api', () => ({
   convertMdToPdf: vi.fn(),
+  fetchThemes: vi.fn().mockResolvedValue([
+    { slug: 'default', name: 'Default', description: '', family: 'general' },
+    { slug: 'academic', name: 'Academic', description: 'Serif.', family: 'serif' },
+  ]),
 }))
 
 const originalCreateObjectURL = Object.getOwnPropertyDescriptor(URL, 'createObjectURL')

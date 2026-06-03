@@ -1,23 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BatchPanel } from '../components/BatchPanel'
 import { Button } from '../components/Button'
 import { ConvertButton } from '../components/ConvertButton'
 import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
+import { ThemePicker } from '../components/ThemePicker'
 import { Toast } from '../components/Toast'
 import { useBatchConvert, type BatchItem } from '../hooks/useBatchConvert'
 import { useBatchZip } from '../hooks/useBatchZip'
+import { useThemes } from '../hooks/useThemes'
 import { useTranslation } from '../i18n'
 import { convertMdToPdf } from '../lib/api'
+
+const THEME_STORAGE_KEY = 'md-bridge:md-to-pdf:theme'
+
+function initialTheme(): string {
+  if (typeof window === 'undefined') return 'default'
+  return window.localStorage.getItem(THEME_STORAGE_KEY) || 'default'
+}
 
 export function MdToPdf() {
   const { t } = useTranslation()
   const [pasted, setPasted] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string } | null>(null)
+  const { themes } = useThemes()
+  const [theme, setTheme] = useState<string>(initialTheme)
 
   const batch = useBatchConvert<Blob>({
-    convert: (file, signal) => convertMdToPdf(file, {}, signal),
+    // The theme is captured per render, so a run always uses the current
+    // selection (#24); switching theme re-runs the queue via the effect below.
+    convert: (file, signal) => convertMdToPdf(file, { theme }, signal),
     toBlobUrl: (blob) => URL.createObjectURL(blob),
     // 10-minute ceiling so a backgrounded tab cannot leave an item stuck in
     // flight forever (issue #138). Removing this line restores the old
@@ -30,6 +43,33 @@ export function MdToPdf() {
       data: new Uint8Array(await (it.result as Blob).arrayBuffer()),
     }),
   })
+
+  // Persist the picked theme so it survives a page reload (#24).
+  useEffect(() => {
+    if (typeof window !== 'undefined') window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+  }, [theme])
+
+  // Re-run the queue when the theme changes so the preview reflects the new
+  // theme without a manual re-click. Skip the first render (initial mount) and
+  // any run in flight. Re-feeding the same File objects keeps the hook's
+  // single-pass model untouched.
+  const didMount = useRef(false)
+  useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true
+      return
+    }
+    const files = batch.items.map((it) => it.file)
+    if (files.length === 0 || batch.running) return
+    batch.clear()
+    batch.add(files)
+    void (async () => {
+      await Promise.resolve()
+      await batch.runAll()
+    })()
+    // Only the theme drives this re-run; batch helpers are stable refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme])
 
   // Pick up the latest completed item so the preview follows the run. Derived
   // during render so the user's explicit selection wins when it is still
@@ -76,6 +116,16 @@ export function MdToPdf() {
         <h1>{t.mdToPdf.title}</h1>
         <p>{t.mdToPdf.subtitle}</p>
       </header>
+
+      <ThemePicker
+        themes={themes}
+        value={theme}
+        onChange={setTheme}
+        label={t.themePicker.label}
+        browseLabel={t.themePicker.browse}
+        browseHref="/themes"
+        disabled={batch.running}
+      />
 
       <div className="grid-2">
         <div className="stack">

@@ -7,6 +7,14 @@ export interface PdfToMdOptions {
 
 export interface MdToPdfOptions {
   lang?: string
+  theme?: string
+}
+
+export interface Theme {
+  slug: string
+  name: string
+  description: string
+  family: string
 }
 
 export interface FrontMatter {
@@ -107,6 +115,12 @@ export async function convertMdToPdf(
   const resp = await fetch('/api/md-to-pdf', { method: 'POST', body: fd, signal })
   if (!resp.ok) await readError(resp)
   return resp.blob()
+}
+
+export async function fetchThemes(signal?: AbortSignal): Promise<Theme[]> {
+  const resp = await fetch('/api/themes', { signal })
+  if (!resp.ok) await readError(resp)
+  return (await resp.json()) as Theme[]
 }
 
 export async function inspectPdf(file: File, signal?: AbortSignal): Promise<InspectPdfResponse> {

@@ -59,6 +59,17 @@ interface Dictionary {
     pastedFilename: string
     success: string
   }
+  themePicker: {
+    // Group label above the theme tiles.
+    label: string
+    // Link to the deep theme library (F2); target may be a placeholder route.
+    browse: string
+  }
+  themesPage: {
+    title: string
+    subtitle: string
+    back: string
+  }
   about: {
     title: string
     intro: string
@@ -201,6 +212,15 @@ const en: Dictionary = {
     previewIframeTitle: 'Generated PDF preview',
     pastedFilename: 'pasted.md',
     success: 'PDF ready.',
+  },
+  themePicker: {
+    label: 'Theme',
+    browse: 'Browse all themes →',
+  },
+  themesPage: {
+    title: 'Theme library',
+    subtitle: 'The full theme catalogue is on the way. For now, pick a theme from the converter.',
+    back: '← Back to Markdown to PDF',
   },
   about: {
     title: 'About md-bridge',
@@ -366,6 +386,15 @@ const pt: Dictionary = {
     pastedFilename: 'colado.md',
     success: 'PDF pronto.',
   },
+  themePicker: {
+    label: 'Tema',
+    browse: 'Ver todos os temas →',
+  },
+  themesPage: {
+    title: 'Biblioteca de temas',
+    subtitle: 'O catálogo completo de temas está a caminho. Por enquanto, escolha um tema no conversor.',
+    back: '← Voltar para Markdown para PDF',
+  },
   about: {
     title: 'Sobre o md-bridge',
     intro:
@@ -529,6 +558,15 @@ const es: Dictionary = {
     previewIframeTitle: 'Vista previa del PDF generado',
     pastedFilename: 'pegado.md',
     success: 'PDF listo.',
+  },
+  themePicker: {
+    label: 'Tema',
+    browse: 'Ver todos los temas →',
+  },
+  themesPage: {
+    title: 'Biblioteca de temas',
+    subtitle: 'El catálogo completo de temas está en camino. Por ahora, elige un tema en el conversor.',
+    back: '← Volver a Markdown a PDF',
   },
   about: {
     title: 'Acerca de md-bridge',
