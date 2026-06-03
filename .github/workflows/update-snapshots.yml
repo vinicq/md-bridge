@@ -42,6 +42,12 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.60.0-noble
     steps:
+      - name: Install the GitHub CLI
+        # The Playwright image does not ship gh, so the steps below that call
+        # `gh pr view`/`gh pr comment` failed with `gh: not found` (#248). gh is
+        # in the noble (Ubuntu 24.04) apt repos, so a plain install is enough.
+        run: apt-get update -qq && apt-get install -y -qq gh
+
       - name: Resolve the PR head branch
         id: pr
         env:
