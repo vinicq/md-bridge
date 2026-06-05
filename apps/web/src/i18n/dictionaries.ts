@@ -91,6 +91,17 @@ interface Dictionary {
     footnotePairing: { label: string; tip: string }
     maxHeadingLevel: { label: string; tip: string }
   }
+  pageSetup: {
+    legend: string
+    page: { legend: string }
+    pageSize: { label: string }
+    margins: { label: string; tight: string; normal: string; loose: string }
+    header: { legend: string }
+    footer: { legend: string }
+    slot: { left: string; center: string; right: string }
+    tokenHelp: string
+    slotPlaceholder: string
+  }
   about: {
     title: string
     intro: string
@@ -285,6 +296,18 @@ const en: Dictionary = {
       label: 'Deepest heading level',
       tip: "Limit how deep detected headings go (1–6). Applies only when 'Detect headings by font size' is on.",
     },
+  },
+  pageSetup: {
+    legend: 'Page setup',
+    page: { legend: 'Page' },
+    pageSize: { label: 'Page size' },
+    margins: { label: 'Margins', tight: 'Tight', normal: 'Normal', loose: 'Loose' },
+    header: { legend: 'Header' },
+    footer: { legend: 'Footer' },
+    slot: { left: 'Left', center: 'Center', right: 'Right' },
+    tokenHelp:
+      'Use {{title}}, {{author}}, {{date}}, {{page}}, {{pages}} to insert values automatically.',
+    slotPlaceholder: 'e.g. {{title}}',
   },
   about: {
     title: 'About md-bridge',
@@ -502,6 +525,18 @@ const pt: Dictionary = {
       tip: "Limita a profundidade dos títulos detectados (1–6). Só vale com 'Detectar títulos por tamanho de fonte' ligado.",
     },
   },
+  pageSetup: {
+    legend: 'Configuração da página',
+    page: { legend: 'Página' },
+    pageSize: { label: 'Tamanho da página' },
+    margins: { label: 'Margens', tight: 'Estreitas', normal: 'Normais', loose: 'Largas' },
+    header: { legend: 'Cabeçalho' },
+    footer: { legend: 'Rodapé' },
+    slot: { left: 'Esquerda', center: 'Centro', right: 'Direita' },
+    tokenHelp:
+      'Use {{title}}, {{author}}, {{date}}, {{page}}, {{pages}} para inserir valores automaticamente.',
+    slotPlaceholder: 'ex: {{title}}',
+  },
   about: {
     title: 'Sobre o md-bridge',
     intro:
@@ -717,6 +752,18 @@ const es: Dictionary = {
       label: 'Nivel de encabezado más profundo',
       tip: "Limita la profundidad de los encabezados detectados (1–6). Solo aplica con 'Detectar encabezados por tamaño de fuente' activado.",
     },
+  },
+  pageSetup: {
+    legend: 'Configuración de página',
+    page: { legend: 'Página' },
+    pageSize: { label: 'Tamaño de página' },
+    margins: { label: 'Márgenes', tight: 'Estrechos', normal: 'Normales', loose: 'Amplios' },
+    header: { legend: 'Encabezado' },
+    footer: { legend: 'Pie de página' },
+    slot: { left: 'Izquierda', center: 'Centro', right: 'Derecha' },
+    tokenHelp:
+      'Usa {{title}}, {{author}}, {{date}}, {{page}}, {{pages}} para insertar valores automáticamente.',
+    slotPlaceholder: 'ej: {{title}}',
   },
   about: {
     title: 'Acerca de md-bridge',

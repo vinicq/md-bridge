@@ -12,9 +12,23 @@ export interface PdfToMdOptions {
   lang?: string
 }
 
+export interface RunningContent {
+  left: string
+  center: string
+  right: string
+}
+
+export interface PageSetup {
+  page_size: 'A4' | 'Letter' | 'Legal'
+  margins: 'tight' | 'normal' | 'loose'
+  header?: RunningContent | null
+  footer?: RunningContent | null
+}
+
 export interface MdToPdfOptions {
   lang?: string
   theme?: string
+  page_setup?: PageSetup | null
 }
 
 export interface Theme {
