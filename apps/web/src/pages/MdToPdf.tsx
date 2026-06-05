@@ -4,6 +4,8 @@ import { Button } from '../components/Button'
 import { ConvertButton } from '../components/ConvertButton'
 import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
+import { PageSetupPanel } from '../components/PageSetupPanel'
+import { DEFAULT_PAGE_SETUP, type PageSetupValue } from '../components/pageSetup'
 import { ThemePicker } from '../components/ThemePicker'
 import { Toast } from '../components/Toast'
 import { useBatchConvert, type BatchItem } from '../hooks/useBatchConvert'
@@ -26,11 +28,16 @@ export function MdToPdf() {
   const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string } | null>(null)
   const { themes } = useThemes()
   const [theme, setTheme] = useState<string>(initialTheme)
+  // Page geometry + running header/footer (#249). Captured per render into the
+  // convert closure, so it lands on the next Convert. Unlike the theme it does
+  // NOT auto re-run: a render is heavy and slot edits are keystroke-frequent.
+  const [pageSetup, setPageSetup] = useState<PageSetupValue>(DEFAULT_PAGE_SETUP)
 
   const batch = useBatchConvert<Blob>({
     // The theme is captured per render, so a run always uses the current
     // selection (#24); switching theme re-runs the queue via the effect below.
-    convert: (file, signal) => convertMdToPdf(file, { theme }, signal),
+    // page_setup rides the same closure but stays passive (no re-run effect).
+    convert: (file, signal) => convertMdToPdf(file, { theme, page_setup: pageSetup }, signal),
     toBlobUrl: (blob) => URL.createObjectURL(blob),
     // 10-minute ceiling so a backgrounded tab cannot leave an item stuck in
     // flight forever (issue #138). Removing this line restores the old
@@ -124,6 +131,13 @@ export function MdToPdf() {
         label={t.themePicker.label}
         browseLabel={t.themePicker.browse}
         browseHref="/themes"
+        disabled={batch.running}
+      />
+
+      <PageSetupPanel
+        labels={t.pageSetup}
+        value={pageSetup}
+        onChange={setPageSetup}
         disabled={batch.running}
       />
 
