@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../../src/App'
 import { Home } from '../../src/pages/Home'
 import { About } from '../../src/pages/About'
+import { LanguageWorkshop } from '../../src/pages/LanguageWorkshop'
 import { I18nProvider } from '../../src/i18n'
 import { ThemeProvider } from '../../src/theme'
 
@@ -22,6 +23,7 @@ function renderApp(initialPath = '/') {
             <Route path="/" element={<App />}>
               <Route index element={<Home />} />
               <Route path="about" element={<About />} />
+              <Route path="contribute/i18n" element={<LanguageWorkshop />} />
             </Route>
           </Routes>
         </MemoryRouter>
@@ -36,6 +38,16 @@ describe('Navigation + LanguageSwitcher integration', () => {
     expect(screen.getByRole('heading', { level: 1, name: /convert pdf and markdown locally/i })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('link', { name: /^about$/i }))
     expect(screen.getByRole('heading', { level: 1, name: /about md-bridge/i })).toBeInTheDocument()
+  })
+
+  it('routes to the Language Workshop from the footer link', async () => {
+    renderApp('/')
+    const workshopLink = screen.getByRole('link', { name: /language workshop/i })
+    expect(workshopLink).toHaveAttribute('href', '/contribute/i18n')
+    await userEvent.click(workshopLink)
+    expect(
+      screen.getByRole('heading', { level: 1, name: /language workshop/i }),
+    ).toBeInTheDocument()
   })
 
   it('flips the whole UI to Portuguese when the language toggle is used', async () => {

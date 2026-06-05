@@ -29,6 +29,13 @@ export function App() {
       <main id="main-content">
         <Outlet />
       </main>
+      <footer className="app-footer">
+        <div className="container app-footer__inner">
+          <NavLink to="/contribute/i18n" className="app-footer__link">
+            {t.workshop.title}
+          </NavLink>
+        </div>
+      </footer>
     </>
   )
 }

@@ -159,6 +159,30 @@ pre {
   color: var(--c-accent);
 }
 
+.app-footer {
+  border-top: 1px solid var(--c-rule);
+  background: var(--c-bg-elev);
+}
+
+.app-footer__inner {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--s-4) 0;
+}
+
+.app-footer__link {
+  border: 0;
+  color: var(--c-ink-soft);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.app-footer__link:hover,
+.app-footer__link[aria-current="page"] {
+  color: var(--c-accent);
+}
+
 .grid-2 {
   display: grid;
   grid-template-columns: 40% 60%;
