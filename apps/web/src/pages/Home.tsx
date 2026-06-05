@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Card } from '../components/Card'
+import { FormatMatrix } from '../components/FormatMatrix'
 import { useTranslation } from '../i18n'
 import './Home.css'
 
@@ -29,6 +30,8 @@ export function Home() {
           </Link>
         </Card>
       </section>
+
+      <FormatMatrix />
     </div>
   )
 }

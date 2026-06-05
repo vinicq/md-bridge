@@ -4,12 +4,18 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import App from './App'
 import { I18nProvider } from './i18n'
 import { ThemeProvider } from './theme'
+import { CONVERTER_PAGES } from './lib/converterRoutes'
 import { About } from './pages/About'
 import { Home } from './pages/Home'
 import { LanguageWorkshop } from './pages/LanguageWorkshop'
-import { MdToPdf } from './pages/MdToPdf'
-import { PdfToMd } from './pages/PdfToMd'
 import { Themes } from './pages/Themes'
+
+// Converter routes come from the shared CONVERTER_PAGES map so the router and the
+// format hub never disagree about which pairs have a page (#237).
+const converterRoutes = Object.entries(CONVERTER_PAGES).map(([slug, Component]) => ({
+  path: `convert/${slug}`,
+  Component,
+}))
 
 const router = createBrowserRouter([
   {
@@ -17,8 +23,7 @@ const router = createBrowserRouter([
     Component: App,
     children: [
       { index: true, Component: Home },
-      { path: 'convert/pdf-to-md', Component: PdfToMd },
-      { path: 'convert/md-to-pdf', Component: MdToPdf },
+      ...converterRoutes,
       { path: 'about', Component: About },
       { path: 'themes', Component: Themes },
       { path: 'contribute/i18n', Component: LanguageWorkshop },

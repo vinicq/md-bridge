@@ -38,6 +38,19 @@ export interface Theme {
   family: string
 }
 
+export type FormatStatus = 'shipped' | 'in-pr' | 'roadmap' | 'wanted'
+
+export interface Format {
+  slug: string
+  label: string
+  source: string
+  target: string
+  input_mime: string
+  output_mime: string
+  status: FormatStatus
+  endpoint: string | null
+}
+
 export interface FrontMatter {
   title?: string
   author?: string
@@ -142,6 +155,12 @@ export async function fetchThemes(signal?: AbortSignal): Promise<Theme[]> {
   const resp = await fetch('/api/themes', { signal })
   if (!resp.ok) await readError(resp)
   return (await resp.json()) as Theme[]
+}
+
+export async function fetchFormats(signal?: AbortSignal): Promise<Format[]> {
+  const resp = await fetch('/api/formats', { signal })
+  if (!resp.ok) await readError(resp)
+  return (await resp.json()) as Format[]
 }
 
 export async function inspectPdf(file: File, signal?: AbortSignal): Promise<InspectPdfResponse> {
