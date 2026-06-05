@@ -23,6 +23,13 @@ interface Dictionary {
       pdfToMd: { title: string; body: string; cta: string }
       mdToPdf: { title: string; body: string; cta: string }
     }
+    matrix: {
+      heading: string
+      openConverter: string
+      requestPair: string
+      newTab: string
+      status: { shipped: string; inPr: string; roadmap: string; wanted: string }
+    }
   }
   pdfToMd: {
     title: string
@@ -210,6 +217,13 @@ const en: Dictionary = {
         body: 'Renders via headless Chromium with a CSS theme. Consistent output, no GTK or wkhtmltopdf.',
         cta: 'Generate a PDF',
       },
+    },
+    matrix: {
+      heading: 'All conversions',
+      openConverter: 'Open converter',
+      requestPair: 'Request this pair',
+      newTab: '(opens in a new tab)',
+      status: { shipped: 'Shipped', inPr: 'In PR', roadmap: 'Roadmap', wanted: 'Wanted' },
     },
   },
   pdfToMd: {
@@ -439,6 +453,13 @@ const pt: Dictionary = {
         cta: 'Gerar um PDF',
       },
     },
+    matrix: {
+      heading: 'Todas as conversões',
+      openConverter: 'Abrir conversor',
+      requestPair: 'Pedir este par',
+      newTab: '(abre em uma nova aba)',
+      status: { shipped: 'Disponível', inPr: 'Em PR', roadmap: 'No mapa', wanted: 'Procurado' },
+    },
   },
   pdfToMd: {
     title: 'PDF para Markdown',
@@ -666,6 +687,13 @@ const es: Dictionary = {
         body: 'Renderiza con Chromium headless y un tema CSS. Salida consistente, sin GTK ni wkhtmltopdf.',
         cta: 'Generar un PDF',
       },
+    },
+    matrix: {
+      heading: 'Todas las conversiones',
+      openConverter: 'Abrir conversor',
+      requestPair: 'Solicitar este par',
+      newTab: '(se abre en una pestaña nueva)',
+      status: { shipped: 'Disponible', inPr: 'En PR', roadmap: 'En la hoja de ruta', wanted: 'Buscado' },
     },
   },
   pdfToMd: {
