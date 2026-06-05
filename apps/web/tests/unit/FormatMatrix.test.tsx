@@ -5,6 +5,7 @@ import { FormatMatrix } from '../../src/components/FormatMatrix'
 import { _resetFormatsCacheForTests } from '../../src/hooks/useFormats'
 import { I18nProvider } from '../../src/i18n'
 import { fetchFormats, type Format } from '../../src/lib/api'
+import { hasConverterPage } from '../../src/lib/converterRoutes'
 
 vi.mock('../../src/lib/api', () => ({ fetchFormats: vi.fn() }))
 
@@ -47,12 +48,45 @@ describe('FormatMatrix', () => {
     expect(screen.getByText('Markdown → DOCX')).toBeInTheDocument()
   })
 
-  it('links shipped cells to their converter route, derived from the slug', async () => {
+  it('links shipped cells that have a UI page to their converter route, from the slug', async () => {
     renderMatrix()
-    const link = await screen.findByRole('link', { name: /open converter.*Markdown → DOCX/i })
-    expect(link).toHaveAttribute('href', '/convert/md-to-docx')
+    const link = await screen.findByRole('link', { name: /open converter.*PDF → Markdown/i })
+    expect(link).toHaveAttribute('href', '/convert/pdf-to-md')
     // Never the raw API endpoint.
-    expect(link).not.toHaveAttribute('href', '/api/md-to-docx')
+    expect(link).not.toHaveAttribute('href', '/api/pdf-to-md')
+  })
+
+  it('does NOT link a shipped pair that has no UI page to a dead route', async () => {
+    // md-to-docx ships in the API (#60) but has no /convert/md-to-docx page.
+    renderMatrix()
+    await screen.findByRole('heading', { name: /all conversions/i })
+    // The pair still shows, with its Shipped pill, but it is not a navigable link.
+    expect(screen.getByText('Markdown → DOCX')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: /Markdown → DOCX/i }),
+    ).not.toBeInTheDocument()
+    // And nothing anywhere points at the dead route.
+    for (const link of screen.getAllByRole('link')) {
+      expect(link).not.toHaveAttribute('href', '/convert/md-to-docx')
+    }
+  })
+
+  it('internal converter link appears iff the slug has a UI page (integrity guard)', async () => {
+    // Mirrors the backend drift guard (test_md_to_docx.py): a shipped API pair
+    // only becomes a converter link when the frontend actually has its page.
+    renderMatrix()
+    await screen.findByRole('heading', { name: /all conversions/i })
+    for (const fmt of FORMATS) {
+      if (!fmt.endpoint) continue
+      const internalLink = screen.queryByRole('link', {
+        name: new RegExp(`open converter.*${fmt.label.replace(/[→]/g, '.')}`, 'i'),
+      })
+      if (hasConverterPage(fmt.slug)) {
+        expect(internalLink).toHaveAttribute('href', `/convert/${fmt.slug}`)
+      } else {
+        expect(internalLink).toBeNull()
+      }
+    }
   })
 
   it('links planned cells to a prefilled feature request that opens in a new tab', async () => {
