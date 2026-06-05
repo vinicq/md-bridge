@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FormatMatrix } from '../../src/components/FormatMatrix'
@@ -118,8 +118,32 @@ describe('FormatMatrix', () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
-  it('renders nothing when the registry is empty or the fetch fails', async () => {
-    vi.mocked(fetchFormats).mockResolvedValue([])
+  it('branches on page existence, not status: a pair with an endpoint but no page is non-navigable', async () => {
+    // An in-pr pair that already has a live endpoint but no SPA page must NOT
+    // become a link (neither internal nor a feature request). This locks the
+    // decision that the cell branches on page existence, not on status.
+    const inPrNoPage: Format = {
+      slug: 'epub-to-md',
+      label: 'EPUB → Markdown',
+      source: 'epub',
+      target: 'md',
+      input_mime: 'application/epub+zip',
+      output_mime: 'text/markdown',
+      status: 'in-pr',
+      endpoint: '/api/epub-to-md',
+    }
+    vi.mocked(fetchFormats).mockResolvedValue([inPrNoPage])
+    renderMatrix()
+    await screen.findByRole('heading', { name: /all conversions/i })
+    expect(screen.getByText('EPUB → Markdown')).toBeInTheDocument()
+    // Has an endpoint, but no UI page: rendered static, no link at all.
+    expect(screen.queryByRole('link')).toBeNull()
+    // The status pill still tells the truth.
+    expect(screen.getByText('In PR')).toBeInTheDocument()
+  })
+
+  it('renders nothing once the registry resolves empty (post-fetch state)', async () => {
+    vi.mocked(fetchFormats).mockResolvedValueOnce([])
     const { container } = render(
       <MemoryRouter>
         <I18nProvider initialLocale="en">
@@ -127,8 +151,28 @@ describe('FormatMatrix', () => {
         </I18nProvider>
       </MemoryRouter>,
     )
-    // Give the effect a tick to resolve, then assert no matrix rendered.
-    await Promise.resolve()
+    // Flush the resolved fetch so the assertion covers the ready-with-[] state,
+    // not just the initial loading state (both render null, but we want the
+    // post-fetch path proven).
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(fetchFormats).toHaveBeenCalledTimes(1)
+    expect(container.querySelector('.home__matrix')).toBeNull()
+  })
+
+  it('renders nothing when the registry fetch fails', async () => {
+    vi.mocked(fetchFormats).mockRejectedValueOnce(new Error('registry down'))
+    const { container } = render(
+      <MemoryRouter>
+        <I18nProvider initialLocale="en">
+          <FormatMatrix />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+    await act(async () => {
+      await Promise.resolve()
+    })
     expect(container.querySelector('.home__matrix')).toBeNull()
   })
 })
