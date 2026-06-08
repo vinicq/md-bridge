@@ -550,6 +550,9 @@ python -m falsegreen apps/api/tests tests          # text report
 python -m falsegreen apps/api/tests tests --summary # one-line count
 ```
 
+It is also wired into the pre-commit hooks, where it scans only the staged test
+files for fast feedback; CI re-runs the full scan over every test.
+
 A HIGH-confidence finding (exit code 20) fails the backend job. LOW findings
 (exit 10) do not block; they surface as annotations in the PR via SARIF so you
 can tighten them over time. When a LOW finding is a deliberate, documented
