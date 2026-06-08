@@ -45,6 +45,9 @@ A proposal that implements one of these is in scope by default and does not need
 - Abbreviations
 - MathJax or any JS-rendered syntax by default
 
+**Escaping policy**
+- Literal prose that would otherwise be reparsed is backslash-escaped at emission. Inline-dangerous punctuation (`` \ ` * _ [ ] ``) is escaped at the span level (#155); line-start-only block markers (`#`, `-`/`+`/`*`, `>`, and an ordered-list `N.`/`N)`) are escaped at line-level assembly when a paragraph genuinely begins with one (#192). Detected headings, lists, and quotes carry their real marker and are never escaped.
+
 **Renderer policy**
 - `markdown-to-pdf` consumes this same dialect. Syntax outside the dialect passes through as literal characters rather than being reinterpreted. Determinism holds: the same Markdown renders to the same PDF.
 - Heading input accepts both ATX (`# Title`) and setext (a text line underlined with `===` for H1 or `---` for H2). ATX is canonical and is what `pdf-to-markdown` emits; setext is accepted on input for hand-authored documents (#177).

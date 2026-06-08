@@ -84,6 +84,50 @@ def escape_markdown_inline(text: str) -> str:
     return _MD_INLINE_ESCAPE.sub(r"\\\1", text)
 
 
+# Line-start-only CommonMark block markers (#192). These only change meaning at
+# the very start of a line, so the span pass above cannot handle them (a span
+# has no line position). Applied at line-level assembly to a paragraph that was
+# classified as prose, never to a detected heading/list/quote (those carry the
+# real marker we just synthesized). Optional leading spaces are tolerated since
+# CommonMark allows up to three before a block marker.
+#   ATX heading:    `#`..`######` followed by a space or end of line
+#   bullet list:    `-`, `+`, `*` followed by a space (or bare, a thematic-break edge)
+#   blockquote:     `>`
+#   ordered list:   a 1-9 digit run followed by `.` or `)` and a space/EOL
+_MD_LINE_START_SPECIAL = re.compile(
+    r"^(?P<indent> {0,3})"
+    r"(?P<marker>#{1,6}(?=\s|$)|[-+*](?=\s|$)|>|\d{1,9}(?=[.)](?:\s|$)))"
+)
+
+
+def escape_line_start_specials(text: str) -> str:
+    """Backslash-escape a leading block marker on each line of literal prose.
+
+    Operates per physical line so a hard-broken paragraph (#156) is covered too.
+    Only the single leading marker is escaped; the rest of the line is left as
+    the span pass rendered it. A line with no leading marker is returned
+    unchanged, so the default path stays byte-identical for ordinary prose.
+
+    The ordered-list case escapes only the trailing punctuation of the marker
+    (`1\\. text`), which is the minimal escape CommonMark needs to stop a list
+    from forming while keeping the digit visible.
+    """
+
+    def _escape_one(line: str) -> str:
+        m = _MD_LINE_START_SPECIAL.match(line)
+        if not m:
+            return line
+        marker = m.group("marker")
+        rest = line[m.end():]
+        if marker.isdigit():
+            # `12) ...` / `12. ...`: escape the `.`/`)` that triggers the list.
+            sep, rest = rest[0], rest[1:]
+            return f"{m.group('indent')}{marker}\\{sep}{rest}"
+        return f"{m.group('indent')}\\{marker}{rest}"
+
+    return "\n".join(_escape_one(line) for line in text.split("\n"))
+
+
 # Inline, semantic, non-scripting tags the allow-list may ever contain (#154).
 # Kept identical to the schema cap in apps/api/app/schemas/convert.py; a test
 # asserts they match. Anything else (script/style/iframe/a/img/...) is never
@@ -595,6 +639,14 @@ def dominant_font(block: Block) -> str:
 
 
 def is_mono_span(span: Span) -> bool:
+    # GlyphLessFont is PyMuPDF's internal placeholder for glyphs unavailable in
+    # the embedded font. It carries FLAG_MONO but is not real monospace content;
+    # treating it as mono would misclassify any prose paragraph whose font can't
+    # be resolved on the host (e.g. unembedded Helvetica on a minimal Linux CI).
+    # Note: "GlyphLessFont" is a mupdf implementation detail, not a public API;
+    # see pymupdf source (fitz/__init__.py) and mupdf glyph substitution code.
+    if span.font == "GlyphLessFont":
+        return False
     if span.flags & FLAG_MONO:
         return True
     return any(hint in span.font for hint in MONO_FONT_HINTS)
@@ -1257,7 +1309,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             # boundary (#174 state-corruption guard).
             flush_blockquote()
             flush_heading()
-            cont_line = list_cont_indent + text_clean
+            cont_line = list_cont_indent + escape_line_start_specials(text_clean)
             if numbered_run:
                 numbered_run.append("")
                 numbered_run.append(cont_line)
@@ -1327,10 +1379,13 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             # text as a plain paragraph and drop the size hint (#141). Opt-in
             # raw-HTML preservation is the job of the allow-list policy (#154).
             list_marker_x0 = None
-            out_parts.append(para_clean)
+            out_parts.append(escape_line_start_specials(para_clean))
         else:
             list_marker_x0 = None
-            out_parts.append(para_clean)
+            # Plain prose: escape a leading block marker so a paragraph that
+            # genuinely starts with `#`, a bullet glyph, `>`, or `N.` is not
+            # reinterpreted as a heading/list/quote on round-trip (#192).
+            out_parts.append(escape_line_start_specials(para_clean))
 
     flush_numbered()
     flush_blockquote()
