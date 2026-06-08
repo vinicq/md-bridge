@@ -57,18 +57,31 @@ describe('FormatMatrix', () => {
   })
 
   it('does NOT link a shipped pair that has no UI page to a dead route', async () => {
-    // md-to-docx ships in the API (#60) but has no /convert/md-to-docx page.
+    // A shipped API pair with no SPA page must render non-navigable, never a
+    // dead /convert link. md-to-docx used to be that example; it now has its
+    // page (#276), so this uses a dedicated shipped-without-page fixture to keep
+    // the guard alive on the case that matters.
+    const shippedNoPage: Format = {
+      slug: 'md-to-rtf',
+      label: 'Markdown → RTF',
+      source: 'md',
+      target: 'rtf',
+      input_mime: 'text/markdown',
+      output_mime: 'application/rtf',
+      status: 'shipped',
+      endpoint: '/api/md-to-rtf',
+    }
+    vi.mocked(fetchFormats).mockResolvedValue([shippedNoPage])
     renderMatrix()
     await screen.findByRole('heading', { name: /all conversions/i })
     // The pair still shows, with its Shipped pill, but it is not a navigable link.
-    expect(screen.getByText('Markdown → DOCX')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('link', { name: /Markdown → DOCX/i }),
-    ).not.toBeInTheDocument()
+    expect(screen.getByText('Markdown → RTF')).toBeInTheDocument()
+    expect(screen.getByText('Shipped')).toBeInTheDocument()
+    expect(screen.queryByRole('link')).toBeNull()
     // And nothing anywhere points at the dead route.
-    for (const link of screen.getAllByRole('link')) {
-      expect(link).not.toHaveAttribute('href', '/convert/md-to-docx')
-    }
+    expect(
+      screen.queryByRole('link', { name: /Markdown → RTF/i }),
+    ).not.toBeInTheDocument()
   })
 
   it('internal converter link appears iff the slug has a UI page (integrity guard)', async () => {

@@ -23,6 +23,7 @@ const ROUTES = [
   { name: 'home', path: '/' },
   { name: 'pdf-to-md', path: '/convert/pdf-to-md' },
   { name: 'md-to-pdf', path: '/convert/md-to-pdf' },
+  { name: 'md-to-docx', path: '/convert/md-to-docx' },
   { name: 'about', path: '/about' },
 ] as const
 

@@ -76,6 +76,21 @@ interface Dictionary {
     pastedFilename: string
     success: string
   }
+  // Markdown → DOCX page (#276). No theme/page-setup tunables and no result
+  // preview (a .docx cannot render in an iframe), so there is no
+  // previewIframeTitle here; the right pane previews the INPUT markdown.
+  mdToDocx: {
+    title: string
+    subtitle: string
+    paste: string
+    pasteLabel: string
+    generate: string
+    generating: string
+    download: string
+    previewEmpty: string
+    pastedFilename: string
+    success: string
+  }
   themePicker: {
     // Group label above the theme tiles.
     label: string
@@ -142,6 +157,7 @@ interface Dictionary {
     errorSkipped: string
     pdfBundleName: string
     mdBundleName: string
+    docxBundleName: string
   }
   diag: {
     title: string
@@ -267,6 +283,18 @@ const en: Dictionary = {
     pastedFilename: 'pasted.md',
     success: 'PDF ready.',
   },
+  mdToDocx: {
+    title: 'Markdown to DOCX',
+    subtitle: 'Upload a .md file or paste text and convert it to a Word document.',
+    paste: 'Or paste markdown here...',
+    pasteLabel: 'Pasted markdown',
+    generate: 'Convert',
+    generating: 'Converting',
+    download: 'Download .docx',
+    previewEmpty: 'The preview will appear here.',
+    pastedFilename: 'pasted.md',
+    success: 'DOCX ready.',
+  },
   themePicker: {
     label: 'Theme',
     browse: 'Browse all themes →',
@@ -375,6 +403,7 @@ const en: Dictionary = {
     errorSkipped: 'Skipped',
     pdfBundleName: 'pdfs.zip',
     mdBundleName: 'markdown.zip',
+    docxBundleName: 'docx.zip',
   },
   diag: {
     title: 'PDF diagnostics',
@@ -502,6 +531,18 @@ const pt: Dictionary = {
     pastedFilename: 'colado.md',
     success: 'PDF pronto.',
   },
+  mdToDocx: {
+    title: 'Markdown para DOCX',
+    subtitle: 'Suba um .md ou cole texto e converta em documento Word.',
+    paste: 'Ou cole markdown aqui...',
+    pasteLabel: 'Markdown colado',
+    generate: 'Converter',
+    generating: 'Convertendo',
+    download: 'Baixar .docx',
+    previewEmpty: 'O preview aparece aqui.',
+    pastedFilename: 'colado.md',
+    success: 'DOCX pronto.',
+  },
   themePicker: {
     label: 'Tema',
     browse: 'Ver todos os temas →',
@@ -610,6 +651,7 @@ const pt: Dictionary = {
     errorSkipped: 'Pulado',
     pdfBundleName: 'pdfs.zip',
     mdBundleName: 'markdown.zip',
+    docxBundleName: 'docx.zip',
   },
   diag: {
     title: 'Diagnóstico do PDF',
@@ -737,6 +779,18 @@ const es: Dictionary = {
     pastedFilename: 'pegado.md',
     success: 'PDF listo.',
   },
+  mdToDocx: {
+    title: 'Markdown a DOCX',
+    subtitle: 'Sube un archivo .md o pega texto y conviértelo a un documento Word.',
+    paste: 'O pega markdown aquí...',
+    pasteLabel: 'Markdown pegado',
+    generate: 'Convertir',
+    generating: 'Convirtiendo',
+    download: 'Descargar .docx',
+    previewEmpty: 'La vista previa aparecerá aquí.',
+    pastedFilename: 'pegado.md',
+    success: 'DOCX listo.',
+  },
   themePicker: {
     label: 'Tema',
     browse: 'Ver todos los temas →',
@@ -845,6 +899,7 @@ const es: Dictionary = {
     errorSkipped: 'Omitido',
     pdfBundleName: 'pdfs.zip',
     mdBundleName: 'markdown.zip',
+    docxBundleName: 'docx.zip',
   },
   diag: {
     title: 'Diagnóstico del PDF',
