@@ -167,3 +167,51 @@ def test_invalid_page_size_is_422(client):
 def test_unknown_page_setup_field_is_422(client):
     resp = _render(client, SAMPLE_MD, {"page_setup": {"bogus": 1}})
     assert resp.status_code == 422, resp.text
+
+
+# --- #177 setext headings + #160 HTML comments: accepted renderer input ------
+
+SETEXT_MD = b"""Setext H1
+=========
+
+Setext H2
+---------
+
+Body paragraph.
+"""
+
+
+def test_setext_headings_render_as_headings(client, chromium_ready):
+    # Underlined (setext) headings are valid CommonMark input; they must reach
+    # the PDF as heading text, not literal "=====" lines (#177). Read the real
+    # page back with PyMuPDF rather than trusting the request.
+    import fitz
+
+    resp = _render(client, SETEXT_MD)
+    assert resp.status_code == 200, resp.text
+    doc = fitz.open(stream=resp.content, filetype="pdf")
+    text = doc[0].get_text()
+    assert "Setext H1" in text and "Setext H2" in text, text
+    # The underline markers must not survive as literal characters.
+    assert "=========" not in text and "---------" not in text, text
+
+
+COMMENT_MD = b"""Para A.
+
+<!-- hidden build note -->
+
+Para B.
+"""
+
+
+def test_html_comment_does_not_render_in_the_pdf(client, chromium_ready):
+    # HTML comments pass through to the HTML but must stay invisible in the
+    # rendered PDF: the note text must not leak as visible content (#160).
+    import fitz
+
+    resp = _render(client, COMMENT_MD)
+    assert resp.status_code == 200, resp.text
+    doc = fitz.open(stream=resp.content, filetype="pdf")
+    text = doc[0].get_text()
+    assert "Para A" in text and "Para B" in text, text
+    assert "hidden build note" not in text, text
