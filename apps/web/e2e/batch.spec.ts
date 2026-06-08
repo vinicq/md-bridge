@@ -20,6 +20,15 @@ test.beforeEach(async ({ context }) => {
 })
 
 test('Batch: two PDFs queue up, run sequentially, each downloadable', async ({ page }) => {
+  // Two real /api/pdf-to-md round-trips run sequentially here, and the
+  // done-count assertion below already waits up to 120s for them. The default
+  // 30s per-test budget is shorter than that wait, so on the slower webkit
+  // engine the whole test was killed at 30s before the conversions finished,
+  // flaking on unrelated PRs (#233). Lift only this test's ceiling to match the
+  // work it does; chromium/firefox finish well under it, and no assertion is
+  // weakened (still two sequential conversions, each downloadable).
+  test.setTimeout(150_000)
+
   await page.goto('/convert/pdf-to-md')
 
   // Drop the same ISTQB fixture twice through the file input (multiple is on).
