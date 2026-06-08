@@ -126,3 +126,55 @@ def test_render_span_mono_with_backtick_falls_back_to_escaped_prose():
     # emitting a broken code span.
     out = mod.render_span(span("a`b", font="Courier"))
     assert out == r"a\`b"
+
+
+# --- #192: line-start block markers in literal prose get escaped ---
+
+
+def test_escape_line_start_heading():
+    assert mod.escape_line_start_specials("# not a heading") == r"\# not a heading"
+
+
+def test_escape_line_start_bullet_markers():
+    assert mod.escape_line_start_specials("- not a bullet") == r"\- not a bullet"
+    assert mod.escape_line_start_specials("+ not a bullet") == r"\+ not a bullet"
+    assert mod.escape_line_start_specials("* not a bullet") == r"\* not a bullet"
+
+
+def test_escape_line_start_blockquote():
+    assert mod.escape_line_start_specials("> not a quote") == r"\> not a quote"
+
+
+def test_escape_line_start_ordered_list_dot_and_paren():
+    # Only the punctuation that triggers the list is escaped; the digit stays.
+    assert mod.escape_line_start_specials("1. not a list") == r"1\. not a list"
+    assert mod.escape_line_start_specials("3) not a list") == r"3\) not a list"
+    assert mod.escape_line_start_specials("12. still prose") == r"12\. still prose"
+
+
+def test_escape_line_start_tolerates_up_to_three_leading_spaces():
+    # CommonMark allows up to three spaces before a block marker, so a marker
+    # behind that much indent still needs escaping.
+    assert mod.escape_line_start_specials("   # indented") == r"   \# indented"
+
+
+def test_escape_line_start_leaves_plain_prose_untouched():
+    # No leading marker: the line is returned byte-identical (default path).
+    assert mod.escape_line_start_specials("ordinary prose line") == "ordinary prose line"
+    # A hyphen glued to a word is not a bullet (no following space).
+    assert mod.escape_line_start_specials("-fast option") == "-fast option"
+    # A digit not followed by list punctuation is not a list.
+    assert mod.escape_line_start_specials("2024 was a year") == "2024 was a year"
+    # A four-space indent is a code block, not a paragraph; leave it alone.
+    assert mod.escape_line_start_specials("    # deep") == "    # deep"
+
+
+def test_escape_line_start_applies_per_line():
+    # A hard-broken paragraph (#156) gets each physical line checked.
+    src = "First line\n- second looks like a bullet"
+    assert mod.escape_line_start_specials(src) == "First line\n\\- second looks like a bullet"
+
+
+def test_escape_line_start_only_escapes_the_leading_marker():
+    # An inner `#` or `-` is untouched; only the line-start one is escaped.
+    assert mod.escape_line_start_specials("# a - b # c") == r"\# a - b # c"
