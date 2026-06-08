@@ -128,6 +128,14 @@ def test_render_span_mono_with_backtick_falls_back_to_escaped_prose():
     assert out == r"a\`b"
 
 
+def test_is_mono_span_excludes_glyph_less_font():
+    # GlyphLessFont is PyMuPDF's internal placeholder for unresolvable glyphs.
+    # It carries FLAG_MONO (it IS a fixed-pitch fallback) but is NOT real code
+    # content. A block of GlyphLessFont spans must not become a code fence.
+    s = span("hello", font="GlyphLessFont", flags=mod.FLAG_MONO)
+    assert mod.is_mono_span(s) is False
+
+
 # --- #192: line-start block markers in literal prose get escaped ---
 
 

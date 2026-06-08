@@ -639,10 +639,12 @@ def dominant_font(block: Block) -> str:
 
 
 def is_mono_span(span: Span) -> bool:
-    # GlyphLessFont is PyMuPDF's fallback placeholder for glyphs unavailable in
+    # GlyphLessFont is PyMuPDF's internal placeholder for glyphs unavailable in
     # the embedded font. It carries FLAG_MONO but is not real monospace content;
     # treating it as mono would misclassify any prose paragraph whose font can't
     # be resolved on the host (e.g. unembedded Helvetica on a minimal Linux CI).
+    # Note: "GlyphLessFont" is a mupdf implementation detail, not a public API;
+    # see pymupdf source (fitz/__init__.py) and mupdf glyph substitution code.
     if span.font == "GlyphLessFont":
         return False
     if span.flags & FLAG_MONO:
