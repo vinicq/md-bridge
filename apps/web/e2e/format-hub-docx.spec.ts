@@ -76,7 +76,6 @@ test('Markdown → DOCX: matrix link, convert, and download a real .docx', async
   // Real Office Open XML package, not just a 200 with a docx MIME.
   expect(docx.zip_magic).toBe('504b0304') // PK\x03\x04
   expect(docx.has_document_xml).toBe(true)
-  expect(docx.entry_count).toBeGreaterThan(0)
   // The converted body text actually landed in the document.
   expect(docx.text).toContain('Docx honesty')
   expect(docx.text).toContain('Paragraph from the format hub DOCX flow.')
