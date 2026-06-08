@@ -17,6 +17,14 @@ repos:
         name: ruff (apps/api, tests, packages)
         args: ["--config=apps/api/pyproject.toml"]
 
+  # Test-honesty gate (matches the CI falsegreen step). Scans only staged test
+  # files and blocks the commit on HIGH-confidence false-positive tests; LOW
+  # findings warn without blocking. CI re-runs the full scan over all tests.
+  - repo: https://github.com/vinicq/falsegreen
+    rev: v0.2.0
+    hooks:
+      - id: falsegreen
+
   # General hygiene that catches the boring mistakes before they reach review.
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

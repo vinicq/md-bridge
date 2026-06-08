@@ -33,6 +33,33 @@ jobs:
       - name: Lint backend (ruff)
         run: python -m ruff check apps/api tests packages --config apps/api/pyproject.toml
 
+      - name: Scan test honesty (falsegreen)
+        # Detects false-positive ("rotten green") Python tests. Exit 20 means a
+        # HIGH-confidence finding and fails the job; exit 10 (LOW only) and 0
+        # (clean) pass. LOW findings print here and in the job summary for
+        # visibility but never block: posting them to code scanning turned them
+        # into PR review threads that the "require conversation resolution" rule
+        # treated as blockers, which is exactly the friction this gate avoids.
+        # This is a static Python layer and does NOT replace the E2E honesty
+        # gates (the Playwright suite reads the real converted artifact) nor
+        # cover the Vitest tests in apps/web.
+        run: |
+          set +e
+          python -m falsegreen apps/api/tests tests | tee falsegreen.txt
+          code=$?
+          echo "falsegreen exit: $code"
+          {
+            echo "### falsegreen (test honesty)"
+            echo '```'
+            tail -n 2 falsegreen.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" -eq 20 ]; then
+            echo "::error::falsegreen found HIGH-confidence false-positive test(s)"
+            exit 1
+          fi
+          exit 0
+
       - name: Install Chromium for Playwright
         run: python -m playwright install chromium --with-deps
 

@@ -11,7 +11,14 @@ def test_registry_exposes_the_shipped_pairs():
 
 
 def test_shipped_pairs_carry_an_endpoint_planned_ones_do_not():
-    for f in formats.list_formats():
+    pairs = formats.list_formats()
+    # Both branches of the loop must actually run; on an empty or single-status
+    # registry the per-item asserts below would pass vacuously. This
+    # unconditional cardinality guard closes that gap (falsegreen C21).
+    shipped = [f for f in pairs if f.status == "shipped"]
+    planned = [f for f in pairs if f.status != "shipped"]
+    assert shipped and planned
+    for f in pairs:
         if f.status == "shipped":
             assert f.endpoint and f.endpoint.startswith("/api/"), f.slug
         else:
