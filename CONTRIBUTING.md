@@ -538,6 +538,40 @@ can reproduce the green build with no extra data and no silent skips.
 If you find yourself reaching for a heavy mock, that is usually a signal
 that the test belongs one tier higher.
 
+### Test honesty (falsegreen)
+
+CI runs [`falsegreen`](https://github.com/vinicq/falsegreen) over the Python
+test suites to catch false-positive ("rotten green") tests: asserts that never
+run, checks that pass by construction, and tests with no oracle. Run it locally
+the same way CI does:
+
+```bash
+python -m falsegreen apps/api/tests tests          # text report
+python -m falsegreen apps/api/tests tests --summary # one-line count
+```
+
+A HIGH-confidence finding (exit code 20) fails the backend job. LOW findings
+(exit 10) do not block; they surface as annotations in the PR via SARIF so you
+can tighten them over time. When a LOW finding is a deliberate, documented
+pattern (a best-effort teardown with no assertion, an anti-vacuous guard before
+a loop), suppress that single line with a justifying comment rather than
+weakening the check:
+
+```python
+assert md, "conversion produced no markdown"  # falsegreen: ignore[C6]
+```
+
+Two caveats keep this honest:
+
+- **Scope.** falsegreen is a static Python layer. It does **not** cover the
+  Vitest tests in `apps/web`, and it does **not** replace the end-to-end honesty
+  gates — the Playwright specs that read the real converted artifact back (the
+  produced PDF via PyMuPDF, the `.docx` as a zip) and assert the real content,
+  not the request payload. Keep writing those.
+- **No baseline.** We do not commit a `.falsegreen-baseline.json`. A baseline
+  freezes existing findings out of sight; inline suppression with a reason is the
+  auditable alternative.
+
 ## Code style
 
 ### TypeScript and React

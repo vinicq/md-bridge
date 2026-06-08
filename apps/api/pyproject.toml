@@ -40,6 +40,12 @@ dev = [
     "pytest-cov>=6.0",
     "httpx>=0.27",
     "ruff>=0.15",
+    # falsegreen scans the Python test suite for false-positive ("rotten green")
+    # tests: asserts that never run, checks that pass by construction, tests with
+    # no oracle. Dev/CI tooling only, zero runtime deps, never shipped in the
+    # runtime install or the Docker image. The CI gate fails on HIGH-confidence
+    # findings (exit 20); LOW findings stay non-blocking.
+    "falsegreen>=0.2",
 ]
 
 [build-system]
