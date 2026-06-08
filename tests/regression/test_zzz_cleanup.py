@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 
 
-def test_zzz_regression_cleanup():
+def test_zzz_regression_cleanup():  # falsegreen: ignore[C2b]
     tmp_root = Path(tempfile.gettempdir())
     for prefix in ("regress-pdf2md-", "regress-md2pdf-", "regress-istqb-"):
         for p in tmp_root.glob(f"{prefix}*"):
