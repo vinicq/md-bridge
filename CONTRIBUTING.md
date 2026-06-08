@@ -554,7 +554,7 @@ It is also wired into the pre-commit hooks, where it scans only the staged test
 files for fast feedback; CI re-runs the full scan over every test.
 
 A HIGH-confidence finding (exit code 20) fails the backend job. LOW findings
-(exit 10) do not block; they surface as annotations in the PR via SARIF so you
+(exit 10) do not block; they print in the CI step log and the job summary so you
 can tighten them over time. When a LOW finding is a deliberate, documented
 pattern (a best-effort teardown with no assertion, an anti-vacuous guard before
 a loop), suppress that single line with a justifying comment rather than

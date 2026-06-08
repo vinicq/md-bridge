@@ -12,12 +12,6 @@ jobs:
   backend:
     name: Backend (pytest)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      # falsegreen uploads its SARIF to code scanning so LOW findings annotate
-      # the PR without blocking. The HIGH gate is enforced by the step's exit
-      # code, not by this permission.
-      security-events: write
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
@@ -42,30 +36,29 @@ jobs:
       - name: Scan test honesty (falsegreen)
         # Detects false-positive ("rotten green") Python tests. Exit 20 means a
         # HIGH-confidence finding and fails the job; exit 10 (LOW only) and 0
-        # (clean) pass. LOW findings surface as SARIF annotations below, not as a
-        # blocker. This is a static Python layer and does NOT replace the E2E
-        # honesty gates (the Playwright suite reads the real converted artifact)
-        # nor cover the Vitest tests in apps/web.
+        # (clean) pass. LOW findings print here and in the job summary for
+        # visibility but never block: posting them to code scanning turned them
+        # into PR review threads that the "require conversation resolution" rule
+        # treated as blockers, which is exactly the friction this gate avoids.
+        # This is a static Python layer and does NOT replace the E2E honesty
+        # gates (the Playwright suite reads the real converted artifact) nor
+        # cover the Vitest tests in apps/web.
         run: |
           set +e
-          python -m falsegreen apps/api/tests tests --format sarif --output falsegreen.sarif
+          python -m falsegreen apps/api/tests tests | tee falsegreen.txt
           code=$?
           echo "falsegreen exit: $code"
+          {
+            echo "### falsegreen (test honesty)"
+            echo '```'
+            tail -n 2 falsegreen.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
           if [ "$code" -eq 20 ]; then
             echo "::error::falsegreen found HIGH-confidence false-positive test(s)"
             exit 1
           fi
           exit 0
-
-      - name: Upload falsegreen SARIF to code scanning
-        # Non-blocking visibility for LOW findings; on fork PRs the upload has no
-        # security-events write, so a failure here must not fail the job.
-        if: always()
-        continue-on-error: true
-        uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa  # v4
-        with:
-          sarif_file: falsegreen.sarif
-          category: falsegreen
 
       - name: Install Chromium for Playwright
         run: python -m playwright install chromium --with-deps
