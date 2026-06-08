@@ -43,7 +43,7 @@ def test_zzz_cleanup_tempdirs():
     assert not leaked, f"could not remove: {leaked}"
 
 
-def test_zzz_cleanup_project_artifacts():
+def test_zzz_cleanup_project_artifacts():  # falsegreen: ignore[C2b]
     root = _project_root()
     targets = [
         root / "apps" / "api" / ".coverage",

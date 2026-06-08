@@ -73,9 +73,13 @@ def test_shipped_format_endpoints_are_real_routes(client):
     registered = {route.path for route in client.app.routes}
     resp = client.get("/api/formats")
     assert resp.status_code == 200
-    for fmt in resp.json():
-        if fmt["status"] == "shipped":
-            assert fmt["endpoint"] in registered, f"{fmt['slug']} endpoint missing: {fmt['endpoint']}"
+    # Drive the loop off the shipped subset and assert it is non-empty, so the
+    # check can't pass vacuously if the registry ever returns no shipped pairs
+    # (falsegreen C1: assert inside a loop that might never run).
+    shipped = [fmt for fmt in resp.json() if fmt["status"] == "shipped"]
+    assert shipped, "expected shipped pairs to verify"  # falsegreen: ignore[C6]
+    for fmt in shipped:
+        assert fmt["endpoint"] in registered, f"{fmt['slug']} endpoint missing: {fmt['endpoint']}"
 
 
 def test_get_formats_lists_pairs_with_status_and_endpoints(client):
