@@ -47,6 +47,8 @@ A proposal that implements one of these is in scope by default and does not need
 
 **Renderer policy**
 - `markdown-to-pdf` consumes this same dialect. Syntax outside the dialect passes through as literal characters rather than being reinterpreted. Determinism holds: the same Markdown renders to the same PDF.
+- Heading input accepts both ATX (`# Title`) and setext (a text line underlined with `===` for H1 or `---` for H2). ATX is canonical and is what `pdf-to-markdown` emits; setext is accepted on input for hand-authored documents (#177).
+- HTML comments (`<!-- ... -->`) pass through to the HTML output and are ignored by the PDF renderer, so they stay out of the visible page. Use them for in-source notes or build pragmas (#160). This is independent of the raw-HTML emission gate above, which governs converter *output*.
 
 ## Implementation notes (current state, 2026-06-02)
 
