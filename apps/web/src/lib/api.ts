@@ -31,6 +31,10 @@ export interface MdToPdfOptions {
   page_setup?: PageSetup | null
 }
 
+export interface MdToDocxOptions {
+  lang?: string
+}
+
 export interface Theme {
   slug: string
   name: string
@@ -147,6 +151,21 @@ export async function convertMdToPdf(
     fd.append('options', JSON.stringify(options))
   }
   const resp = await fetch('/api/md-to-pdf', { method: 'POST', body: fd, signal })
+  if (!resp.ok) await readError(resp)
+  return resp.blob()
+}
+
+export async function convertMdToDocx(
+  file: File,
+  options: MdToDocxOptions = {},
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const fd = new FormData()
+  fd.append('file', file)
+  if (Object.keys(options).length > 0) {
+    fd.append('options', JSON.stringify(options))
+  }
+  const resp = await fetch('/api/md-to-docx', { method: 'POST', body: fd, signal })
   if (!resp.ok) await readError(resp)
   return resp.blob()
 }

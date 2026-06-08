@@ -19,6 +19,7 @@ const ROUTES = [
   { path: '/', name: 'Home' },
   { path: '/convert/pdf-to-md', name: 'PdfToMd' },
   { path: '/convert/md-to-pdf', name: 'MdToPdf' },
+  { path: '/convert/md-to-docx', name: 'MdToDocx' },
   { path: '/about', name: 'About' },
   { path: '/contribute/i18n', name: 'I18nWorkshop' },
 ]

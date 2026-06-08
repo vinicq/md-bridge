@@ -6,10 +6,9 @@ import AxeBuilder from '@axe-core/playwright'
  *
  * Drives the happy path the matrix promises: from Home, a shipped pair that has
  * a converter page navigates to that converter and produces output. MD-to-PDF is
- * used because it is the shipped pair with a UI page; the MD-to-DOCX download
- * lives with the future md-to-docx converter-page issue (that pair ships in the
- * API but has no page yet, so the matrix renders it non-navigable, not a dead
- * link). Also runs axe over Home with the new pills/links present.
+ * used here; the MD-to-DOCX matrix flow (now that the pair has a page, #276)
+ * lives in format-hub-docx.spec.ts with its own download honesty gate. Also runs
+ * axe over Home with the pills/links present.
  */
 
 const SAMPLE_MD = `# Hub sample\n\nParagraph from the format hub flow.\n`
@@ -27,12 +26,6 @@ test('a shipped pair with a page navigates from the matrix to a working converte
 
   // The matrix renders from GET /api/formats.
   await expect(page.getByRole('heading', { name: /all conversions/i })).toBeVisible()
-
-  // The shipped, page-backed pair is a real link; the shipped-without-page pair
-  // (Markdown → DOCX) shows but is not a navigable link to a dead route.
-  const docxCell = page.getByText('Markdown → DOCX')
-  await expect(docxCell).toBeVisible()
-  await expect(page.getByRole('link', { name: /Markdown → DOCX/i })).toHaveCount(0)
 
   await page.getByRole('link', { name: /open converter.*Markdown → PDF/i }).click()
   await expect(page).toHaveURL(/\/convert\/md-to-pdf$/)
