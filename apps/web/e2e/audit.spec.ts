@@ -14,6 +14,15 @@ const ISTQB = path.resolve(
   'fixtures',
   'istqb-ctal-ta-syllabus-en.pdf',
 )
+const CODE_SAMPLE = path.resolve(
+  here,
+  '..',
+  '..',
+  'api',
+  'tests',
+  'fixtures',
+  'code-sample.pdf',
+)
 
 const ROUTES = [
   { path: '/', name: 'Home' },
@@ -209,6 +218,32 @@ test.describe('batch Skip button a11y', () => {
       ).toHaveLength(0)
     })
   }
+})
+
+test.describe('batch reorder controls a11y (#27)', () => {
+  test('queued reorder controls have names and no critical/serious axe violations', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => window.localStorage.setItem('md-bridge:locale', 'en'))
+    await page.goto('/convert/pdf-to-md')
+    await page.locator('input[type="file"]').setInputFiles([ISTQB, CODE_SAMPLE])
+
+    await expect(page.getByRole('button', { name: /drag to reorder code-sample\.pdf/i }))
+      .toBeVisible({ timeout: 30_000 })
+    await expect(page.getByRole('button', { name: /move code-sample\.pdf up/i }))
+      .toBeEnabled()
+
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze()
+    const criticalSerious = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    )
+    expect(
+      criticalSerious,
+      `critical/serious with batch reorder controls: ${criticalSerious.map((v) => v.id).join(', ')}`,
+    ).toHaveLength(0)
+  })
 })
 
 test.describe('needs_ocr alerts a11y (#139)', () => {

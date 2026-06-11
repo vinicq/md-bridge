@@ -129,4 +129,37 @@ describe('useBatchConvert', () => {
     expect(result.current.items).toHaveLength(0)
     expect(result.current.running).toBe(false)
   })
+
+  it('reorders queued items by direction and drop target', () => {
+    const convert = makeConvert({})
+    const { result } = renderHook(() => useBatchConvert<Res>({ convert }))
+
+    act(() => result.current.add([pdf('a.pdf'), pdf('b.pdf'), pdf('c.pdf')]))
+    const [a, b, c] = result.current.items
+
+    act(() => result.current.move(c.id, -1))
+    expect(result.current.items.map((it) => it.file.name)).toEqual(['a.pdf', 'c.pdf', 'b.pdf'])
+
+    act(() => result.current.moveTo(a.id, b.id))
+    expect(result.current.items.map((it) => it.file.name)).toEqual(['c.pdf', 'b.pdf', 'a.pdf'])
+  })
+
+  it('does not reorder while the batch is running', async () => {
+    const convert = makeConvert({})
+    const { result } = renderHook(() => useBatchConvert<Res>({ convert }))
+
+    act(() => result.current.add([pdf('a.pdf'), pdf('b.pdf')]))
+    act(() => {
+      void result.current.runAll()
+    })
+    await settle()
+
+    const [a, b] = result.current.items
+    act(() => {
+      result.current.move(b.id, -1)
+      result.current.moveTo(b.id, a.id)
+    })
+
+    expect(result.current.items.map((it) => it.file.name)).toEqual(['a.pdf', 'b.pdf'])
+  })
 })
