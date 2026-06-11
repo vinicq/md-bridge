@@ -1,3 +1,4 @@
+import { useState, type DragEvent, type KeyboardEvent } from 'react'
 import { useTranslation } from '../i18n'
 import type { BatchItem } from '../hooks/useBatchConvert'
 import { Button } from './Button'
@@ -10,6 +11,8 @@ interface BatchPanelProps<TResult> {
   onConvertAll: () => void
   onClear: () => void
   onRemove: (id: string) => void
+  onMove: (id: string, direction: -1 | 1) => void
+  onMoveTo: (id: string, targetId: string) => void
   /** Called when the user skips an item that is still converting. */
   onSkip?: (id: string) => void
   /** Called when the user clicks the per-item download button. */
@@ -40,6 +43,8 @@ export function BatchPanel<TResult>({
   onConvertAll,
   onClear,
   onRemove,
+  onMove,
+  onMoveTo,
   onSkip,
   onDownload,
   onDownloadAll,
@@ -50,6 +55,9 @@ export function BatchPanel<TResult>({
   downloadAnywayLabel,
 }: BatchPanelProps<TResult>) {
   const { t } = useTranslation()
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
+  const [grabbedId, setGrabbedId] = useState<string | null>(null)
   if (items.length === 0) return null
 
   // The hook leaves timeout/skip errors with an empty message and only a code,
@@ -63,6 +71,61 @@ export function BatchPanel<TResult>({
   const done = items.filter((it) => it.status === 'done').length
   const hasQueued = items.some((it) => it.status === 'queued')
   const hasDone = done > 0
+  const canReorder = !running && items.length > 1
+
+  const move = (id: string, direction: -1 | 1) => {
+    if (!canReorder) return
+    onMove(id, direction)
+  }
+
+  const handleDragStart = (event: DragEvent<HTMLButtonElement>, id: string) => {
+    if (!canReorder) {
+      event.preventDefault()
+      return
+    }
+    setDraggedId(id)
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', id)
+  }
+
+  const handleDrop = (event: DragEvent<HTMLLIElement>, targetId: string) => {
+    event.preventDefault()
+    if (!canReorder) return
+    const sourceId = draggedId ?? event.dataTransfer.getData('text/plain')
+    if (sourceId && sourceId !== targetId) onMoveTo(sourceId, targetId)
+    setDraggedId(null)
+    setDropTargetId(null)
+  }
+
+  const handleRowKeyDown = (event: KeyboardEvent<HTMLLIElement>, id: string) => {
+    if (event.currentTarget !== event.target) return
+    if (!canReorder) return
+
+    if (event.altKey && event.key === 'ArrowUp') {
+      event.preventDefault()
+      move(id, -1)
+      return
+    }
+    if (event.altKey && event.key === 'ArrowDown') {
+      event.preventDefault()
+      move(id, 1)
+      return
+    }
+    if (event.key === ' ') {
+      event.preventDefault()
+      setGrabbedId((prev) => (prev === id ? null : id))
+      return
+    }
+    if (grabbedId === id && event.key === 'ArrowUp') {
+      event.preventDefault()
+      move(id, -1)
+      return
+    }
+    if (grabbedId === id && event.key === 'ArrowDown') {
+      event.preventDefault()
+      move(id, 1)
+    }
+  }
 
   return (
     <div className="batch">
@@ -72,13 +135,55 @@ export function BatchPanel<TResult>({
       </header>
 
       <ul className="batch__list">
-        {items.map((item) => {
+        {items.map((item, index) => {
           const isSelected = item.id === selectedId
+          const isDragged = item.id === draggedId
+          const isDropTarget = item.id === dropTargetId
+          const isGrabbed = item.id === grabbedId
+          const rowClass = [
+            'batch__row',
+            `batch__row--${item.status}`,
+            isSelected ? 'is-selected' : '',
+            isDragged ? 'is-dragging' : '',
+            isDropTarget ? 'is-drop-target' : '',
+            isGrabbed ? 'is-grabbed' : '',
+          ].filter(Boolean).join(' ')
           return (
             <li
               key={item.id}
-              className={`batch__row batch__row--${item.status} ${isSelected ? 'is-selected' : ''}`.trim()}
+              className={rowClass}
+              tabIndex={0}
+              aria-grabbed={isGrabbed}
+              onKeyDown={(event) => handleRowKeyDown(event, item.id)}
+              onDragOver={(event) => {
+                if (!canReorder) return
+                event.preventDefault()
+                event.dataTransfer.dropEffect = 'move'
+                setDropTargetId(item.id)
+              }}
+              onDragLeave={() => setDropTargetId((current) => (current === item.id ? null : current))}
+              onDrop={(event) => handleDrop(event, item.id)}
             >
+              <button
+                type="button"
+                className="batch__drag"
+                draggable={canReorder}
+                aria-disabled={!canReorder}
+                aria-label={`Drag to reorder ${item.file.name}`}
+                title="Drag to reorder"
+                onDragStart={(event) => handleDragStart(event, item.id)}
+                onDragEnd={() => {
+                  setDraggedId(null)
+                  setDropTargetId(null)
+                }}
+                onClick={() => {
+                  if (canReorder) setGrabbedId((prev) => (prev === item.id ? null : item.id))
+                }}
+                disabled={!canReorder}
+              >
+                <span aria-hidden="true">::</span>
+              </button>
+
               <button
                 type="button"
                 className="batch__file"
@@ -98,6 +203,22 @@ export function BatchPanel<TResult>({
               </span>
 
               <div className="batch__actions">
+                <Button
+                  variant="icon"
+                  onClick={() => move(item.id, -1)}
+                  disabled={!canReorder || index === 0}
+                  aria-label={`move ${item.file.name} up`}
+                >
+                  Up
+                </Button>
+                <Button
+                  variant="icon"
+                  onClick={() => move(item.id, 1)}
+                  disabled={!canReorder || index === items.length - 1}
+                  aria-label={`move ${item.file.name} down`}
+                >
+                  Down
+                </Button>
                 {item.status === 'done' && (
                   <Button variant="ghost" onClick={() => onDownload(item)}>
                     {downloadBlocked?.(item) ? (downloadAnywayLabel ?? downloadLabel) : downloadLabel}

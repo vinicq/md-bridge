@@ -34,18 +34,35 @@
 
 .batch__row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: var(--s-3);
   padding: var(--s-2) var(--s-3);
   border: 1px solid var(--c-rule);
   border-radius: var(--r-sm);
   background: var(--c-bg);
-  transition: border-color var(--t-fast) var(--easing);
+  transition:
+    border-color var(--t-fast) var(--easing),
+    background var(--t-fast) var(--easing),
+    opacity var(--t-fast) var(--easing);
+}
+
+.batch__row:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
 }
 
 .batch__row.is-selected {
   border-color: var(--c-accent);
+}
+
+.batch__row.is-dragging {
+  opacity: 0.6;
+}
+
+.batch__row.is-drop-target,
+.batch__row.is-grabbed {
+  background: var(--c-accent-soft);
 }
 
 .batch__row--converting {
@@ -58,6 +75,28 @@
 
 .batch__row--error {
   border-color: var(--c-accent);
+}
+
+.batch__drag {
+  width: 1.75rem;
+  height: 2rem;
+  border: 1px solid var(--c-rule);
+  border-radius: var(--r-sm);
+  background: var(--c-bg-elev);
+  color: var(--c-ink-soft);
+  cursor: grab;
+  font: inherit;
+  font-size: var(--fs-xs);
+  line-height: 1;
+}
+
+.batch__drag:active {
+  cursor: grabbing;
+}
+
+.batch__drag[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .batch__file {
@@ -113,6 +152,8 @@
 .batch__actions {
   display: flex;
   gap: var(--s-1);
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .batch__error {
