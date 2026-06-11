@@ -78,6 +78,34 @@ export function useBatchConvert<TResult>({
     })
   }, [])
 
+  const move = useCallback((id: string, direction: -1 | 1) => {
+    if (running) return
+    setItems((prev) => {
+      const from = prev.findIndex((it) => it.id === id)
+      if (from === -1) return prev
+      const to = from + direction
+      if (to < 0 || to >= prev.length) return prev
+      const next = [...prev]
+      const [item] = next.splice(from, 1)
+      next.splice(to, 0, item)
+      return next
+    })
+  }, [running])
+
+  const moveTo = useCallback((id: string, targetId: string) => {
+    if (running) return
+    if (id === targetId) return
+    setItems((prev) => {
+      const from = prev.findIndex((it) => it.id === id)
+      const target = prev.findIndex((it) => it.id === targetId)
+      if (from === -1 || target === -1) return prev
+      const next = [...prev]
+      const [item] = next.splice(from, 1)
+      next.splice(target, 0, item)
+      return next
+    })
+  }, [running])
+
   const clear = useCallback(() => {
     abortRef.current?.abort()
     itemCtrlsRef.current.clear()
@@ -170,5 +198,5 @@ export function useBatchConvert<TResult>({
     setRunning(false)
   }, [convert, convertTimeoutMs, patch, running, toBlobUrl])
 
-  return { items, running, add, remove, clear, skip, runAll }
+  return { items, running, add, remove, move, moveTo, clear, skip, runAll }
 }
