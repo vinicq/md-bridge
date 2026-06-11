@@ -12,6 +12,15 @@ const ISTQB = path.resolve(
   'fixtures',
   'istqb-ctal-ta-syllabus-en.pdf',
 )
+const CODE_SAMPLE = path.resolve(
+  here,
+  '..',
+  '..',
+  'api',
+  'tests',
+  'fixtures',
+  'code-sample.pdf',
+)
 
 test.beforeEach(async ({ context }) => {
   await context.addInitScript(() => {
@@ -125,4 +134,47 @@ test('Batch: clearing the list cancels and empties the queue', async ({ page }) 
 
   await page.getByRole('button', { name: /clear list/i }).click()
   await expect(page.locator('.batch__list')).toHaveCount(0)
+})
+
+test('Batch: drag reorder changes the conversion order', async ({ page }) => {
+  const converted: string[] = []
+  await page.route('**/api/pdf-to-md', async (route) => {
+    const body = route.request().postData() ?? ''
+    const match = body.match(/filename="([^"]+)"/)
+    converted.push(match?.[1] ?? 'unknown')
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        md: '# converted',
+        front_matter: {},
+        warnings: [],
+        stats: { headings: 1, tables: 0, bullets: 0 },
+      }),
+    })
+  })
+
+  await page.goto('/convert/pdf-to-md')
+  await page.locator('input[type="file"]').setInputFiles([ISTQB, CODE_SAMPLE])
+
+  const list = page.locator('.batch__list')
+  const codeRow = list.locator('.batch__row').filter({ hasText: 'code-sample.pdf' })
+  await codeRow.locator('.batch__drag').dragTo(list.locator('.batch__row').first())
+
+  await expect(list.locator('.batch__row').first()).toContainText('code-sample.pdf')
+  await page.getByRole('button', { name: /convert all/i }).click()
+  await expect(list.locator('.batch__row--done')).toHaveCount(2)
+  expect(converted).toEqual(['code-sample.pdf', 'istqb-ctal-ta-syllabus-en.pdf'])
+})
+
+test('Batch: mobile fallback buttons reorder the queue', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/convert/pdf-to-md')
+  await page.locator('input[type="file"]').setInputFiles([ISTQB, CODE_SAMPLE])
+
+  const list = page.locator('.batch__list')
+  const codeRow = list.locator('.batch__row').filter({ hasText: 'code-sample.pdf' })
+  await codeRow.getByRole('button', { name: /move code-sample\.pdf up/i }).click()
+
+  await expect(list.locator('.batch__row').first()).toContainText('code-sample.pdf')
 })

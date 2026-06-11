@@ -118,6 +118,8 @@ export function MdToDocx() {
             onConvertAll={onConvertAll}
             onClear={batch.clear}
             onRemove={batch.remove}
+            onMove={batch.move}
+            onMoveTo={batch.moveTo}
             onSkip={batch.skip}
             onDownload={onDownload}
             onDownloadAll={() => void zip.downloadZip(batch.items, t.batch.docxBundleName)}
