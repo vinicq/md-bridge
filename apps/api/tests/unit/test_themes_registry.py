@@ -7,10 +7,12 @@ import pytest
 from app.services import themes
 
 
-def test_registry_lists_the_four_slugs_default_first():
+def test_registry_lists_default_first_and_known_slugs_present():
     slugs = [t.slug for t in themes.list_themes()]
     assert slugs[0] == "default"
-    assert set(slugs) == {"default", "academic", "business", "minimal"}
+    # Core themes shipped from the start must always be present.
+    for expected in ("academic", "business", "minimal"):
+        assert expected in slugs, f"expected theme slug '{expected}' not found in registry"
 
 
 def test_get_theme_returns_metadata():

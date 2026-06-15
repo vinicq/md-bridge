@@ -1,0 +1,51 @@
+/* report — corporate report style, navy accent, structured hierarchy.
+ *
+ * Stacks on top of default.css; only identity overrides here. */
+
+:root {
+  --report-accent: #1a3a6b;
+  --report-accent-light: #e8edf5;
+  --report-ink: #1a1a1a;
+  --report-font: "Calibri", "Helvetica Neue", Arial, "Liberation Sans", sans-serif;
+}
+
+body {
+  font-family: var(--report-font);
+  color: var(--report-ink);
+  line-height: 1.5;
+  text-align: left;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--report-font);
+  color: var(--report-accent);
+}
+
+h1 {
+  border-bottom: 3px solid var(--report-accent);
+  color: var(--report-accent);
+  padding-bottom: .3em;
+}
+
+h2 {
+  border-bottom: 1px solid var(--report-accent);
+  padding-bottom: .15em;
+}
+
+th {
+  background: var(--report-accent);
+  color: #ffffff;
+  border-color: var(--report-accent);
+}
+
+tr:nth-child(even) td {
+  background: var(--report-accent-light);
+}
+
+blockquote {
+  border-left-color: var(--report-accent);
+  background: var(--report-accent-light);
+  color: #333;
+}
+
+a { color: var(--report-accent); }

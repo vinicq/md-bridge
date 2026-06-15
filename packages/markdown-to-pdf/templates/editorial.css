@@ -1,0 +1,77 @@
+/* editorial — magazine and long-form style, generous spacing, elegant hierarchy.
+ *
+ * Stacks on top of default.css; only identity overrides here. */
+
+:root {
+  --editorial-heading-font: Georgia, Cambria, "Times New Roman", serif;
+  --editorial-body-font: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --editorial-ink: #1c1c1c;
+  --editorial-rule: #c8a96e;
+}
+
+body {
+  font-family: var(--editorial-body-font);
+  color: var(--editorial-ink);
+  line-height: 1.75;
+  text-align: justify;
+  hyphens: auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--editorial-heading-font);
+  color: var(--editorial-ink);
+  font-weight: 700;
+  text-align: center;
+}
+
+h1 {
+  font-size: 26pt;
+  border-bottom: 2px solid var(--editorial-rule);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 17pt;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  font-weight: 700;
+  border-bottom: none;
+}
+
+h3 {
+  font-size: 13pt;
+  font-style: italic;
+  font-weight: 700;
+  text-align: left;
+}
+
+/* Pull-quote style for blockquotes. */
+blockquote {
+  border-left: none;
+  border-top: 2px solid var(--editorial-rule);
+  border-bottom: 2px solid var(--editorial-rule);
+  background: transparent;
+  font-size: 13pt;
+  font-style: italic;
+  color: #3d3020;
+  padding: .8em 1.5em;
+  margin: 1.5em 2em;
+  text-align: center;
+}
+
+th {
+  background: #f7f0e3;
+  border-color: #c8a96e;
+  font-family: var(--editorial-heading-font);
+}
+td { border-color: #d8cdb8; }
+
+hr {
+  border: none;
+  border-top: 2px solid var(--editorial-rule);
+  width: 40%;
+  margin: 2em auto;
+}
+
+a { color: #8b6914; }
