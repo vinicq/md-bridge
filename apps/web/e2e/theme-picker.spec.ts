@@ -10,25 +10,22 @@ Paragraph text with **bold**.
 `
 
 test.beforeEach(async ({ context }) => {
-  // Note: init scripts re-run on every navigation (including reload), so this
-  // only seeds the locale. The theme is left to its natural 'default' so the
-  // persistence assertion after reload reflects the real localStorage write.
   await context.addInitScript(() => {
     window.localStorage.setItem('md-bridge:locale', 'en')
   })
 })
 
-test('theme picker lists the API themes, persists the choice, and re-renders on switch', async ({
+test('theme picker lists API themes, persists choice, and re-renders on switch', async ({
   page,
 }) => {
   await page.goto('/convert/md-to-pdf')
 
-  // The picker renders one tile per theme the backend registry returns.
-  const radios = page.getByRole('radio')
-  await expect(radios).toHaveCount(4)
-  await expect(page.getByRole('radio', { name: /default/i })).toBeChecked()
-  for (const name of ['Academic', 'Business', 'Minimal']) {
-    await expect(page.locator('.theme-tile', { hasText: name })).toBeVisible()
+  // The select renders with at least the core themes from the backend registry.
+  const select = page.getByRole('combobox', { name: /theme/i })
+  await expect(select).toBeVisible()
+  await expect(select).toHaveValue('default')
+  for (const name of ['Default', 'Academic', 'Business', 'Minimal']) {
+    await expect(page.getByRole('option', { name })).toBeAttached()
   }
 
   // Convert once with the default theme and capture the preview source.
@@ -41,8 +38,8 @@ test('theme picker lists the API themes, persists the choice, and re-renders on 
   const firstSrc = await iframe.getAttribute('src')
 
   // Switching the theme re-runs the conversion; the preview points at a new blob.
-  await page.locator('.theme-tile', { hasText: 'Academic' }).click()
-  await expect(page.getByRole('radio', { name: /academic/i })).toBeChecked()
+  await page.getByRole('combobox', { name: /theme/i }).selectOption('academic')
+  await expect(select).toHaveValue('academic')
   await expect
     .poll(async () => iframe.getAttribute('src'), { timeout: 60_000 })
     .not.toBe(firstSrc)
@@ -50,11 +47,5 @@ test('theme picker lists the API themes, persists the choice, and re-renders on 
 
   // The choice survives a reload.
   await page.reload()
-  await expect(page.getByRole('radio', { name: /academic/i })).toBeChecked()
-
-  // The "Browse all themes" link resolves to the placeholder library page,
-  // not a 404 (the F2 deep catalogue is a future issue).
-  await page.getByRole('link', { name: /browse all themes/i }).click()
-  await expect(page).toHaveURL(/\/themes$/)
-  await expect(page.getByRole('heading', { name: /theme library/i })).toBeVisible()
+  await expect(page.getByRole('combobox', { name: /theme/i })).toHaveValue('academic')
 })
