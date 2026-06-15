@@ -169,8 +169,8 @@ export function BatchPanel<TResult>({
                 className="batch__drag"
                 draggable={canReorder}
                 aria-disabled={!canReorder}
-                aria-label={`Drag to reorder ${item.file.name}`}
-                title="Drag to reorder"
+                aria-label={t.batch.dragLabel(item.file.name)}
+                title={t.batch.dragLabel(item.file.name)}
                 onDragStart={(event) => handleDragStart(event, item.id)}
                 onDragEnd={() => {
                   setDraggedId(null)
@@ -191,18 +191,27 @@ export function BatchPanel<TResult>({
                 title={item.file.name}
               >
                 <span className="batch__name">{item.file.name}</span>
-                <span className="batch__size">{formatSize(item.file.size)}</span>
               </button>
 
-              <span className={`batch__status batch__status--${item.status}`}>
-                {item.status === 'converting' && <Spinner size={14} label={t.batch.statusConverting} />}
-                {item.status === 'queued' && t.batch.statusQueued}
-                {item.status === 'converting' && t.batch.statusConverting}
-                {item.status === 'done' && t.batch.statusDone}
-                {item.status === 'error' && t.batch.statusError}
-              </span>
+              <div className="batch__meta">
+                <span className={`batch__status batch__status--${item.status}`}>
+                  {item.status === 'converting' && <Spinner size={14} label={t.batch.statusConverting} />}
+                  {item.status === 'queued' && t.batch.statusQueued}
+                  {item.status === 'converting' && <span aria-hidden="true">{t.batch.statusConverting}</span>}
+                  {item.status === 'done' && t.batch.statusDone}
+                  {item.status === 'error' && t.batch.statusError}
+                </span>
+                <span className="batch__size">{formatSize(item.file.size)}</span>
+              </div>
 
               <div className="batch__actions">
+                <Button
+                  variant="icon"
+                  onClick={() => onRemove(item.id)}
+                  aria-label={`remove ${item.file.name}`}
+                >
+                  ×
+                </Button>
                 <Button
                   variant="icon"
                   onClick={() => move(item.id, -1)}
@@ -233,13 +242,6 @@ export function BatchPanel<TResult>({
                     {t.batch.skip}
                   </Button>
                 )}
-                <Button
-                  variant="icon"
-                  onClick={() => onRemove(item.id)}
-                  aria-label={`remove ${item.file.name}`}
-                >
-                  ×
-                </Button>
               </div>
 
               {item.error && (

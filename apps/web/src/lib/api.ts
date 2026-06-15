@@ -1,4 +1,4 @@
-export interface PdfToMdOptions {
+interface PdfToMdOptions {
   page_break?: boolean
   with_images?: boolean
   front_matter?: boolean

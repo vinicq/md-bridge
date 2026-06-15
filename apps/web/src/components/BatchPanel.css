@@ -34,9 +34,11 @@
 
 .batch__row {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: 1.75rem 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: var(--s-3);
+  row-gap: var(--s-1);
   align-items: center;
-  gap: var(--s-3);
   padding: var(--s-2) var(--s-3);
   border: 1px solid var(--c-rule);
   border-radius: var(--r-sm);
@@ -78,6 +80,9 @@
 }
 
 .batch__drag {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  align-self: center;
   width: 1.75rem;
   height: 2rem;
   border: 1px solid var(--c-rule);
@@ -100,27 +105,39 @@
 }
 
 .batch__file {
+  grid-column: 2;
+  grid-row: 1;
   background: none;
   border: 0;
   text-align: left;
   cursor: pointer;
   font: inherit;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: block;
   min-width: 0;
 }
 
 .batch__name {
+  display: block;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.batch__meta {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
 .batch__size {
   font-size: 0.7rem;
   color: var(--c-ink-soft);
+  white-space: nowrap;
 }
 
 .batch__status {
@@ -150,10 +167,13 @@
 }
 
 .batch__actions {
+  grid-column: 3;
+  grid-row: 1 / 3;
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
   gap: var(--s-1);
-  flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
 .batch__error {

@@ -422,18 +422,19 @@ test.describe('focus-visible coverage', () => {
   }
 })
 
-// The source-PDF preview (#15) adds a11y-relevant surface that the empty-state
-// sweeps above do not cover: the iframe `title`, and the mobile tablist/tab/
-// tabpanel. Audit those loaded states directly.
-test.describe('source-PDF preview a11y (#15)', () => {
+// After conversion the page shows a Markdown preview region. Audit that loaded
+// state for axe violations — the empty-state sweeps above don't cover it.
+test.describe('pdf-to-md post-conversion a11y', () => {
   for (const theme of ['light', 'dark'] as const) {
-    test(`no axe violations with the PDF loaded [${theme}]`, async ({ page }) => {
+    test(`no axe violations after conversion [${theme}]`, async ({ page }) => {
       await page.goto('/', { waitUntil: 'domcontentloaded' })
       await page.evaluate((t) => window.localStorage.setItem('md-bridge:theme', t), theme)
       await page.setViewportSize({ width: 1280, height: 1000 })
       await page.goto('/convert/pdf-to-md', { waitUntil: 'networkidle' })
       await page.locator('input[type="file"]').setInputFiles(ISTQB)
-      await expect(page.locator('iframe.compare__frame')).toBeVisible({ timeout: 30_000 })
+      await expect(page.getByRole('region', { name: /markdown/i })).toBeVisible({
+        timeout: 30_000,
+      })
 
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa'])
@@ -444,21 +445,4 @@ test.describe('source-PDF preview a11y (#15)', () => {
       ).toHaveLength(0)
     })
   }
-
-  test('mobile tab swap keeps the active tabpanel clean under axe', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 900 })
-    await page.goto('/convert/pdf-to-md', { waitUntil: 'networkidle' })
-    await page.locator('input[type="file"]').setInputFiles(ISTQB)
-    await expect(page.getByRole('tablist')).toBeVisible({ timeout: 30_000 })
-
-    // Switch to the PDF tab and audit with that tabpanel active.
-    await page.getByRole('tab', { name: 'PDF' }).click()
-    await expect(page.locator('#compare-panel-pdf')).toBeVisible()
-
-    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
-    expect(
-      results.violations,
-      `axe violations (mobile tabs): ${results.violations.map((v) => v.id).join(', ')}`,
-    ).toHaveLength(0)
-  })
 })

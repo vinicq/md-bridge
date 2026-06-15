@@ -39,17 +39,8 @@ interface Dictionary {
     ready: string
     download: string
     previewEmpty: string
+    previewLabel: string
     success: string
-    // Source-PDF preview pane (#15). `sourceIframeTitle` is the iframe's
-    // accessible name and takes the file name.
-    sourceIframeTitle: (name: string) => string
-    sourcePaneEmpty: string
-    sourcePaneError: string
-    compare: {
-      tablistLabel: string
-      tabPdf: string
-      tabMd: string
-    }
     warnings: {
       // Heading on the warnings alert.
       title: string
@@ -92,37 +83,16 @@ interface Dictionary {
     success: string
   }
   themePicker: {
-    // Group label above the theme tiles.
+    // Group label above the radio list.
     label: string
-    // Link to the deep theme library (F2); target may be a placeholder route.
-    browse: string
+    // Status strings for loading / error states.
+    loading: string
+    loadError: string
   }
   themesPage: {
     title: string
     subtitle: string
     back: string
-  }
-  optionsPanel: {
-    legend: string
-    frontMatter: { label: string; tip: string }
-    pageBreak: { label: string; tip: string }
-    withImages: { label: string; tip: string }
-    blockquotes: { label: string; tip: string }
-    clusterHeadings: { label: string; tip: string }
-    preserveLineBreaks: { label: string; tip: string }
-    footnotePairing: { label: string; tip: string }
-    maxHeadingLevel: { label: string; tip: string }
-  }
-  pageSetup: {
-    legend: string
-    page: { legend: string }
-    pageSize: { label: string }
-    margins: { label: string; tight: string; normal: string; loose: string }
-    header: { legend: string }
-    footer: { legend: string }
-    slot: { left: string; center: string; right: string }
-    tokenHelp: string
-    slotPlaceholder: string
   }
   about: {
     title: string
@@ -153,6 +123,7 @@ interface Dictionary {
     clear: string
     skip: string
     skipLabel: (name: string) => string
+    dragLabel: (name: string) => string
     errorTimeout: string
     errorSkipped: string
     pdfBundleName: string
@@ -250,15 +221,8 @@ const en: Dictionary = {
     ready: 'Ready',
     download: 'Download .md',
     previewEmpty: 'The Markdown will appear here after conversion.',
+    previewLabel: 'Converted Markdown',
     success: 'Markdown generated.',
-    sourceIframeTitle: (name: string) => `Source PDF: ${name}`,
-    sourcePaneEmpty: 'Drop a PDF to preview it here.',
-    sourcePaneError: 'This PDF has no text layer to convert.',
-    compare: {
-      tablistLabel: 'Source and result view',
-      tabPdf: 'PDF',
-      tabMd: 'Markdown',
-    },
     warnings: {
       title: 'Warnings',
       needs_ocr:
@@ -297,59 +261,13 @@ const en: Dictionary = {
   },
   themePicker: {
     label: 'Theme',
-    browse: 'Browse all themes →',
+    loading: 'Loading themes…',
+    loadError: 'Could not load themes.',
   },
   themesPage: {
     title: 'Theme library',
     subtitle: 'The full theme catalogue is on the way. For now, pick a theme from the converter.',
     back: '← Back to Markdown to PDF',
-  },
-  optionsPanel: {
-    legend: 'Conversion options',
-    frontMatter: {
-      label: 'Add front matter',
-      tip: 'Write the title, author, and date as a YAML block at the top of the Markdown.',
-    },
-    pageBreak: {
-      label: 'Mark page breaks',
-      tip: 'Insert a horizontal rule (---) where each PDF page ends.',
-    },
-    withImages: {
-      label: 'Extract images',
-      tip: 'Save embedded images and link them from the Markdown. The hosted demo does not serve the image files back.',
-    },
-    blockquotes: {
-      label: 'Detect block quotes',
-      tip: 'Treat consistently indented passages as block quotes.',
-    },
-    clusterHeadings: {
-      label: 'Detect headings by font size',
-      tip: 'Group font sizes into heading levels and merge headings split across lines.',
-    },
-    preserveLineBreaks: {
-      label: 'Keep line breaks',
-      tip: 'Preserve intentional line breaks, like poetry or addresses, as hard breaks.',
-    },
-    footnotePairing: {
-      label: 'Pair footnotes',
-      tip: 'Link footer footnotes to their reference marks in the text.',
-    },
-    maxHeadingLevel: {
-      label: 'Deepest heading level',
-      tip: "Limit how deep detected headings go (1–6). Applies only when 'Detect headings by font size' is on.",
-    },
-  },
-  pageSetup: {
-    legend: 'Page setup',
-    page: { legend: 'Page' },
-    pageSize: { label: 'Page size' },
-    margins: { label: 'Margins', tight: 'Tight', normal: 'Normal', loose: 'Loose' },
-    header: { legend: 'Header' },
-    footer: { legend: 'Footer' },
-    slot: { left: 'Left', center: 'Center', right: 'Right' },
-    tokenHelp:
-      'Use {{title}}, {{author}}, {{date}}, {{page}}, {{pages}} to insert values automatically.',
-    slotPlaceholder: 'e.g. {{title}}',
   },
   about: {
     title: 'About md-bridge',
@@ -399,6 +317,7 @@ const en: Dictionary = {
     clear: 'Clear list',
     skip: 'Skip',
     skipLabel: (name) => `skip ${name}`,
+    dragLabel: (name) => `Drag to reorder ${name}`,
     errorTimeout: 'Timed out',
     errorSkipped: 'Skipped',
     pdfBundleName: 'pdfs.zip',
@@ -498,15 +417,8 @@ const pt: Dictionary = {
     ready: 'Pronto',
     download: 'Baixar .md',
     previewEmpty: 'O Markdown aparece aqui depois da conversão.',
+    previewLabel: 'Markdown convertido',
     success: 'Markdown gerado.',
-    sourceIframeTitle: (name: string) => `PDF de origem: ${name}`,
-    sourcePaneEmpty: 'Solte um PDF para visualizá-lo aqui.',
-    sourcePaneError: 'Este PDF não tem camada de texto para converter.',
-    compare: {
-      tablistLabel: 'Visão de origem e resultado',
-      tabPdf: 'PDF',
-      tabMd: 'Markdown',
-    },
     warnings: {
       title: 'Avisos',
       needs_ocr:
@@ -545,59 +457,13 @@ const pt: Dictionary = {
   },
   themePicker: {
     label: 'Tema',
-    browse: 'Ver todos os temas →',
+    loading: 'Carregando temas…',
+    loadError: 'Não foi possível carregar os temas.',
   },
   themesPage: {
     title: 'Biblioteca de temas',
     subtitle: 'O catálogo completo de temas está a caminho. Por enquanto, escolha um tema no conversor.',
     back: '← Voltar para Markdown para PDF',
-  },
-  optionsPanel: {
-    legend: 'Opções de conversão',
-    frontMatter: {
-      label: 'Adicionar front matter',
-      tip: 'Escreve título, autor e data como um bloco YAML no topo do Markdown.',
-    },
-    pageBreak: {
-      label: 'Marcar quebras de página',
-      tip: 'Insere uma régua (---) onde cada página do PDF termina.',
-    },
-    withImages: {
-      label: 'Extrair imagens',
-      tip: 'Salva as imagens embutidas e referencia no Markdown. A demo hospedada não devolve os arquivos de imagem.',
-    },
-    blockquotes: {
-      label: 'Detectar citações',
-      tip: 'Trata trechos com recuo consistente como citações.',
-    },
-    clusterHeadings: {
-      label: 'Detectar títulos por tamanho de fonte',
-      tip: 'Agrupa tamanhos de fonte em níveis de título e une títulos quebrados em linhas.',
-    },
-    preserveLineBreaks: {
-      label: 'Manter quebras de linha',
-      tip: 'Preserva quebras de linha intencionais, como poesia ou endereços, como quebras rígidas.',
-    },
-    footnotePairing: {
-      label: 'Parear notas de rodapé',
-      tip: 'Liga as notas de rodapé às marcas de referência no texto.',
-    },
-    maxHeadingLevel: {
-      label: 'Nível de título mais profundo',
-      tip: "Limita a profundidade dos títulos detectados (1–6). Só vale com 'Detectar títulos por tamanho de fonte' ligado.",
-    },
-  },
-  pageSetup: {
-    legend: 'Configuração da página',
-    page: { legend: 'Página' },
-    pageSize: { label: 'Tamanho da página' },
-    margins: { label: 'Margens', tight: 'Estreitas', normal: 'Normais', loose: 'Largas' },
-    header: { legend: 'Cabeçalho' },
-    footer: { legend: 'Rodapé' },
-    slot: { left: 'Esquerda', center: 'Centro', right: 'Direita' },
-    tokenHelp:
-      'Use {{title}}, {{author}}, {{date}}, {{page}}, {{pages}} para inserir valores automaticamente.',
-    slotPlaceholder: 'ex: {{title}}',
   },
   about: {
     title: 'Sobre o md-bridge',
@@ -647,6 +513,7 @@ const pt: Dictionary = {
     clear: 'Limpar lista',
     skip: 'Pular',
     skipLabel: (name) => `pular ${name}`,
+    dragLabel: (name) => `Arrastar para reordenar ${name}`,
     errorTimeout: 'Tempo esgotado',
     errorSkipped: 'Pulado',
     pdfBundleName: 'pdfs.zip',
@@ -746,15 +613,8 @@ const es: Dictionary = {
     ready: 'Listo',
     download: 'Descargar .md',
     previewEmpty: 'El Markdown aparecerá aquí después de la conversión.',
+    previewLabel: 'Markdown convertido',
     success: 'Markdown generado.',
-    sourceIframeTitle: (name: string) => `PDF de origen: ${name}`,
-    sourcePaneEmpty: 'Suelta un PDF para verlo aquí.',
-    sourcePaneError: 'Este PDF no tiene capa de texto para convertir.',
-    compare: {
-      tablistLabel: 'Vista de origen y resultado',
-      tabPdf: 'PDF',
-      tabMd: 'Markdown',
-    },
     warnings: {
       title: 'Advertencias',
       needs_ocr:
@@ -793,59 +653,13 @@ const es: Dictionary = {
   },
   themePicker: {
     label: 'Tema',
-    browse: 'Ver todos los temas →',
+    loading: 'Cargando temas…',
+    loadError: 'No se pudieron cargar los temas.',
   },
   themesPage: {
     title: 'Biblioteca de temas',
     subtitle: 'El catálogo completo de temas está en camino. Por ahora, elige un tema en el conversor.',
     back: '← Volver a Markdown a PDF',
-  },
-  optionsPanel: {
-    legend: 'Opciones de conversión',
-    frontMatter: {
-      label: 'Añadir front matter',
-      tip: 'Escribe el título, el autor y la fecha como un bloque YAML al inicio del Markdown.',
-    },
-    pageBreak: {
-      label: 'Marcar saltos de página',
-      tip: 'Inserta una regla (---) donde termina cada página del PDF.',
-    },
-    withImages: {
-      label: 'Extraer imágenes',
-      tip: 'Guarda las imágenes incrustadas y las enlaza desde el Markdown. La demo alojada no devuelve los archivos de imagen.',
-    },
-    blockquotes: {
-      label: 'Detectar citas',
-      tip: 'Trata los pasajes con sangría constante como citas.',
-    },
-    clusterHeadings: {
-      label: 'Detectar encabezados por tamaño de fuente',
-      tip: 'Agrupa los tamaños de fuente en niveles de encabezado y une encabezados partidos en líneas.',
-    },
-    preserveLineBreaks: {
-      label: 'Conservar saltos de línea',
-      tip: 'Conserva los saltos de línea intencionales, como poesía o direcciones, como saltos duros.',
-    },
-    footnotePairing: {
-      label: 'Emparejar notas al pie',
-      tip: 'Vincula las notas al pie con sus marcas de referencia en el texto.',
-    },
-    maxHeadingLevel: {
-      label: 'Nivel de encabezado más profundo',
-      tip: "Limita la profundidad de los encabezados detectados (1–6). Solo aplica con 'Detectar encabezados por tamaño de fuente' activado.",
-    },
-  },
-  pageSetup: {
-    legend: 'Configuración de página',
-    page: { legend: 'Página' },
-    pageSize: { label: 'Tamaño de página' },
-    margins: { label: 'Márgenes', tight: 'Estrechos', normal: 'Normales', loose: 'Amplios' },
-    header: { legend: 'Encabezado' },
-    footer: { legend: 'Pie de página' },
-    slot: { left: 'Izquierda', center: 'Centro', right: 'Derecha' },
-    tokenHelp:
-      'Usa {{title}}, {{author}}, {{date}}, {{page}}, {{pages}} para insertar valores automáticamente.',
-    slotPlaceholder: 'ej: {{title}}',
   },
   about: {
     title: 'Acerca de md-bridge',
@@ -895,6 +709,7 @@ const es: Dictionary = {
     clear: 'Limpiar lista',
     skip: 'Omitir',
     skipLabel: (name) => `omitir ${name}`,
+    dragLabel: (name) => `Arrastrar para reordenar ${name}`,
     errorTimeout: 'Tiempo agotado',
     errorSkipped: 'Omitido',
     pdfBundleName: 'pdfs.zip',
