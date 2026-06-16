@@ -422,6 +422,44 @@ test.describe('focus-visible coverage', () => {
   }
 })
 
+// The ThemePicker shows a role="alert" error when the themes fetch fails. That
+// alert uses the --c-error token (#b41c18 light / #ff6b6b dark), a color the
+// static route sweep never renders. Force the failure and audit the alert for
+// axe violations and color-contrast in both themes (WCAG 1.4.3 / 4.1.2).
+test.describe('theme-picker load-error a11y', () => {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`themes-fetch error alert is clean [${theme}]`, async ({ page }) => {
+      await page.addInitScript((t) => {
+        window.localStorage.setItem('md-bridge:locale', 'en')
+        window.localStorage.setItem('md-bridge:theme', t)
+      }, theme)
+      // Fail the themes fetch so useThemes lands in its error state.
+      await page.route('**/api/themes', (route) => route.abort())
+
+      await page.goto('/convert/md-to-pdf', { waitUntil: 'networkidle' })
+      const appliedTheme = await page.evaluate(() =>
+        document.documentElement.getAttribute('data-theme'),
+      )
+      expect(appliedTheme, `expected data-theme=${theme}`).toBe(theme)
+
+      const alert = page.locator('.theme-picker__error')
+      await expect(alert).toBeVisible({ timeout: 10_000 })
+
+      // The wcag2aa tag set includes color-contrast, so this validates the
+      // --c-error token's contrast on the alert in both themes.
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze()
+      expect(
+        results.violations,
+        `violations on themes load-error alert [${theme}]: ${results.violations
+          .map((v) => v.id)
+          .join(', ')}`,
+      ).toHaveLength(0)
+    })
+  }
+})
+
 // After conversion the page shows a Markdown preview region. Audit that loaded
 // state for axe violations — the empty-state sweeps above don't cover it.
 test.describe('pdf-to-md post-conversion a11y', () => {

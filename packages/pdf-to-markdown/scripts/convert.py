@@ -74,7 +74,9 @@ NUMBERED_RE = re.compile(r"^\s*(\d{1,3}|[a-zA-Z])[.)]\s+")
 # PDFs embed as empty glyph runs. These surface as `**﻿**` or `### ﻿` in the
 # output — headings or bold spans containing nothing visible (#text-artifacts).
 # Also normalise unusual Unicode spaces (NBSP, en-space, thin-space, etc.) to
-# regular ASCII space so word boundaries work in downstream tools.
+# regular ASCII space so word boundaries work in downstream tools. This set
+# includes U+2007 figure space on purpose: tabular figures lose their alignment
+# in plain Markdown anyway, so a normal space reads better than a stray glyph.
 _ZERO_WIDTH_RE = re.compile(
     "[﻿​‌‍⁠￾]"
 )
