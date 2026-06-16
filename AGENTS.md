@@ -20,6 +20,18 @@ A change that contradicts this contract should be flagged, not waved through.
 
 This is an open-source project. Every public artifact is written in English: PR review comments, review summaries, commit messages, issue comments, and docs. Internal reasoning can happen in any language, but anything posted to GitHub is English.
 
+## Review guidelines
+
+Codex reads this section when it reviews a pull request. Apply every rule below; the longer sections that follow expand on each one.
+
+- Write in English. No emojis anywhere: not in summaries, inline comments, headings, or as status markers. Use plain words ("blocker", "nit", "approved").
+- No em-dash. Use a hyphen, comma, or colon. Prefer "but" over "however". Drop filler praise ("essential", "robust", "seamless"). Be direct, vary sentence length, and quote the `file:line` you mean.
+- Never add AI attribution to anything that lands in the public record (no `Co-Authored-By: <AI>`, no "Generated with ..." footer, no mention of the assistant).
+- Open the top-level summary with a verdict: APPROVE, REQUEST CHANGES, or NEEDS DISCUSSION. Follow it with reasoning bullets grounded in `file:line`, a numbered action-item list that separates blockers from nits, and a named reversibility path for a non-trivial change.
+- Hold the testing bar: tests land in the same PR, the integration tier hits real binaries (no mocked subprocess), a bug fix carries a regression test, an a11y attribute change needs an axe-core E2E check, and a unit test renders the leaf rather than the full hook chain.
+- Flag scope creep against the project identity above: a new runtime external call, telemetry, or a quietly expanded surface.
+- A new native dependency must land in pyproject, the Dockerfile, and CI together. Visual snapshot baselines refresh only through the `/update-snapshots` maintainer comment, never a locally committed image.
+
 ## Writing style (applies to all review comments and summaries)
 
 - No emojis. Not in summaries, not in inline comments, not in headings, not as status markers. Use plain words ("blocker", "nit", "approved").
