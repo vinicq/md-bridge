@@ -32,9 +32,9 @@ apps/web/.playwright/
 .cursor/
 .cursorrules
 .copilot/
-AGENTS.md
 CLAUDE.md
 CODEX.md
+# AGENTS.md is intentionally tracked: it configures the Codex code-review bot.
 
 # Internal planning / design docs (not part of the public repo).
 # Anchored to the repo root so docs/architecture.md (the public MkDocs
