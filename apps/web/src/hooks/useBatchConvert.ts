@@ -34,7 +34,21 @@ export function useBatchConvert<TResult>({
   toBlobUrl,
   convertTimeoutMs,
 }: UseBatchConvertOptions<TResult>) {
-  const [items, setItems] = useState<BatchItem<TResult>[]>([])
+  const [items, setItemsState] = useState<BatchItem<TResult>[]>([])
+  // Mirror of `items` kept in sync on every write. runAll() reads it directly
+  // instead of snapshotting through a setState updater: when the queue is
+  // rebuilt and run in the same tick (clear -> add -> runAll, e.g. the theme
+  // re-run on /md-to-pdf), a setState snapshot can still observe the empty
+  // post-clear state and convert nothing. A ref reflects each write at once.
+  const itemsRef = useRef<BatchItem<TResult>[]>([])
+  const setItems = useCallback(
+    (updater: BatchItem<TResult>[] | ((prev: BatchItem<TResult>[]) => BatchItem<TResult>[])) => {
+      const next = typeof updater === 'function' ? updater(itemsRef.current) : updater
+      itemsRef.current = next
+      setItemsState(next)
+    },
+    [],
+  )
   const [running, setRunning] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
   // One controller per in-flight item, so the user can skip a single stuck
@@ -130,14 +144,9 @@ export function useBatchConvert<TResult>({
     setRunning(true)
 
     // Capture the IDs to process so we don't re-run items the user might add
-    // mid-flight (they remain queued, ready for the next click).
-    let snapshot: BatchItem<TResult>[] = []
-    setItems((prev) => {
-      snapshot = prev
-      return prev
-    })
-    // Wait for the snapshot assignment to flush.
-    await Promise.resolve()
+    // mid-flight (they remain queued, ready for the next click). itemsRef is
+    // current as of the last write, so no setState flush wait is needed.
+    const snapshot = itemsRef.current
     const targets = snapshot.filter((it) => it.status === 'queued').map((it) => it.id)
 
     for (const id of targets) {

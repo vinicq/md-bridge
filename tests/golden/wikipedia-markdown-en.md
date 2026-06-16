@@ -19,29 +19,29 @@ pages: 9
 text/markdown[2]
 ```
 
-[**Internet**](https://en.wikipedia.org/wiki/Media_type) [**media type**](https://en.wikipedia.org/wiki/Media_type)
+[**Internet**](https://en.wikipedia.org/wiki/Media_type) [**media type**](https://en.wikipedia.org/wiki/Media_type)
 
 ```
 net.daringfireball.markdown
 ```
 
-[**Uniform Type**](https://en.wikipedia.org/wiki/Uniform_Type_Identifier) [**Identifier (UTI)**](https://en.wikipedia.org/wiki/Uniform_Type_Identifier)
+[**Uniform Type**](https://en.wikipedia.org/wiki/Uniform_Type_Identifier) [**Identifier (UTI)**](https://en.wikipedia.org/wiki/Uniform_Type_Identifier)
 
 ### The initial description of Markdown\[11\]
 
-**UTI conformation** `public.plain-text` contained ambiguities and raised unanswered questions, causing implementations to both intentionally and accidentally diverge from the original version. This was addressed in 2014 when long-standing Markdown contributors released CommonMark, an unambiguous specification and test suite for Markdown.\[12\]
+**UTI conformation** `public.plain-text` contained ambiguities and raised unanswered questions, causing implementations to both intentionally and accidentally diverge from the original version. This was addressed in 2014 when long-standing Markdown contributors released CommonMark, an unambiguous specification and test suite for Markdown.\[12\]
 
 [**Magic number**](https://en.wikipedia.org/wiki/File_format#Magic_number) None
 
-**Developed by** [John Gruber](https://en.wikipedia.org/wiki/John_Gruber)
+**Developed by** [John Gruber](https://en.wikipedia.org/wiki/John_Gruber)
 
-**Initial release** March 9, 2004\[3\]\[4\]
+**Initial release** March 9, 2004\[3\]\[4\]
 
-[**Latest release**](https://en.wikipedia.org/wiki/Software_release_life_cycle) 1.0.1 December 17, 2004\[5\]
+[**Latest release**](https://en.wikipedia.org/wiki/Software_release_life_cycle) 1.0.1 December 17, 2004\[5\]
 
 **Type of format** Open file format\[6\]
 
-**Extended to** pandoc, MultiMarkdown, Markdown Extra, CommonMark,\[7\]
+**Extended to** pandoc, MultiMarkdown, Markdown Extra, CommonMark,\[7\]
 
 RMarkdown\[8\]
 
@@ -49,7 +49,7 @@ RMarkdown\[8\]
 
 **Website** [daringfireball.net/projects/markdown](https://daringfireball.net/projects/markdown/) [/ (https://daringfireball.net/projects/m](https://daringfireball.net/projects/markdown/) [arkdown/)](https://daringfireball.net/projects/markdown/)
 
-Markdown was inspired by pre-existing conventions for marking up plain text in email and usenet posts,\[13\] such as the earlier markup languages setext (c. 1992), Textile (c. 2002), and reStructuredText (c. 2002).\[9\]
+Markdown was inspired by pre-existing conventions for marking up plain text in email and usenet posts,\[13\] such as the earlier markup languages setext (c. 1992), Textile (c. 2002), and reStructuredText (c. 2002).\[9\]
 
 In 2002, Aaron Swartz created atx and referred to it as "the true structured text format". Gruber created the Markdown language in 2004 with Swartz as his "sounding board".\[14\] The goal of the language was to enable people "to write using an easy-to-read and easy-to-write plain text format, optionally convert it to structurally valid XHTML (or HTML)".\[5\]
 
@@ -86,33 +86,33 @@ text/markdown;
 variant=CommonMark[7]
 ```
 
-[**Internet**](https://en.wikipedia.org/wiki/Media_type) [**media type**](https://en.wikipedia.org/wiki/Media_type)
+[**Internet**](https://en.wikipedia.org/wiki/Media_type) [**media type**](https://en.wikipedia.org/wiki/Media_type)
 
 *uncertain*[^\[24\]^](#page-7)
 
 A community website now aims to "document various tools and resources available to document authors and developers, as well as implementors of the various Markdown implementations".\[26\]
 
-[**Uniform Type**](https://en.wikipedia.org/wiki/Uniform_Type_Identifier) [**Identifier (UTI)**](https://en.wikipedia.org/wiki/Uniform_Type_Identifier)
+[**Uniform Type**](https://en.wikipedia.org/wiki/Uniform_Type_Identifier) [**Identifier (UTI)**](https://en.wikipedia.org/wiki/Uniform_Type_Identifier)
 
-**UTI conformation** public.plain-text
+**UTI conformation** public.plain-text
 
-**Developed by** John MacFarlane, open source
+**Developed by** John MacFarlane, open source
 
 ### Name
 
-**Initial release** October 25, 2014
+**Initial release** October 25, 2014
 
-[**Latest release**](https://en.wikipedia.org/wiki/Software_release_life_cycle) 0.31.2 January 28, 2024\[25\]
+[**Latest release**](https://en.wikipedia.org/wiki/Software_release_life_cycle) 0.31.2 January 28, 2024\[25\]
 
 In September 2014, Gruber objected to the usage of "Markdown" in the name of this effort and it was rebranded as "CommonMark".\[13\]\[27\]\[28\]
 
 **Type of format** [Open file format](https://en.wikipedia.org/wiki/Open_file_format)
 
-**Extended from** Markdown
+**Extended from** Markdown
 
 CommonMark.org published several versions of a specification, reference implementation, test suite, and " \[plans\] to announce a finalized 1.0 spec and test suite in 2019".\[29\] A finalized 1.0 spec has not been released, as major issues still remain unsolved.\[30\]
 
-**Extended to** [GitHub Flavored](#page-3) [Markdown](#page-3)
+**Extended to** [GitHub Flavored](#page-3) [Markdown](#page-3)
 
 **Website** [commonmark.org (https://](https://commonmark.org/) [commonmark.org/) spec](https://commonmark.org/) [.commonmark.org (http://s](http://spec.commonmark.org/) [pec.commonmark.org/)](http://spec.commonmark.org/)
 
@@ -122,11 +122,11 @@ Nonetheless, several websites and projects have adopted CommonMark, including Co
 
 In March 2016, two relevant informational Internet RFCs were published:
 
-RFC 7763 (https://www.rfc-editor.org/rfc/rfc7763)  –  "The text/markdown Media Type,"\[2\]
+RFC 7763 (https://www.rfc-editor.org/rfc/rfc7763)  –  "The text/markdown Media Type,"\[2\]
 
 *Informational.*
 
-Introduces MIME type `text/markdown`. RFC 7764 (https://www.rfc-editor.org/rfc/rfc7764)  –  "Guidance on Markdown: Design Philosophies, Stability Strategies, and Select Registrations,"\[7\] *Informational.*
+Introduces MIME type `text/markdown`. RFC 7764 (https://www.rfc-editor.org/rfc/rfc7764)  –  "Guidance on Markdown: Design Philosophies, Stability Strategies, and Select Registrations,"\[7\] *Informational.*
 
 Discusses and registers the variants MultiMarkdown, GitHub Flavored Markdown (GFM), Pandoc, and Markdown Extra (among others).\[31\]
 
@@ -194,13 +194,13 @@ While Markdown is a minimal markup language and is read and edited with a normal
 
 offered by Hilton Lipschitz: *We no longer live in a 8.3 world, so we should be using the most* *descriptive file extensions. It's sad that all our operating systems rely on this stupid* *convention instead of the better creator code or a metadata model, but great that they now* *support longer file extensions.*" 2. S. Leonard (March 2016). [*The text/markdown Media Type*](https://www.rfc-editor.org/rfc/rfc7763) [(https://www.rfc-editor.org/rfc/rfc77](https://www.rfc-editor.org/rfc/rfc7763)
 
-63). Internet Engineering Task Force. doi:10.17487/RFC7763 (https://doi.org/10.17487%2FR FC7763). ISSN 2070-1721 (https://search.worldcat.org/issn/2070-1721). RFC 7763 (https://d atatracker.ietf.org/doc/html/rfc7763). *Informational.* 3. Swartz, Aaron (2004-03-19). "Markdown" (http://www.aaronsw.com/weblog/001189). *Aaron*
+63). Internet Engineering Task Force. doi:10.17487/RFC7763 (https://doi.org/10.17487%2FR FC7763). ISSN 2070-1721 (https://search.worldcat.org/issn/2070-1721). RFC 7763 (https://d atatracker.ietf.org/doc/html/rfc7763). *Informational.* 3. Swartz, Aaron (2004-03-19). "Markdown" (http://www.aaronsw.com/weblog/001189). *Aaron*
 
 *Swartz: The Weblog*. Archived (https://web.archive.org/web/20171224200232/http://www.aar onsw.com/weblog/001189) from the original on 2017-12-24. Retrieved 2013-09-01. 4. Gruber, John. "Markdown" (https://web.archive.org/web/20040311230924/https://daringfirebal l.net/projects/markdown/index.text). [*Daring Fireball*](https://en.wikipedia.org/wiki/Daring_Fireball). Archived from the original (http://daringfir eball.net/projects/markdown/index.text) on 2004-03-11. Retrieved 2022-08-20. 5. Markdown 1.0.1 readme source code "Daring Fireball – Markdown" (https://web.archive.org/ web/20040402182332/http://daringfireball.net/projects/markdown/). 2004-12-17. Archived from the original (http://daringfireball.net/projects/markdown/) on 2004-04-02. 6. "Markdown: License" (http://daringfireball.net/projects/markdown/license). Daring Fireball.
 
 [Archived (https://web.archive.org/web/20200218183533/https://daringfireball.net/projects/mar](https://web.archive.org/web/20200218183533/https://daringfireball.net/projects/markdown/license) kdown/license) from the original on 2020-02-18. Retrieved 2014-04-25. 7. S. Leonard (March 2016). [*Guidance on Markdown: Design Philosophies, Stability Strategies,*](https://www.rfc-editor.org/rfc/rfc7764)
 
-[*and Select Registrations*](https://www.rfc-editor.org/rfc/rfc7764) (https://www.rfc-editor.org/rfc/rfc7764). Internet Engineering Task Force. doi:10.17487/RFC7764 (https://doi.org/10.17487%2FRFC7764). ISSN 2070-1721 (htt ps://search.worldcat.org/issn/2070-1721). RFC 7764 (https://datatracker.ietf.org/doc/html/rfc7 764). *Informational.* 8. "RMarkdown Reference site" (https://rmarkdown.rstudio.com/). Archived (https://web.archive.
+[*and Select Registrations*](https://www.rfc-editor.org/rfc/rfc7764) (https://www.rfc-editor.org/rfc/rfc7764). Internet Engineering Task Force. doi:10.17487/RFC7764 (https://doi.org/10.17487%2FRFC7764). ISSN 2070-1721 (htt ps://search.worldcat.org/issn/2070-1721). RFC 7764 (https://datatracker.ietf.org/doc/html/rfc7 764). *Informational.* 8. "RMarkdown Reference site" (https://rmarkdown.rstudio.com/). Archived (https://web.archive.
 
 org/web/20200303054734/https://rmarkdown.rstudio.com/) from the original on 2020-03-03. Retrieved 2019-11-21. 9. Markdown Syntax "Daring Fireball – Markdown – Syntax" (http://daringfireball.net/projects/ma rkdown/syntax#philosophy). 2013-06-13. "Readability, however, is emphasized above all else. A Markdown-formatted document should be publishable as-is, as plain text, without looking like it's been marked up with tags or formatting instructions. While Markdown's syntax has been influenced by several existing text-to-HTML filters — including Setext, atx, Textile, reStructuredText, Grutatext\[15\], and EtText\[16\] — the single biggest source of inspiration for Markdown's syntax is the format of plain text email." 10. Dillet, Romain (6 March 2025). "Mistral adds a new API that turns any PDF document into an
 
@@ -226,7 +226,7 @@ github.io. Archived (https://web.archive.org/web/20201112043521/https://babelmar
 
 [Archived (https://web.archive.org/web/20170728115918/http://johnmacfarlane.net/babelmark](https://web.archive.org/web/20170728115918/http://johnmacfarlane.net/babelmark2/faq.html) 2/faq.html) from the original on 2017-07-28. Retrieved 2014-04-25. 22. Gruber, John \[@gruber\] (4 September 2014). "@tobie @espadrine @comex @wycats
 
-[Because different sites (and people) have different needs. No one syntax would make all](https://twitter.com/gruber/status/507670720886091776) happy" (https://twitter.com/gruber/status/507670720886091776) (Tweet) – via Twitter. 23. Gruber, John (19 May 2022). "Markdoc" (https://daringfireball.net/linked/2022/05/19/markdo c). *Daring Fireball*. Archived (https://web.archive.org/web/20220519202920/https://daringfireb all.net/linked/2022/05/19/markdoc) from the original on 19 May 2022. Retrieved May 19, 2022. "I love their syntax extensions — very true to the spirit of Markdown. They use curly braces for their extensions; I'm not sure I ever made this clear, publicly, but I avoided using curly braces in Markdown itself — even though they are very tempting characters — to unofficially reserve them for implementation-specific extensions. Markdoc's extensive use of curly braces for its syntax is exactly the sort of thing I was thinking about." 24. "UTI of a CommonMark document" (https://talk.commonmark.org/t/uti-of-a-commonmark-doc ument/2406). 12 April 2017. Archived (https://web.archive.org/web/20181122140119/https://t alk.commonmark.org/t/uti-of-a-commonmark-document/2406) from the original on 22 November 2018. Retrieved 29 September 2017. 25. "CommonMark specification" (http://spec.commonmark.org/). Archived (https://web.archive.or g/web/20170807052756/http://spec.commonmark.org/) from the original on 2017-08-07. Retrieved 2017-07-26. 26. "Markdown Community Page" (https://markdown.github.io/). GitHub. Archived (https://web.arc hive.org/web/20201026161924/http://markdown.github.io/) from the original on 2020-10-26. Retrieved 2014-04-25. 27. "Standard Markdown is now Common Markdown" (http://blog.codinghorror.com/standard-mar kdown-is-now-common-markdown/). Jeff Atwood. 4 September 2014. Archived (https://web.ar [chive.org/web/20141009181014/http://blog.codinghorror.com/standard-markdown-is-now-co](https://web.archive.org/web/20141009181014/http://blog.codinghorror.com/standard-markdown-is-now-common-markdown/) mmon-markdown/) from the original on 2014-10-09. Retrieved 2014-10-07. 28. "Standard Markdown Becomes Common Markdown then CommonMark" (http://www.infoq.co m/news/2014/09/markdown-commonmark). *InfoQ*. Archived (https://web.archive.org/web/202 00930150521/https://www.infoq.com/news/2014/09/markdown-commonmark/) from the original on 2020-09-30. Retrieved 2014-10-07.
+[Because different sites (and people) have different needs. No one syntax would make all](https://twitter.com/gruber/status/507670720886091776) happy" (https://twitter.com/gruber/status/507670720886091776) (Tweet) – via Twitter. 23. Gruber, John (19 May 2022). "Markdoc" (https://daringfireball.net/linked/2022/05/19/markdo c). *Daring Fireball*. Archived (https://web.archive.org/web/20220519202920/https://daringfireb all.net/linked/2022/05/19/markdoc) from the original on 19 May 2022. Retrieved May 19, 2022. "I love their syntax extensions — very true to the spirit of Markdown. They use curly braces for their extensions; I'm not sure I ever made this clear, publicly, but I avoided using curly braces in Markdown itself — even though they are very tempting characters — to unofficially reserve them for implementation-specific extensions. Markdoc's extensive use of curly braces for its syntax is exactly the sort of thing I was thinking about." 24. "UTI of a CommonMark document" (https://talk.commonmark.org/t/uti-of-a-commonmark-doc ument/2406). 12 April 2017. Archived (https://web.archive.org/web/20181122140119/https://t alk.commonmark.org/t/uti-of-a-commonmark-document/2406) from the original on 22 November 2018. Retrieved 29 September 2017. 25. "CommonMark specification" (http://spec.commonmark.org/). Archived (https://web.archive.or g/web/20170807052756/http://spec.commonmark.org/) from the original on 2017-08-07. Retrieved 2017-07-26. 26. "Markdown Community Page" (https://markdown.github.io/). GitHub. Archived (https://web.arc hive.org/web/20201026161924/http://markdown.github.io/) from the original on 2020-10-26. Retrieved 2014-04-25. 27. "Standard Markdown is now Common Markdown" (http://blog.codinghorror.com/standard-mar kdown-is-now-common-markdown/). Jeff Atwood. 4 September 2014. Archived (https://web.ar [chive.org/web/20141009181014/http://blog.codinghorror.com/standard-markdown-is-now-co](https://web.archive.org/web/20141009181014/http://blog.codinghorror.com/standard-markdown-is-now-common-markdown/) mmon-markdown/) from the original on 2014-10-09. Retrieved 2014-10-07. 28. "Standard Markdown Becomes Common Markdown then CommonMark" (http://www.infoq.co m/news/2014/09/markdown-commonmark). *InfoQ*. Archived (https://web.archive.org/web/202 00930150521/https://www.infoq.com/news/2014/09/markdown-commonmark/) from the original on 2020-09-30. Retrieved 2014-10-07.
 
 29. "CommonMark" (http://commonmark.org/). Archived (https://web.archive.org/web/201604122
 
@@ -242,7 +242,7 @@ a). *Michel Fortin website*. Archived (https://web.archive.org/web/2021011701581
 
 [Archived (https://web.archive.org/web/20210117015819/https://michelf.ca/projects/php-mark](https://web.archive.org/web/20210117015819/https://michelf.ca/projects/php-markdown/extra/) down/extra/) from the original on 2021-01-17. Retrieved 2018-12-26. 43. "Markdown editor for BUEditor" (https://drupal.org/project/markdowneditor). 4 December
 
-2008. Archived (https://web.archive.org/web/20200917172201/https://www.drupal.org/project/ markdowneditor) from the original on 17 September 2020. Retrieved 15 January 2017. 44. "Plugin: wet\_textfilter\_markdown" (https://plugins.textpattern.com/plugins/wet\_textfilter\_mark down). *Textpattern CMS plugins*. 2025-04-27. 45. "Markdown for TYPO3 (markdown\_content)" (https://extensions.typo3.org/extension/markdo wn\_content/). *extensions.typo3.org*. Archived (https://web.archive.org/web/20210201205749/ https://extensions.typo3.org/extension/markdown\_content/) from the original on 2021-02-01. Retrieved 2019-02-06. 46. "W3C Community Page of Markdown Implementations" (https://www.w3.org/community/mark down/wiki/MarkdownImplementations). *W3C Markdown Wiki*. Archived (https://web.archive.or [g/web/20200917231621/https://www.w3.org/community/markdown/wiki/MarkdownImplement](https://web.archive.org/web/20200917231621/https://www.w3.org/community/markdown/wiki/MarkdownImplementations) ations) from the original on 17 September 2020. Retrieved 24 March 2016.
+2008\. Archived (https://web.archive.org/web/20200917172201/https://www.drupal.org/project/ markdowneditor) from the original on 17 September 2020. Retrieved 15 January 2017. 44. "Plugin: wet\_textfilter\_markdown" (https://plugins.textpattern.com/plugins/wet\_textfilter\_mark down). *Textpattern CMS plugins*. 2025-04-27. 45. "Markdown for TYPO3 (markdown\_content)" (https://extensions.typo3.org/extension/markdo wn\_content/). *extensions.typo3.org*. Archived (https://web.archive.org/web/20210201205749/ https://extensions.typo3.org/extension/markdown\_content/) from the original on 2021-02-01. Retrieved 2019-02-06. 46. "W3C Community Page of Markdown Implementations" (https://www.w3.org/community/mark down/wiki/MarkdownImplementations). *W3C Markdown Wiki*. Archived (https://web.archive.or [g/web/20200917231621/https://www.w3.org/community/markdown/wiki/MarkdownImplement](https://web.archive.org/web/20200917231621/https://www.w3.org/community/markdown/wiki/MarkdownImplementations) ations) from the original on 17 September 2020. Retrieved 24 March 2016.
 
 ## External links
 

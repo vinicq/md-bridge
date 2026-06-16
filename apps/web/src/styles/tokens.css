@@ -23,9 +23,8 @@
   --c-accent-strong: var(--theme-accent-strong); /* accent text on accent-soft tint (#178) */
   --c-ok: var(--theme-ok);
   --c-warn: var(--theme-warn);
+  --c-error: var(--theme-error);
   --c-focus-ring: var(--theme-accent);
-  --c-pdf-surface: var(--theme-pdf-surface); /* always-light source-PDF pane (#15) */
-  --c-pdf-frame: var(--theme-pdf-frame);
 
   /* Shadows */
   --shadow-1: var(--theme-shadow-1);

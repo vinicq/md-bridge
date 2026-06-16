@@ -1,0 +1,100 @@
+/* claude — inspired by Claude's visual identity: warm off-white, terracotta accent,
+ * clean sans-serif, generous whitespace.
+ *
+ * Stacks on top of default.css; only identity overrides here. */
+
+:root {
+  --claude-accent: #c96442;      /* terracotta, Claude's signature warm tone */
+  --claude-accent-light: #fdf0eb;
+  --claude-ink: #1a1a1a;
+  --claude-ink-soft: #5c5c5c;
+  --claude-rule: #e5ddd6;
+  --claude-font: "Söhne", "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+html { font-size: 11pt; }
+
+body {
+  font-family: var(--claude-font);
+  color: var(--claude-ink);
+  line-height: 1.65;
+  text-align: left;
+  hyphens: none;
+  background: #faf9f7;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--claude-font);
+  color: var(--claude-ink);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 22pt;
+  font-weight: 700;
+  border-bottom: 2px solid var(--claude-accent);
+  color: var(--claude-ink);
+  letter-spacing: -0.02em;
+  padding-bottom: .3em;
+}
+
+h2 {
+  font-size: 15pt;
+  font-weight: 600;
+  color: var(--claude-ink);
+  border-bottom: 1px solid var(--claude-rule);
+  padding-bottom: .15em;
+}
+
+h3 {
+  font-size: 12pt;
+  font-weight: 600;
+  color: var(--claude-ink-soft);
+}
+
+p { color: var(--claude-ink); }
+
+/* Warm-tinted code blocks. */
+code {
+  background: var(--claude-accent-light);
+  color: #7a3520;
+  border: 1px solid #e8c8b8;
+  font-size: 9.5pt;
+}
+
+pre {
+  background: #f5f0ec;
+  border: 1px solid var(--claude-rule);
+  color: var(--claude-ink);
+}
+pre code {
+  background: transparent;
+  color: inherit;
+  border: none;
+  padding: 0;
+}
+
+/* Tables: accent header, warm stripe. */
+th {
+  background: var(--claude-accent);
+  color: #ffffff;
+  border-color: var(--claude-accent);
+  font-weight: 600;
+}
+tr:nth-child(even) td {
+  background: var(--claude-accent-light);
+}
+td { border-color: var(--claude-rule); }
+
+blockquote {
+  border-left: 3px solid var(--claude-accent);
+  background: var(--claude-accent-light);
+  color: #5a3020;
+  padding: .4em 1em;
+}
+
+hr { border-top-color: var(--claude-rule); }
+
+a { color: var(--claude-accent); }
+
+small { color: var(--claude-ink-soft); }

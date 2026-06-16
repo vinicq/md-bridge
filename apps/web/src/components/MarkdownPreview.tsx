@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import './MarkdownPreview.css'
 
 interface MarkdownPreviewProps {
@@ -12,7 +13,7 @@ export function MarkdownPreview({ markdown, empty = '' }: MarkdownPreviewProps) 
   }
   return (
     <div className="md-preview">
-      <ReactMarkdown>{markdown}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
     </div>
   )
 }

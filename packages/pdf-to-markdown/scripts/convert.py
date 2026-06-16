@@ -70,6 +70,27 @@ def page_text_dict(page: fitz.Page) -> dict:
 BULLET_CHARS = {"▪", "•", "●", "◦", "‣", "⁃", "∙"}
 NUMBERED_RE = re.compile(r"^\s*(\d{1,3}|[a-zA-Z])[.)]\s+")
 
+# Strip invisible zero-width characters (BOM, ZWNBSP, zero-width joiners) that
+# PDFs embed as empty glyph runs. These surface as `**﻿**` or `### ﻿` in the
+# output — headings or bold spans containing nothing visible (#text-artifacts).
+# Also normalise unusual Unicode spaces (NBSP, en-space, thin-space, etc.) to
+# regular ASCII space so word boundaries work in downstream tools. This set
+# includes U+2007 figure space on purpose: tabular figures lose their alignment
+# in plain Markdown anyway, so a normal space reads better than a stray glyph.
+_ZERO_WIDTH_RE = re.compile(
+    "[﻿​‌‍⁠￾]"
+)
+_UNUSUAL_SPACE_RE = re.compile(
+    "[\xa0         ]"
+)
+
+
+def normalize_span_text(text: str) -> str:
+    """Remove invisible zero-width marks and normalise unusual whitespace."""
+    text = _ZERO_WIDTH_RE.sub("", text)
+    text = _UNUSUAL_SPACE_RE.sub(" ", text)
+    return text
+
 # CommonMark inline punctuation that changes meaning anywhere in body text:
 # a backslash, code backticks, emphasis markers, and link brackets. Escaping
 # these keeps literal prose (`5 * 3`, `my_file.txt`, `[NOTE]`) from being parsed
@@ -418,7 +439,7 @@ def parse_block(raw_block: dict) -> Block | None:
     for raw_line in raw_block.get("lines", []):
         spans = []
         for raw_span in raw_line.get("spans", []):
-            text = raw_span["text"]
+            text = normalize_span_text(raw_span["text"])
             if not text:
                 continue
             # char_flags carries the strikeout bit only when the page was read
@@ -831,7 +852,7 @@ def render_table(table) -> str:
     if not rows:
         return ""
 
-    rows = [[(c or "").strip().replace("\n", " ") for c in row] for row in rows]
+    rows = [[normalize_span_text((c or "").replace("\n", " ")).strip() for c in row] for row in rows]
     width = max(len(r) for r in rows)
     rows = [r + [""] * (width - len(r)) for r in rows]
 

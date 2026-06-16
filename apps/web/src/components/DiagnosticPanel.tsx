@@ -6,8 +6,7 @@ interface DiagnosticPanelProps {
   data: InspectPdfResponse | null
   loading?: boolean
   error?: string | null
-  // `card` (default) is the sidebar block; `strip` lays the pairs out inline as
-  // a horizontal banner above the source-PDF pane (#15).
+  // `card` (default) is the sidebar block; `strip` lays the pairs out inline.
   layout?: 'card' | 'strip'
 }
 

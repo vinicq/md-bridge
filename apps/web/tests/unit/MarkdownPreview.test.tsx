@@ -25,4 +25,13 @@ describe('MarkdownPreview', () => {
     const wrapper = container.querySelector('.md-preview--empty')
     expect(wrapper).not.toBeNull()
   })
+
+  it('renders GFM tables as a <table> with column headers', () => {
+    const md = '| Col A | Col B |\n|---|---|\n| 1 | 2 |'
+    render(<MarkdownPreview markdown={md} />)
+    expect(screen.getByRole('table')).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Col A' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Col B' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: '1' })).toBeInTheDocument()
+  })
 })

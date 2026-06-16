@@ -130,6 +130,33 @@ describe('useBatchConvert', () => {
     expect(result.current.running).toBe(false)
   })
 
+  it('converts when the queue is rebuilt and run in one act (clear -> add -> runAll)', async () => {
+    // Regression guard for the /md-to-pdf theme re-run: the page clears the
+    // queue, re-adds the same files, and calls runAll() in a single tick. When
+    // runAll snapshotted the queue through a setState updater, it read the empty
+    // post-clear state and converted nothing. runAll now reads a synchronous
+    // itemsRef, so the freshly-added item is seen and converted.
+    const convert = makeConvert({ 'a.pdf': 'resolve' })
+    const { result } = renderHook(() => useBatchConvert<Res>({ convert }))
+
+    act(() => result.current.add([pdf('a.pdf')]))
+
+    let run!: Promise<void>
+    act(() => {
+      result.current.clear()
+      result.current.add([pdf('a.pdf')])
+      run = result.current.runAll()
+    })
+    await act(async () => {
+      await run
+    })
+
+    expect(convert).toHaveBeenCalledTimes(1)
+    expect(result.current.items).toHaveLength(1)
+    expect(result.current.items[0].status).toBe('done')
+    expect(result.current.running).toBe(false)
+  })
+
   it('reorders queued items by direction and drop target', () => {
     const convert = makeConvert({})
     const { result } = renderHook(() => useBatchConvert<Res>({ convert }))

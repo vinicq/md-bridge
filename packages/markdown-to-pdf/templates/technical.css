@@ -1,0 +1,81 @@
+/* technical — engineering and API documentation style, teal accent, code-first.
+ *
+ * Stacks on top of default.css; only identity overrides here. */
+
+:root {
+  --tech-accent: #0a7c6e;
+  --tech-accent-light: #e6f4f2;
+  --tech-ink: #111827;
+  --tech-font: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --tech-mono: "Fira Code", "Cascadia Code", "Consolas", "Courier New", monospace;
+}
+
+html { font-size: 10.5pt; }
+
+body {
+  font-family: var(--tech-font);
+  color: var(--tech-ink);
+  line-height: 1.6;
+  text-align: left;
+  hyphens: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--tech-font);
+  color: var(--tech-ink);
+}
+
+h1 {
+  color: var(--tech-accent);
+  border-bottom: 2px solid var(--tech-accent);
+  font-size: 22pt;
+}
+
+h2 {
+  color: var(--tech-accent);
+  border-bottom: 1px solid #cce7e4;
+  font-size: 16pt;
+}
+
+h3 { color: #1f5c54; font-size: 12.5pt; }
+
+/* Monospace is prominent in technical docs. */
+code {
+  font-family: var(--tech-mono);
+  font-size: 9.5pt;
+  background: var(--tech-accent-light);
+  color: var(--tech-accent);
+  border: 1px solid #cce7e4;
+  padding: .1em .3em;
+}
+
+pre {
+  font-family: var(--tech-mono);
+  background: #0d1117;
+  color: #c9d1d9;
+  border: none;
+  font-size: 9pt;
+}
+pre code {
+  background: transparent;
+  color: inherit;
+  border: none;
+  padding: 0;
+}
+
+th {
+  background: var(--tech-accent);
+  color: #ffffff;
+  border-color: var(--tech-accent);
+  font-family: var(--tech-mono);
+  font-size: 9pt;
+}
+td { font-size: 9.5pt; }
+
+blockquote {
+  border-left-color: var(--tech-accent);
+  background: var(--tech-accent-light);
+  color: #1f5c54;
+}
+
+a { color: var(--tech-accent); }

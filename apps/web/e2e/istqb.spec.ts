@@ -38,8 +38,8 @@ test('ISTQB syllabus converts to Markdown end-to-end', async ({ page }) => {
 
   // Download flow: the .md file produced by the heuristic converter starts with
   // a YAML front-matter header.
-  // Filter to the .md download: the source-PDF preview (#15) can emit a PDF-blob
-  // download in headless Chromium, which lacks the inline PDF viewer.
+  // Filter to the .md download: headless Chromium can emit blob downloads for
+  // other page resources, so predicate to the .md filename.
   const downloadPromise = page.waitForEvent('download', {
     predicate: (d) => d.suggestedFilename().endsWith('.md'),
   })

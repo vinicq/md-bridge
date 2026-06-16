@@ -59,9 +59,8 @@ test('Batch: two PDFs queue up, run sequentially, each downloadable', async ({ p
   const firstDownload = list.locator('.batch__row').first().getByRole('button', {
     name: /download \.md/i,
   })
-  // Filter to the .md download: with the source-PDF preview (#15), headless
-  // Chromium (which lacks the inline PDF viewer) emits a download for the
-  // previewed PDF blob, so the page can produce more than one download event.
+  // Filter to the .md download: headless Chromium can emit blob downloads for
+  // other page resources, so predicate to the .md filename.
   const dl = page.waitForEvent('download', {
     predicate: (d) => d.suggestedFilename().endsWith('.md'),
   })
@@ -117,8 +116,8 @@ test('Batch: Download all bundles the done items into a single .zip', async ({ p
   await page.getByRole('button', { name: /convert all/i }).click()
   await expect(page.locator('.batch__row--done')).toHaveCount(2, { timeout: 30_000 })
 
-  // Filter to the .zip bundle: the source-PDF preview (#15) can emit a separate
-  // PDF-blob download in headless Chromium (no inline viewer).
+  // Filter to the .zip bundle: headless Chromium can emit blob downloads for
+  // other page resources, so predicate to the .zip filename.
   const dl = page.waitForEvent('download', {
     predicate: (d) => d.suggestedFilename().endsWith('.zip'),
   })

@@ -1,0 +1,65 @@
+/* legal — formal document style, Times New Roman, strict justified text.
+ *
+ * Stacks on top of default.css; only identity overrides here. */
+
+:root {
+  --legal-font: "Times New Roman", "Liberation Serif", Georgia, serif;
+  --legal-ink: #000000;
+  --legal-rule: #555555;
+}
+
+html { font-size: 12pt; }
+
+body {
+  font-family: var(--legal-font);
+  color: var(--legal-ink);
+  line-height: 1.8;
+  text-align: justify;
+  hyphens: auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--legal-font);
+  color: var(--legal-ink);
+  font-weight: 700;
+  text-align: left;
+}
+
+h1 {
+  font-size: 16pt;
+  text-align: center;
+  border-bottom: 1px solid var(--legal-rule);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+h2 {
+  font-size: 13pt;
+  text-transform: uppercase;
+  letter-spacing: .01em;
+}
+
+h3 { font-size: 12pt; }
+
+/* No decorative background on table headers; formal plain style. */
+th {
+  background: transparent;
+  border: 1px solid var(--legal-rule);
+  font-weight: 700;
+}
+td { border: 1px solid var(--legal-rule); }
+
+code, pre {
+  font-family: "Courier New", Courier, monospace;
+}
+
+blockquote {
+  border-left: 3px solid var(--legal-rule);
+  background: transparent;
+  font-style: italic;
+  color: #333;
+}
+
+hr { border-top-color: var(--legal-rule); }
+
+a { color: var(--legal-ink); text-decoration: underline; }

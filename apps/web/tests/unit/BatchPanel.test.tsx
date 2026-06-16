@@ -67,6 +67,76 @@ function Harness({ running = false }: { running?: boolean }) {
   )
 }
 
+describe('BatchPanel render', () => {
+  it('displays file name inside batch__name', () => {
+    const { container } = render(
+      <I18nProvider initialLocale="en">
+        <BatchPanel
+          items={[makeItem('documento.pdf')]}
+          running={false}
+          onConvertAll={() => undefined}
+          onClear={() => undefined}
+          onRemove={() => undefined}
+          onMove={() => undefined}
+          onMoveTo={() => undefined}
+          onDownload={() => undefined}
+          downloadLabel="Download .md"
+        />
+      </I18nProvider>,
+    )
+    const nameEl = container.querySelector('.batch__name')
+    expect(nameEl).not.toBeNull()
+    expect(nameEl!.textContent).toBe('documento.pdf')
+  })
+
+  it('displays formatted file size inside batch__size', () => {
+    const { container } = render(
+      <I18nProvider initialLocale="en">
+        <BatchPanel
+          items={[{
+            id: 'sz',
+            file: new File([new ArrayBuffer(2048)], 'big.pdf', { type: 'application/pdf' }),
+            status: 'queued',
+            result: null,
+            error: null,
+            blobUrl: null,
+          }]}
+          running={false}
+          onConvertAll={() => undefined}
+          onClear={() => undefined}
+          onRemove={() => undefined}
+          onMove={() => undefined}
+          onMoveTo={() => undefined}
+          onDownload={() => undefined}
+          downloadLabel="Download .md"
+        />
+      </I18nProvider>,
+    )
+    const sizeEl = container.querySelector('.batch__size')
+    expect(sizeEl).not.toBeNull()
+    expect(sizeEl!.textContent).toBe('2.0 KB')
+  })
+
+  it('shows queued status text in batch__meta', () => {
+    render(
+      <I18nProvider initialLocale="en">
+        <BatchPanel
+          items={[makeItem('a.pdf')]}
+          running={false}
+          onConvertAll={() => undefined}
+          onClear={() => undefined}
+          onRemove={() => undefined}
+          onMove={() => undefined}
+          onMoveTo={() => undefined}
+          onDownload={() => undefined}
+          downloadLabel="Download .md"
+        />
+      </I18nProvider>,
+    )
+    expect(screen.getByText('Queued')).toBeInTheDocument()
+  })
+})
+
 describe('BatchPanel reorder', () => {
   it('reorders rows through drag and drop', () => {
     const { container } = render(<Harness />)

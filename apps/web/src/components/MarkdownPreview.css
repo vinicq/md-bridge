@@ -47,9 +47,20 @@
   border-collapse: collapse;
   width: 100%;
   margin: var(--s-4) 0;
+  display: block;
+  overflow-x: auto;
 }
 
-.md-preview th,
+.md-preview th {
+  border: 1px solid var(--c-rule);
+  padding: var(--s-2) var(--s-3);
+  text-align: left;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  background: var(--c-bg);
+  white-space: nowrap;
+}
+
 .md-preview td {
   border: 1px solid var(--c-rule);
   padding: var(--s-2) var(--s-3);

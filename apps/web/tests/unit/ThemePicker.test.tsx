@@ -17,8 +17,7 @@ function renderPicker(value: string, onChange = vi.fn(), disabled = false) {
       value={value}
       onChange={onChange}
       label="Theme"
-      browseLabel="Browse all themes →"
-      browseHref="/themes"
+      loadingLabel="Loading themes…"
       disabled={disabled}
     />,
   )
@@ -26,40 +25,66 @@ function renderPicker(value: string, onChange = vi.fn(), disabled = false) {
 }
 
 describe('ThemePicker', () => {
-  it('renders one tile per theme from the list', () => {
+  it('renders a combobox with one option per theme', () => {
     renderPicker('default')
-    expect(screen.getAllByRole('radio')).toHaveLength(THEMES.length)
-    expect(screen.getByText('Academic')).toBeInTheDocument()
-    expect(screen.getByText('Business')).toBeInTheDocument()
+    const select = screen.getByRole('combobox', { name: /theme/i })
+    expect(select).toBeInTheDocument()
+    const options = screen.getAllByRole('option')
+    expect(options).toHaveLength(THEMES.length)
+    expect(screen.getByRole('option', { name: 'Academic' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Business' })).toBeInTheDocument()
   })
 
-  it('marks the selected tile active and checks its radio', () => {
+  it('shows the current value as selected', () => {
     renderPicker('academic')
-    const academic = screen.getByRole('radio', { name: /academic/i })
-    expect(academic).toBeChecked()
-    // The active class lands on the tile label wrapping the checked radio.
-    expect(academic.closest('.theme-tile')).toHaveClass('is-active')
+    expect(screen.getByRole('combobox', { name: /theme/i })).toHaveValue('academic')
   })
 
-  it('calls onChange with the slug when a tile is picked', async () => {
+  it('calls onChange with the slug when the user picks a theme', async () => {
     const onChange = renderPicker('default')
-    await userEvent.click(screen.getByRole('radio', { name: /business/i }))
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: /theme/i }),
+      'business',
+    )
     expect(onChange).toHaveBeenCalledWith('business')
   })
 
-  it('locks selection when disabled (e.g. while converting)', async () => {
-    const onChange = renderPicker('default', vi.fn(), true)
-    const business = screen.getByRole('radio', { name: /business/i })
-    expect(business).toBeDisabled()
-    await userEvent.click(business)
-    expect(onChange).not.toHaveBeenCalled()
+  it('disables the combobox while converting', () => {
+    renderPicker('default', vi.fn(), true)
+    expect(screen.getByRole('combobox', { name: /theme/i })).toBeDisabled()
   })
 
-  it('points the browse link at the deep library route', () => {
-    renderPicker('default')
-    expect(screen.getByRole('link', { name: /browse all themes/i })).toHaveAttribute(
-      'href',
-      '/themes',
+  it('shows a loading option and disables the select when loading=true', () => {
+    render(
+      <ThemePicker
+        themes={THEMES}
+        value="default"
+        onChange={vi.fn()}
+        label="Theme"
+        loadingLabel="Loading themes…"
+        loading
+      />,
     )
+    expect(screen.getByRole('combobox', { name: /theme/i })).toBeDisabled()
+    expect(screen.getByRole('option', { name: /loading/i })).toBeInTheDocument()
+  })
+
+  it('shows an error alert when loadError is set', () => {
+    render(
+      <ThemePicker
+        themes={THEMES}
+        value="default"
+        onChange={vi.fn()}
+        label="Theme"
+        loadingLabel="Loading themes…"
+        loadError="Could not load themes."
+      />,
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not load themes/i)
+  })
+
+  it('has an accessible label linked to the select via htmlFor/id', () => {
+    renderPicker('default')
+    expect(screen.getByLabelText(/theme/i)).toBeInTheDocument()
   })
 })

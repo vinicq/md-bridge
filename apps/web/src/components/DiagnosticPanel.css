@@ -64,9 +64,9 @@
   padding-left: var(--s-4);
 }
 
-/* Strip layout (#15): a horizontal banner above the source-PDF pane. The pairs
-   sit inline and wrap; the secondary metrics (body size, heading sizes) drop at
-   narrow widths so Pages / Tagged / OCR stay readable. */
+/* Strip layout: horizontal banner above the markdown preview. The pairs sit
+   inline and wrap; secondary metrics drop at narrow widths so Pages / Tagged /
+   OCR stay readable. */
 .diag--strip {
   container-type: inline-size;
 }
