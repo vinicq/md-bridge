@@ -18,6 +18,15 @@ test.beforeEach(async ({ context }) => {
 test('theme picker lists API themes, persists choice, and re-renders on switch', async ({
   page,
 }) => {
+  // This test drives two real md-to-pdf conversions: one on Convert, then a
+  // second when the theme switch re-runs the queue, and the re-run is verified
+  // with a poll budget up to 60s. The default 30s per-test ceiling is shorter
+  // than that work, so the slower CI engines were killed at 30s mid-re-run
+  // before the new blob landed. Lift the ceiling to match the work it does, the
+  // same way batch.spec.ts does for its sequential conversions; no assertion is
+  // weakened.
+  test.setTimeout(120_000)
+
   await page.goto('/convert/md-to-pdf')
 
   // The select renders with at least the core themes from the backend registry.
