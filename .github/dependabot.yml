@@ -6,6 +6,13 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    groups:
+      api-python-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     labels:
       - dependencies
       - backend
@@ -18,6 +25,13 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    groups:
+      web-npm-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     labels:
       - dependencies
       - frontend
@@ -30,6 +44,13 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 3
+    groups:
+      root-npm-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     labels:
       - dependencies
       - tooling
@@ -42,6 +63,13 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 3
+    groups:
+      ci-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     labels:
       - dependencies
       - ci
@@ -53,6 +81,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    groups:
+      docker-api:
+        patterns:
+          - "*"
     labels:
       - dependencies
       - docker
@@ -62,6 +94,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    groups:
+      docker-web:
+        patterns:
+          - "*"
     labels:
       - dependencies
       - docker
