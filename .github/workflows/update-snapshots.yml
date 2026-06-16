@@ -40,7 +40,7 @@ jobs:
     # Same image as the visual-regression job so regenerated baselines match the
     # environment they are later diffed in. Keep the tag in sync with both.
     container:
-      image: mcr.microsoft.com/playwright:v1.60.0-noble
+      image: mcr.microsoft.com/playwright:v1.61.0-noble
     steps:
       - name: Install the GitHub CLI
         # The Playwright image does not ship gh, so the steps below that call

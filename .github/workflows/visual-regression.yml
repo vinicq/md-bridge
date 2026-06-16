@@ -31,7 +31,7 @@ jobs:
     name: Visual snapshots (chromium)
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.60.0-noble
+      image: mcr.microsoft.com/playwright:v1.61.0-noble
     steps:
       - name: Check out repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
@@ -55,10 +55,10 @@ jobs:
         # check instead of as silent font drift in every baseline.
         run: |
           pkg=$(node -p "require('@playwright/test/package.json').version")
-          echo "Installed @playwright/test: $pkg (image: v1.60.0-noble)"
+          echo "Installed @playwright/test: $pkg (image: v1.61.0-noble)"
           case "$pkg" in
-            1.60.*) ;;
-            *) echo "::error::@playwright/test $pkg does not match the v1.60.0-noble image. Bump the container tag in visual-regression.yml and update-snapshots.yml to match, then regenerate the baselines."; exit 1 ;;
+            1.61.*) ;;
+            *) echo "::error::@playwright/test $pkg does not match the v1.61.0-noble image. Bump the container tag in visual-regression.yml and update-snapshots.yml to match, then regenerate the baselines."; exit 1 ;;
           esac
 
       - name: Run visual snapshots
