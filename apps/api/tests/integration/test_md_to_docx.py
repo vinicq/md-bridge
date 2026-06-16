@@ -70,7 +70,10 @@ def test_md_to_docx_rejects_non_markdown(client):
 def test_shipped_format_endpoints_are_real_routes(client):
     # Guards against drift: every shipped pair's declared endpoint must be a
     # route actually registered on the app, so a rename can't silently lie.
-    registered = {route.path for route in client.app.routes}
+    # Read the paths from the OpenAPI schema, a stable public surface, instead
+    # of walking app.routes, which mixes in version-specific sub-router wrappers
+    # that carry no .path.
+    registered = set(client.app.openapi()["paths"])
     resp = client.get("/api/formats")
     assert resp.status_code == 200
     # Drive the loop off the shipped subset and assert it is non-empty, so the
