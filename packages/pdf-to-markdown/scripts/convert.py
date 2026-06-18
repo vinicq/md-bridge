@@ -169,14 +169,17 @@ def _autolink_escape(text: str, *, urls: bool, emails: bool) -> str:
 # count inline `[text](url)` call sites, and for any URL at or above the
 # threshold rewrite the call sites to `[text][id]` and append a definitions
 # block. Off by default (threshold 0) so existing output stays byte-identical.
-# The scan skips fenced code, inline code, and images so a `[x](y)` inside a
-# code block is never collapsed. Autolinks (`<url>`, #157) are a different
-# syntax and are left untouched.
+# The scan skips fenced code, indented (4-space/tab) code, inline code, and
+# images so a `[x](y)` inside any code is never collapsed. The link
+# destination allows one level of balanced parens, so a Wikipedia-style
+# `.../Foo_(bar)` is captured whole instead of truncating at the first `)`.
+# Autolinks (`<url>`, #157) are a different syntax and are left untouched.
 _REF_LINK_TOKEN_RE = re.compile(
     r"(?P<fence>^(?P<fence_marker>```|~~~)[^\n]*\n.*?^(?P=fence_marker)[^\n]*$)"
+    r"|(?P<indented>^(?: {4}|\t)[^\n]*$)"
     r"|(?P<code>`+[^`]*`+)"
     r"|(?P<image>!\[[^\]]*\]\([^)]*\))"
-    r"|(?P<link>\[(?P<link_text>[^\]]*)\]\((?P<link_url>[^)\s]+)\))",
+    r"|(?P<link>\[(?P<link_text>[^\]]*)\]\((?P<link_url>(?:[^()\s]|\([^()\s]*\))+)\))",
     re.MULTILINE | re.DOTALL,
 )
 

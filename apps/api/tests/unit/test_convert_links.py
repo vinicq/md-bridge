@@ -172,3 +172,23 @@ def test_reference_links_ids_in_first_seen_order():
     out = mod._collapse_reference_links(md, 3)
     assert "[a][1]" in out and "[b][2]" in out
     assert out.rstrip().split("\n")[-2:] == ["[1]: https://x.io/1", "[2]: https://x.io/2"]
+
+
+def test_reference_links_keep_balanced_parens_in_url():
+    # A Wikipedia-style path with balanced parens must be captured whole, not
+    # truncated at the first ')', and must not leave an orphan paren behind.
+    mod = pdf_to_md_module()
+    u = "https://x.io/wiki/Foo_(bar)"
+    out = mod._collapse_reference_links(f"[a]({u}) [b]({u}) [c]({u})", 3)
+    assert "[a][1]" in out and "[b][1]" in out and "[c][1]" in out
+    assert "[1])" not in out  # no orphaned ')' after a call site
+    assert out.rstrip().endswith(f"[1]: {u}")
+
+
+def test_reference_links_skip_indented_code_block():
+    # Links inside a 4-space indented code block are code; they must not be
+    # counted or rewritten, so a doc whose only repeats are indented is a no-op.
+    mod = pdf_to_md_module()
+    u = "https://x.io/s"
+    md = f"intro\n\n    [a]({u}) [b]({u}) [c]({u})\n\noutro"
+    assert mod._collapse_reference_links(md, 3) == md
