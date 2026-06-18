@@ -105,6 +105,42 @@ def escape_markdown_inline(text: str) -> str:
     return _MD_INLINE_ESCAPE.sub(r"\\\1", text)
 
 
+# Bare-URI and email autolinking (#157). Opt-in: off by default so existing
+# conversions stay byte-identical. The URL match stops before trailing sentence
+# punctuation (`.,;:!?` and closing parens) so `see https://x.` links `https://x`
+# and leaves the period outside. CommonMark autolink syntax (`<...>`) renders the
+# literal URI without inline escaping, so a URL with `_` or `~` survives intact.
+_AUTOLINK_SCAN_RE = re.compile(
+    r"(?P<url>\bhttps?://[^\s<>()]+[^\s<>().,;:!?])"
+    r"|(?P<email>\b[\w.+-]+@[\w-]+\.[\w.-]+\b)"
+)
+
+
+def _autolink_escape(text: str, *, urls: bool, emails: bool) -> str:
+    """Escape literal prose, but wrap bare URLs/emails in CommonMark autolinks.
+
+    With both flags off this is exactly `escape_markdown_inline`, so the default
+    output stays byte-identical. A matched URI becomes `<uri>`, except a URL that
+    carries `*` (which the angle form would italicize) falls back to `[u](u)`.
+    Text between matches is escaped as normal prose. Callers gate this to literal
+    spans only, so code spans and pre-annotated links never reach it.
+    """
+    if not (urls or emails):
+        return escape_markdown_inline(text)
+    out: list[str] = []
+    pos = 0
+    for m in _AUTOLINK_SCAN_RE.finditer(text):
+        is_url = m.lastgroup == "url"
+        if (is_url and not urls) or (not is_url and not emails):
+            continue  # type disabled: leave the token to be escaped as prose
+        token = m.group(0)
+        out.append(escape_markdown_inline(text[pos:m.start()]))
+        out.append(f"[{token}]({token})" if is_url and "*" in token else f"<{token}>")
+        pos = m.end()
+    out.append(escape_markdown_inline(text[pos:]))
+    return "".join(out)
+
+
 # Line-start-only CommonMark block markers (#192). These only change meaning at
 # the very start of a line, so the span pass above cannot handle them (a span
 # has no line position). Applied at line-level assembly to a paragraph that was
@@ -288,6 +324,8 @@ class DocProfile:
     preserve_line_breaks: bool = False  # opt-in: keep intentional layout line breaks (#156)
     footnote_pairing: bool = False  # opt-in: pair footer footnote blocks with body refs (#148)
     footnote_numbers: frozenset = frozenset()  # collected footnote numbers to rewrite as [^N] (#148)
+    autolink_urls: bool = False  # opt-in: wrap bare http(s) URLs in body text as autolinks (#157)
+    autolink_emails: bool = False  # opt-in: wrap bare email addresses in body text as autolinks (#157)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
@@ -573,7 +611,13 @@ def drop_rule_strikethroughs(blocks: list[Block], page: fitz.Page) -> None:
             span.is_strikethrough = False
 
 
-def render_span(span: Span, footnote_numbers: frozenset[int] = frozenset()) -> str:
+def render_span(
+    span: Span,
+    footnote_numbers: frozenset[int] = frozenset(),
+    *,
+    autolink_urls: bool = False,
+    autolink_emails: bool = False,
+) -> str:
     text = span.text
     if not text.strip():
         return text
@@ -600,8 +644,12 @@ def render_span(span: Span, footnote_numbers: frozenset[int] = frozenset()) -> s
             # the backticks. Every other case is literal prose that must be
             # escaped before we add our own emphasis/link markers.
             core = f"`{core}`"
-        else:
+        elif span.link:
+            # A pre-annotated link wraps the whole core as [core](link) below;
+            # autolinking inside it would double-wrap the URL. Escape only.
             core = escape_markdown_inline(core)
+        else:
+            core = _autolink_escape(core, urls=autolink_urls, emails=autolink_emails)
         if sup:
             # Pandoc/pymdownx superscript (`^x^`) instead of raw <sup>, to keep
             # output pure Markdown (#141). A caret-unaware renderer shows the
@@ -623,7 +671,13 @@ def render_span(span: Span, footnote_numbers: frozenset[int] = frozenset()) -> s
     return out[:leading] + core + (out[len(out) - trailing:] if trailing else "")
 
 
-def render_line(line: Line, footnote_numbers: frozenset[int] = frozenset()) -> str:
+def render_line(
+    line: Line,
+    footnote_numbers: frozenset[int] = frozenset(),
+    *,
+    autolink_urls: bool = False,
+    autolink_emails: bool = False,
+) -> str:
     # Merge adjacent spans with same style to avoid `**a****b**` artifacts
     merged: list[Span] = []
     for s in line.spans:
@@ -648,7 +702,10 @@ def render_line(line: Line, footnote_numbers: frozenset[int] = frozenset()) -> s
             )
         else:
             merged.append(s)
-    return "".join(render_span(s, footnote_numbers) for s in merged)
+    return "".join(
+        render_span(s, footnote_numbers, autolink_urls=autolink_urls, autolink_emails=autolink_emails)
+        for s in merged
+    )
 
 
 def dominant_font(block: Block) -> str:
@@ -1128,13 +1185,17 @@ def convert_page(
     return assemble_markdown(typed_items, profile)
 
 
-def render_blockquote(block: Block) -> str:
+def render_blockquote(block: Block, profile: DocProfile) -> str:
     """Render ONE block as a single quoted paragraph: `> ` on each non-empty
     line. Framing blank lines come from the outer join. Multi-paragraph quotes
     are assembled in `assemble_markdown`, which joins consecutive quote blocks
     with a bare `>` separator line (#174).
     """
-    quoted = [f"> {render_line(line).strip()}" for line in block.lines if line.text.strip()]
+    quoted = [
+        f"> {render_line(line, autolink_urls=profile.autolink_urls, autolink_emails=profile.autolink_emails).strip()}"
+        for line in block.lines
+        if line.text.strip()
+    ]
     return "\n".join(quoted)
 
 
@@ -1174,7 +1235,15 @@ def render_paragraph(block: Block, profile: DocProfile) -> str:
     when `profile.preserve_line_breaks` is on. Off by default keeps output
     byte-identical (#156)."""
     lines = [ln for ln in block.lines if ln.text.strip()]
-    rendered = [render_line(ln, profile.footnote_numbers).strip() for ln in lines]
+    rendered = [
+        render_line(
+            ln,
+            profile.footnote_numbers,
+            autolink_urls=profile.autolink_urls,
+            autolink_emails=profile.autolink_emails,
+        ).strip()
+        for ln in lines
+    ]
     if not profile.preserve_line_breaks:
         return " ".join(rendered).strip()
     parts: list[str] = []
@@ -1297,7 +1366,16 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             out_parts.append(f"```{lang}\n{code_body}\n```")
             continue
 
-        text_rendered = " ".join(render_line(line, profile.footnote_numbers).strip() for line in block.lines if line.text.strip()).strip()
+        text_rendered = " ".join(
+            render_line(
+                line,
+                profile.footnote_numbers,
+                autolink_urls=profile.autolink_urls,
+                autolink_emails=profile.autolink_emails,
+            ).strip()
+            for line in block.lines
+            if line.text.strip()
+        ).strip()
         if not text_rendered:
             continue
 
@@ -1393,7 +1471,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             # become one <blockquote> with multiple paragraphs (#174). The run
             # is flushed by any non-quote block (above) or at end of items.
             list_marker_x0 = None
-            blockquote_run.append(render_blockquote(block))
+            blockquote_run.append(render_blockquote(block, profile))
         elif cls == "small":
             # Markdown has no clean small-text semantic, and raw <small> breaks
             # pure-Markdown consumers (RAG, plain viewers, indexers). Emit the
@@ -1464,6 +1542,8 @@ def convert_document(
     preserve_line_breaks: bool = False,
     max_heading_level: int = 3,
     footnote_pairing: bool = False,
+    autolink_urls: bool = False,
+    autolink_emails: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -1472,6 +1552,8 @@ def convert_document(
     profile.allow_html = allow_html
     profile.preserve_line_breaks = preserve_line_breaks
     profile.footnote_pairing = footnote_pairing
+    profile.autolink_urls = autolink_urls
+    profile.autolink_emails = autolink_emails
     footnote_defs: dict[int, str] = {}
     if footnote_pairing:
         footnote_defs = collect_footnote_definitions(doc, profile)
@@ -1856,6 +1938,16 @@ def main() -> int:
         action="store_true",
         help="Pair small-font footer footnotes with body superscript refs as GFM [^N] (opt-in, #148)",
     )
+    parser.add_argument(
+        "--autolink-urls",
+        action="store_true",
+        help="Wrap bare http(s) URLs in body text as CommonMark autolinks (opt-in, #157)",
+    )
+    parser.add_argument(
+        "--autolink-emails",
+        action="store_true",
+        help="Wrap bare email addresses in body text as CommonMark autolinks (opt-in, #157)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -1876,6 +1968,8 @@ def main() -> int:
         preserve_line_breaks=args.preserve_line_breaks,
         max_heading_level=args.max_heading_level,
         footnote_pairing=args.footnote_pairing,
+        autolink_urls=args.autolink_urls,
+        autolink_emails=args.autolink_emails,
     )
     return 0
 
