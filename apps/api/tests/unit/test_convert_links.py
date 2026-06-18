@@ -82,6 +82,24 @@ def test_autolink_keeps_trailing_sentence_punctuation_outside_link():
     )
 
 
+def test_autolink_keeps_balanced_parens_in_path():
+    # A Wikipedia-style path carries balanced parens; they belong to the URL.
+    mod = pdf_to_md_module()
+    url = "https://en.wikipedia.org/wiki/Foo_(bar)"
+    assert (
+        mod._autolink_escape(f"see {url} now", urls=True, emails=True) == f"see <{url}> now"
+    )
+
+
+def test_autolink_strips_wrapping_parens():
+    # A URL written inside prose parens must not swallow the closing paren.
+    mod = pdf_to_md_module()
+    assert (
+        mod._autolink_escape("(see https://example.com)", urls=True, emails=True)
+        == "(see <https://example.com>)"
+    )
+
+
 def test_autolink_respects_per_type_flags():
     mod = pdf_to_md_module()
     # Emails off: the address is left as escaped prose, the URL still links.

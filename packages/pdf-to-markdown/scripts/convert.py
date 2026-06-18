@@ -106,14 +106,36 @@ def escape_markdown_inline(text: str) -> str:
 
 
 # Bare-URI and email autolinking (#157). Opt-in: off by default so existing
-# conversions stay byte-identical. The URL match stops before trailing sentence
-# punctuation (`.,;:!?` and closing parens) so `see https://x.` links `https://x`
-# and leaves the period outside. CommonMark autolink syntax (`<...>`) renders the
-# literal URI without inline escaping, so a URL with `_` or `~` survives intact.
+# conversions stay byte-identical. The URL grabs every non-space, non-angle char
+# and `_trim_autolink_url` then peels trailing sentence punctuation, so
+# `see https://x.` links `https://x` and a Wikipedia-style path
+# `https://en.wikipedia.org/wiki/Foo_(bar)` keeps its balanced parens. CommonMark
+# autolink syntax (`<...>`) renders the literal URI without inline escaping, so a
+# URL with `_` or `~` survives intact.
 _AUTOLINK_SCAN_RE = re.compile(
-    r"(?P<url>\bhttps?://[^\s<>()]+[^\s<>().,;:!?])"
+    r"(?P<url>\bhttps?://[^\s<>]+)"
     r"|(?P<email>\b[\w.+-]+@[\w-]+\.[\w.-]+\b)"
 )
+
+
+def _trim_autolink_url(url: str) -> str:
+    """Peel trailing characters that read as sentence punctuation, not URL.
+
+    Mirrors the GFM autolink-extension trailing rules: drop a run of
+    `?!.,:;*_~'"` from the end, and drop a closing `)` only when the URL holds
+    more `)` than `(`. A balanced `..._(bar)` keeps its parens; a URL written
+    inside prose parens does not swallow the closing one.
+    """
+    while url:
+        last = url[-1]
+        if last in "?!.,:;*_~'\"":
+            url = url[:-1]
+            continue
+        if last == ")" and url.count(")") > url.count("("):
+            url = url[:-1]
+            continue
+        break
+    return url
 
 
 def _autolink_escape(text: str, *, urls: bool, emails: bool) -> str:
@@ -133,10 +155,12 @@ def _autolink_escape(text: str, *, urls: bool, emails: bool) -> str:
         is_url = m.lastgroup == "url"
         if (is_url and not urls) or (not is_url and not emails):
             continue  # type disabled: leave the token to be escaped as prose
-        token = m.group(0)
+        token = _trim_autolink_url(m.group(0)) if is_url else m.group(0)
+        if not token:
+            continue  # whole match was trailing punctuation; treat as prose
         out.append(escape_markdown_inline(text[pos:m.start()]))
         out.append(f"[{token}]({token})" if is_url and "*" in token else f"<{token}>")
-        pos = m.end()
+        pos = m.start() + len(token)
     out.append(escape_markdown_inline(text[pos:]))
     return "".join(out)
 
