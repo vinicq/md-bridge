@@ -29,6 +29,7 @@ class PdfToMdOptions(BaseModel):
     footnote_pairing: bool = False
     autolink_urls: bool = False
     autolink_emails: bool = False
+    reference_link_threshold: int = Field(default=0, ge=0)
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")

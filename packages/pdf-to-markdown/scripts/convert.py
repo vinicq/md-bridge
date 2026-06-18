@@ -165,6 +165,62 @@ def _autolink_escape(text: str, *, urls: bool, emails: bool) -> str:
     return "".join(out)
 
 
+# Reference-style links for repeated URLs (#158). A document-level post-pass:
+# count inline `[text](url)` call sites, and for any URL at or above the
+# threshold rewrite the call sites to `[text][id]` and append a definitions
+# block. Off by default (threshold 0) so existing output stays byte-identical.
+# The scan skips fenced code, inline code, and images so a `[x](y)` inside a
+# code block is never collapsed. Autolinks (`<url>`, #157) are a different
+# syntax and are left untouched.
+_REF_LINK_TOKEN_RE = re.compile(
+    r"(?P<fence>^(?P<fence_marker>```|~~~)[^\n]*\n.*?^(?P=fence_marker)[^\n]*$)"
+    r"|(?P<code>`+[^`]*`+)"
+    r"|(?P<image>!\[[^\]]*\]\([^)]*\))"
+    r"|(?P<link>\[(?P<link_text>[^\]]*)\]\((?P<link_url>[^)\s]+)\))",
+    re.MULTILINE | re.DOTALL,
+)
+
+
+def _collapse_reference_links(md: str, threshold: int) -> str:
+    """Rewrite inline links whose URL repeats >= threshold times into
+    reference style, appending one `[id]: url` definition per collapsed URL.
+
+    Deterministic: ids are assigned in first-seen order, no hashing. With
+    threshold <= 0 the text is returned unchanged. Fenced/inline code and
+    images are matched by the scanner so their contents are never rewritten.
+    """
+    if threshold <= 0:
+        return md
+    counts: dict[str, int] = {}
+    order: list[str] = []
+    for m in _REF_LINK_TOKEN_RE.finditer(md):
+        if m.group("link") is None:
+            continue
+        url = m.group("link_url")
+        if url not in counts:
+            counts[url] = 0
+            order.append(url)
+        counts[url] += 1
+    ids: dict[str, str] = {}
+    for url in order:
+        if counts[url] >= threshold:
+            ids[url] = str(len(ids) + 1)
+    if not ids:
+        return md
+
+    def _rewrite(m: re.Match[str]) -> str:
+        if m.group("link") is None:
+            return m.group(0)
+        rid = ids.get(m.group("link_url"))
+        if rid is None:
+            return m.group(0)
+        return f"[{m.group('link_text')}][{rid}]"
+
+    body = _REF_LINK_TOKEN_RE.sub(_rewrite, md)
+    defs = "\n".join(f"[{ids[url]}]: {url}" for url in order if url in ids)
+    return f"{body.rstrip()}\n\n{defs}\n"
+
+
 # Line-start-only CommonMark block markers (#192). These only change meaning at
 # the very start of a line, so the span pass above cannot handle them (a span
 # has no line position). Applied at line-level assembly to a paragraph that was
@@ -1568,6 +1624,7 @@ def convert_document(
     footnote_pairing: bool = False,
     autolink_urls: bool = False,
     autolink_emails: bool = False,
+    reference_link_threshold: int = 0,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -1645,6 +1702,11 @@ def convert_document(
         tail = render_footnote_tail(footnote_defs)
         if tail:
             full = full + "\n\n" + tail
+
+    # Collapse repeated inline links to reference style (#158), after every
+    # body post-pass and the footnote tail so the appended `[id]:` definitions
+    # land at the true document end. Off by default (threshold 0).
+    full = _collapse_reference_links(full, reference_link_threshold)
 
     if front_matter:
         fm = build_front_matter(pdf_path, doc)
@@ -1972,6 +2034,13 @@ def main() -> int:
         action="store_true",
         help="Wrap bare email addresses in body text as CommonMark autolinks (opt-in, #157)",
     )
+    parser.add_argument(
+        "--reference-link-threshold",
+        type=int,
+        default=0,
+        metavar="N",
+        help="Collapse a URL linked inline N+ times into reference style with a definitions block; 0 disables (opt-in, #158)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -1994,6 +2063,7 @@ def main() -> int:
         footnote_pairing=args.footnote_pairing,
         autolink_urls=args.autolink_urls,
         autolink_emails=args.autolink_emails,
+        reference_link_threshold=args.reference_link_threshold,
     )
     return 0
 
