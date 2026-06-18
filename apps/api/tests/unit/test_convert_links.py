@@ -123,3 +123,72 @@ def test_autolink_skips_code_span_and_existing_link():
         mod.render_span(linked, autolink_urls=True, autolink_emails=True)
         == "[https://x.io](https://x.io)"
     )
+
+
+# Reference-style links for repeated URLs (#158). The post-pass is a pure
+# str->str function, covered here cross-platform.
+
+
+def test_reference_links_collapse_repeated_url():
+    mod = pdf_to_md_module()
+    md = "See [spec](https://x.io/s), [again](https://x.io/s), and [more](https://x.io/s)."
+    out = mod._collapse_reference_links(md, 3)
+    assert "[spec][1]" in out and "[again][1]" in out and "[more][1]" in out
+    assert "(https://x.io/s)" not in out  # no inline copies remain
+    assert out.rstrip().endswith("[1]: https://x.io/s")
+
+
+def test_reference_links_leave_under_threshold_inline():
+    mod = pdf_to_md_module()
+    md = "[a](https://x.io/s) and [b](https://x.io/s)"  # only 2 occurrences
+    assert mod._collapse_reference_links(md, 3) == md
+
+
+def test_reference_links_threshold_zero_is_noop():
+    mod = pdf_to_md_module()
+    md = "[a](https://x.io/s) [b](https://x.io/s) [c](https://x.io/s)"
+    assert mod._collapse_reference_links(md, 0) == md
+
+
+def test_reference_links_skip_code_and_keep_rare_inline():
+    mod = pdf_to_md_module()
+    md = (
+        "[d1](https://x.io/d) [d2](https://x.io/d) [d3](https://x.io/d) "
+        "[rare](https://y.io/r) `[code](https://x.io/d)`"
+    )
+    out = mod._collapse_reference_links(md, 3)
+    assert "[d1][1]" in out and "[d2][1]" in out and "[d3][1]" in out
+    assert "`[code](https://x.io/d)`" in out  # code span untouched
+    assert "[rare](https://y.io/r)" in out  # single-use stays inline
+    assert out.rstrip().endswith("[1]: https://x.io/d")
+
+
+def test_reference_links_ids_in_first_seen_order():
+    mod = pdf_to_md_module()
+    md = (
+        "[a](https://x.io/1) [b](https://x.io/2) [c](https://x.io/1) "
+        "[d](https://x.io/2) [e](https://x.io/1) [f](https://x.io/2)"
+    )
+    out = mod._collapse_reference_links(md, 3)
+    assert "[a][1]" in out and "[b][2]" in out
+    assert out.rstrip().split("\n")[-2:] == ["[1]: https://x.io/1", "[2]: https://x.io/2"]
+
+
+def test_reference_links_keep_balanced_parens_in_url():
+    # A Wikipedia-style path with balanced parens must be captured whole, not
+    # truncated at the first ')', and must not leave an orphan paren behind.
+    mod = pdf_to_md_module()
+    u = "https://x.io/wiki/Foo_(bar)"
+    out = mod._collapse_reference_links(f"[a]({u}) [b]({u}) [c]({u})", 3)
+    assert "[a][1]" in out and "[b][1]" in out and "[c][1]" in out
+    assert "[1])" not in out  # no orphaned ')' after a call site
+    assert out.rstrip().endswith(f"[1]: {u}")
+
+
+def test_reference_links_skip_indented_code_block():
+    # Links inside a 4-space indented code block are code; they must not be
+    # counted or rewritten, so a doc whose only repeats are indented is a no-op.
+    mod = pdf_to_md_module()
+    u = "https://x.io/s"
+    md = f"intro\n\n    [a]({u}) [b]({u}) [c]({u})\n\noutro"
+    assert mod._collapse_reference_links(md, 3) == md

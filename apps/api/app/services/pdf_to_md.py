@@ -177,6 +177,7 @@ def convert_pdf_bytes(
                 footnote_pairing=opts.footnote_pairing,
                 autolink_urls=opts.autolink_urls,
                 autolink_emails=opts.autolink_emails,
+                reference_link_threshold=opts.reference_link_threshold,
             )
 
         md_text = md_path.read_text(encoding="utf-8")
