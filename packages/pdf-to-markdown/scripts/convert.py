@@ -20,6 +20,7 @@ import io
 import logging
 import re
 import sys
+import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
 from math import ceil
@@ -222,6 +223,72 @@ def _collapse_reference_links(md: str, threshold: int) -> str:
     body = _REF_LINK_TOKEN_RE.sub(_rewrite, md)
     defs = "\n".join(f"[{ids[url]}]: {url}" for url in order if url in ids)
     return f"{body.rstrip()}\n\n{defs}\n"
+
+
+# Deterministic heading anchors (#152). A document-level post-pass appends a
+# Pandoc/mkdocs `{#slug}` attribute to each ATX heading so the same heading
+# lands at the same anchor across renderers. Off by default so existing output
+# stays byte-identical; renderers that do not parse the attribute show it as
+# literal trailing text (acceptable degradation).
+_HEADING_RE = re.compile(r"^(?P<hashes>#{1,6})\s+(?P<text>.*\S)\s*$")
+_ALREADY_ANCHORED_RE = re.compile(r"\{#[^}]+\}\s*$")
+
+
+def _slugify_heading(text: str) -> str:
+    """Lowercase, ASCII-fold, and dash-join a heading into a stable slug.
+
+    NFKD normalize then drop combining marks (so `Café` -> `cafe`), collapse
+    every run of non-alphanumeric characters to a single `-`, strip framing
+    `-`, and cap at 64 chars. Returns "" when nothing alphanumeric survives;
+    the caller substitutes a fallback so the anchor is never empty.
+    """
+    folded = unicodedata.normalize("NFKD", text)
+    ascii_text = "".join(c for c in folded if not unicodedata.combining(c)).lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_text).strip("-")
+    return slug[:64].rstrip("-")
+
+
+def _emit_heading_anchors(md: str) -> str:
+    """Append a deduplicated `{#slug}` to each ATX heading outside code fences.
+
+    Slugs collide-suffix in emission order (`summary`, `summary-2`, ...). A
+    heading that already carries a `{#...}` attribute is left untouched, and a
+    `#` line inside a fenced code block is not treated as a heading.
+    """
+    seen: dict[str, int] = {}
+    used: set[str] = set()
+    out: list[str] = []
+    in_fence = False
+    fence_marker = ""
+    for line in md.split("\n"):
+        stripped = line.lstrip()
+        if not in_fence and (stripped.startswith("```") or stripped.startswith("~~~")):
+            in_fence, fence_marker = True, stripped[:3]
+            out.append(line)
+            continue
+        if in_fence:
+            if stripped.startswith(fence_marker):
+                in_fence = False
+            out.append(line)
+            continue
+        m = _HEADING_RE.match(line)
+        if not m or _ALREADY_ANCHORED_RE.search(line):
+            out.append(line)
+            continue
+        text = m.group("text")
+        base = _slugify_heading(text) or "section"
+        # Suffix against the final emitted slugs, not just the base count, so a
+        # base that collides with an already-suffixed slug (`Foo`, `Foo 2`,
+        # `Foo` -> foo, foo-2, foo-3) never emits a duplicate anchor.
+        n = seen.get(base, 0) + 1
+        slug = base if n == 1 else f"{base}-{n}"
+        while slug in used:
+            n += 1
+            slug = f"{base}-{n}"
+        seen[base] = n
+        used.add(slug)
+        out.append(f"{m.group('hashes')} {text} {{#{slug}}}")
+    return "\n".join(out)
 
 
 # Line-start-only CommonMark block markers (#192). These only change meaning at
@@ -1628,6 +1695,7 @@ def convert_document(
     autolink_urls: bool = False,
     autolink_emails: bool = False,
     reference_link_threshold: int = 0,
+    emit_heading_anchors: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -1710,6 +1778,11 @@ def convert_document(
     # body post-pass and the footnote tail so the appended `[id]:` definitions
     # land at the true document end. Off by default (threshold 0).
     full = _collapse_reference_links(full, reference_link_threshold)
+
+    # Append deterministic `{#slug}` anchors to headings (#152). Runs on the
+    # assembled body so slug dedup is document-wide, not per-page. Off by default.
+    if emit_heading_anchors:
+        full = _emit_heading_anchors(full)
 
     if front_matter:
         fm = build_front_matter(pdf_path, doc)
@@ -2044,6 +2117,11 @@ def main() -> int:
         metavar="N",
         help="Collapse a URL linked inline N+ times into reference style with a definitions block; 0 disables (opt-in, #158)",
     )
+    parser.add_argument(
+        "--emit-heading-anchors",
+        action="store_true",
+        help="Append a deterministic Pandoc/mkdocs {#slug} anchor to each heading (opt-in, #152)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -2067,6 +2145,7 @@ def main() -> int:
         autolink_urls=args.autolink_urls,
         autolink_emails=args.autolink_emails,
         reference_link_threshold=args.reference_link_threshold,
+        emit_heading_anchors=args.emit_heading_anchors,
     )
     return 0
 
