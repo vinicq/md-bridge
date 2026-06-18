@@ -256,6 +256,7 @@ def _emit_heading_anchors(md: str) -> str:
     `#` line inside a fenced code block is not treated as a heading.
     """
     seen: dict[str, int] = {}
+    used: set[str] = set()
     out: list[str] = []
     in_fence = False
     fence_marker = ""
@@ -276,8 +277,16 @@ def _emit_heading_anchors(md: str) -> str:
             continue
         text = m.group("text")
         base = _slugify_heading(text) or "section"
-        seen[base] = seen.get(base, 0) + 1
-        slug = base if seen[base] == 1 else f"{base}-{seen[base]}"
+        # Suffix against the final emitted slugs, not just the base count, so a
+        # base that collides with an already-suffixed slug (`Foo`, `Foo 2`,
+        # `Foo` -> foo, foo-2, foo-3) never emits a duplicate anchor.
+        n = seen.get(base, 0) + 1
+        slug = base if n == 1 else f"{base}-{n}"
+        while slug in used:
+            n += 1
+            slug = f"{base}-{n}"
+        seen[base] = n
+        used.add(slug)
         out.append(f"{m.group('hashes')} {text} {{#{slug}}}")
     return "\n".join(out)
 

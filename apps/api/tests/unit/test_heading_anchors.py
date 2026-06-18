@@ -43,6 +43,17 @@ def test_heading_anchors_dedup_in_emission_order():
     assert "## Summary {#summary-3}" in out
 
 
+def test_heading_anchors_dedup_against_suffixed_collision():
+    # A base that collides with an already-suffixed slug must skip past it:
+    # `Foo`, `Foo 2`, `Foo` -> foo, foo-2, foo-3 (never two `#foo-2`).
+    mod = pdf_to_md_module()
+    md = "# Foo\n\n## Foo 2\n\n### Foo"
+    out = mod._emit_heading_anchors(md)
+    anchors = [line.split("{#")[1].rstrip("}") for line in out.split("\n") if "{#" in line]
+    assert anchors == ["foo", "foo-2", "foo-3"]
+    assert len(anchors) == len(set(anchors))  # all distinct
+
+
 def test_heading_anchors_skip_fenced_code_and_existing_anchor():
     mod = pdf_to_md_module()
     md = "# Real\n\n```\n# not a heading\n```\n\n## Done {#custom}"
