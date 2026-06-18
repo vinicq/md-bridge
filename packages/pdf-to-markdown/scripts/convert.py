@@ -291,6 +291,48 @@ def _emit_heading_anchors(md: str) -> str:
     return "\n".join(out)
 
 
+# Quote attribution pairing (#173). A blockquote followed by a short
+# dash-introduced line ("> quote" then "- Author") loses the pairing: the
+# attribution lands as a separate paragraph. This post-pass folds that line
+# back into the blockquote as a trailing paragraph. Off by default; it only
+# ever fires after a `>` block, which the converter emits solely under
+# detect_blockquotes, so default output stays byte-identical.
+_ATTRIBUTION_RE = re.compile("^\\s*(?:—|–|―|--)\\s*\\S")
+
+
+def _pair_quote_attribution(md: str) -> str:
+    """Fold a standalone dash-introduced attribution line into the blockquote
+    immediately above it, as a trailing `>` paragraph."""
+    lines = md.split("\n")
+    out: list[str] = []
+    n = len(lines)
+    i = 0
+    while i < n:
+        if not lines[i].startswith(">"):
+            out.append(lines[i])
+            i += 1
+            continue
+        start = i
+        while i < n and lines[i].startswith(">"):
+            i += 1
+        quote = lines[start:i]
+        # A single blank line then a one-line dash attribution (itself followed
+        # by a blank or EOF) binds to the quote above it.
+        if (
+            i + 1 < n
+            and lines[i].strip() == ""
+            and _ATTRIBUTION_RE.match(lines[i + 1])
+            and (i + 2 >= n or lines[i + 2].strip() == "")
+        ):
+            quote.append(">")
+            quote.append(f"> {lines[i + 1].strip()}")
+            out.extend(quote)
+            i += 2
+            continue
+        out.extend(quote)
+    return "\n".join(out)
+
+
 # Line-start-only CommonMark block markers (#192). These only change meaning at
 # the very start of a line, so the span pass above cannot handle them (a span
 # has no line position). Applied at line-level assembly to a paragraph that was
@@ -1696,6 +1738,7 @@ def convert_document(
     autolink_emails: bool = False,
     reference_link_threshold: int = 0,
     emit_heading_anchors: bool = False,
+    pair_quote_attribution: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -1783,6 +1826,11 @@ def convert_document(
     # assembled body so slug dedup is document-wide, not per-page. Off by default.
     if emit_heading_anchors:
         full = _emit_heading_anchors(full)
+
+    # Fold a dash-introduced attribution line into the blockquote above it
+    # (#173). Off by default; no-op unless detect_blockquotes produced a `>`.
+    if pair_quote_attribution:
+        full = _pair_quote_attribution(full)
 
     if front_matter:
         fm = build_front_matter(pdf_path, doc)
@@ -2122,6 +2170,11 @@ def main() -> int:
         action="store_true",
         help="Append a deterministic Pandoc/mkdocs {#slug} anchor to each heading (opt-in, #152)",
     )
+    parser.add_argument(
+        "--pair-quote-attribution",
+        action="store_true",
+        help="Fold a dash-introduced attribution line into the blockquote above it (opt-in, #173)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -2146,6 +2199,7 @@ def main() -> int:
         autolink_emails=args.autolink_emails,
         reference_link_threshold=args.reference_link_threshold,
         emit_heading_anchors=args.emit_heading_anchors,
+        pair_quote_attribution=args.pair_quote_attribution,
     )
     return 0
 

@@ -179,6 +179,7 @@ def convert_pdf_bytes(
                 autolink_emails=opts.autolink_emails,
                 reference_link_threshold=opts.reference_link_threshold,
                 emit_heading_anchors=opts.emit_heading_anchors,
+                pair_quote_attribution=opts.pair_quote_attribution,
             )
 
         md_text = md_path.read_text(encoding="utf-8")
