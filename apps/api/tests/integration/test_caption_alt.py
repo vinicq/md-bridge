@@ -82,6 +82,38 @@ def test_caption_becomes_alt_when_enabled():
     assert "Figure 1: Architecture overview" not in body
 
 
+def _build_side_by_side_pdf() -> bytes:
+    doc = pymupdf.open()
+    page = doc.new_page(width=400, height=500)
+    # A body paragraph at 11pt sets the body size so the 8pt captions read as
+    # small font (the caption gate keys on small_size).
+    page.insert_text(
+        (40, 60),
+        "Body paragraph at the dominant font size with enough words to set the baseline here.",
+        fontsize=11,
+    )
+    # Two figures on the same row, each with its own caption directly below.
+    page.insert_image(pymupdf.Rect(40, 120, 180, 220), stream=_PNG_A)
+    page.insert_text((40, 232), "Left figure caption", fontsize=8)
+    page.insert_image(pymupdf.Rect(220, 120, 360, 220), stream=_PNG_B)
+    page.insert_text((220, 232), "Right figure caption", fontsize=8)
+    try:
+        return doc.tobytes()
+    finally:
+        doc.close()
+
+
+def test_side_by_side_figures_keep_their_own_caption():
+    # Both captions share the same vertical gap; horizontal overlap must decide
+    # the pairing so neither image steals the other's caption (#323 Codex P2).
+    md = _convert(_build_side_by_side_pdf(), caption_alt_text=True)
+    images = [line for line in md.splitlines() if line.startswith("![")]
+    left = next(line for line in images if "p1_img1" in line)
+    right = next(line for line in images if "p1_img2" in line)
+    assert left.startswith("![Left figure caption](")
+    assert right.startswith("![Right figure caption](")
+
+
 def test_default_keeps_empty_alt_and_caption_in_body():
     md = _convert(_build_pdf(), caption_alt_text=False)
     images = [line for line in md.splitlines() if line.startswith("![")]

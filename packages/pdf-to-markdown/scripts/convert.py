@@ -1684,13 +1684,17 @@ def convert_page(
     # caption line is emitted as ordinary prose, so --with-images output is
     # unchanged. A caption is claimed by at most one image.
     caption_blocks: set[int] = set()
-    for top_y, bottom_y, rel in image_items:
+    for top_y, bottom_y, left_x, right_x, rel in image_items:
         alt = ""
         if profile.caption_alt_text:
             best: Block | None = None
             best_gap = CAPTION_MAX_GAP
             for block in parsed_blocks:
                 if id(block) in caption_blocks or block.dominant_size > profile.small_size:
+                    continue
+                # Require horizontal overlap so a side-by-side figure or column
+                # cannot steal its neighbor's caption (#323 Codex review).
+                if block.bbox[0] >= right_x or block.bbox[2] <= left_x:
                     continue
                 gap = block.bbox[1] - bottom_y
                 if 0 <= gap <= best_gap:
@@ -2043,11 +2047,12 @@ def _caption_alt(text: str) -> str:
     return alt.replace("]", "\\]")
 
 
-def extract_page_images(page: fitz.Page, images_dir: Path, pdf_stem: str) -> list[tuple[float, float, str]]:
+def extract_page_images(page: fitz.Page, images_dir: Path, pdf_stem: str) -> list[tuple[float, float, float, float, str]]:
     """Save each image on the page to <images_dir>/<pdf_stem>/p{N}_img{I}.<ext>
-    and return [(top_y, bottom_y, rel_path), ...] for placement in reading order.
-    The bottom edge lets the caller pair a caption line just below the image (#149)."""
-    out: list[tuple[float, float, str]] = []
+    and return [(top_y, bottom_y, left_x, right_x, rel_path), ...] for placement
+    in reading order. The bottom edge and x-span let the caller pair a caption
+    line that sits just below AND horizontally overlaps the image (#149)."""
+    out: list[tuple[float, float, float, float, str]] = []
     doc = page.parent
     page_no = page.number + 1
     target_dir = images_dir / pdf_stem
@@ -2070,13 +2075,15 @@ def extract_page_images(page: fitz.Page, images_dir: Path, pdf_stem: str) -> lis
         try:
             top_y = float(bbox[1])
             bottom_y = float(bbox[3])
+            left_x = float(bbox[0])
+            right_x = float(bbox[2])
         except (TypeError, IndexError, ValueError):
-            top_y = bottom_y = 0.0
+            top_y = bottom_y = left_x = right_x = 0.0
         filename = f"p{page_no}_img{idx + 1}.{ext}"
         target_dir.mkdir(parents=True, exist_ok=True)
         (target_dir / filename).write_bytes(img["image"])
         rel = f"images/{pdf_stem}/{filename}".replace("\\", "/")
-        out.append((top_y, bottom_y, rel))
+        out.append((top_y, bottom_y, left_x, right_x, rel))
     return out
 
 
