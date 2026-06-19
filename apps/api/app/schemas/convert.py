@@ -31,6 +31,7 @@ class PdfToMdOptions(BaseModel):
     autolink_emails: bool = False
     reference_link_threshold: int = Field(default=0, ge=0)
     emit_heading_anchors: bool = False
+    pair_quote_attribution: bool = False
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")
