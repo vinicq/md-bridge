@@ -33,6 +33,15 @@ class PdfToMdOptions(BaseModel):
     emit_heading_anchors: bool = False
     pair_quote_attribution: bool = False
     extract_abbreviations: bool = False
+    # Smart-typography normalization (#171). All default to preserving the
+    # source glyphs, so the default output stays byte-identical. "ascii" folds
+    # the Unicode form back to ASCII. Straight->curly quote synthesis, NBSP
+    # form/preservation, and locale NBSP insertion are out of scope: the curly
+    # direction is the renderer's smarty job, and the converter already strips
+    # NBSP upstream, so reshaping it needs a separate upstream change.
+    smart_typography_quotes: Literal["preserve", "ascii"] = "preserve"
+    smart_typography_ellipsis: Literal["preserve", "ascii"] = "preserve"
+    smart_typography_dashes: Literal["preserve", "ascii"] = "preserve"
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")
