@@ -225,6 +225,68 @@ def _collapse_reference_links(md: str, threshold: int) -> str:
     return f"{body.rstrip()}\n\n{defs}\n"
 
 
+# Smart typography (#171). A document-level post-pass that folds Unicode
+# typography back to ASCII: curly quotes -> straight, ellipsis -> ..., en/em
+# dash -> --/---. Every option defaults to preserving the source glyph, so the
+# default path is a no-op and output stays byte-identical. The transforms only
+# ever remove a Unicode source character, so re-running the pass is idempotent.
+# NBSP handling is intentionally out of scope: the converter normalizes a
+# non-breaking space to a regular space upstream, so by the time this pass runs
+# there is no NBSP left to reshape; preserving it needs an upstream change and
+# is left as a follow-up.
+#
+# Typography must never touch code or a URL. This protect-scanner matches
+# fenced/indented/inline code, images, inline links, autolinks, AND
+# reference-style definition lines (`[id]: url`), emitting each verbatim; the
+# transforms apply only to the prose between matches. (Reference-definition
+# lines are appended by `_collapse_reference_links` and are NOT covered by its
+# own tokenizer, so they are protected explicitly here, #171 review.)
+_TYPO_PROTECT_RE = re.compile(
+    r"(?P<fence>^(?P<fence_marker>```|~~~)[^\n]*\n.*?^(?P=fence_marker)[^\n]*$)"
+    r"|(?P<indented>^(?: {4}|\t)[^\n]*$)"
+    r"|(?P<refdef>^ {0,3}\[[^\]]+\]:\s+\S+.*$)"
+    r"|(?P<code>`+[^`]*`+)"
+    r"|(?P<image>!\[[^\]]*\]\([^)]*\))"
+    r"|(?P<link>\[[^\]]*\]\([^)]*\))"
+    r"|(?P<autolink><[^>\s]+>)",
+    re.MULTILINE | re.DOTALL,
+)
+
+
+def _fold_typography(text: str, *, quotes: str, ellipsis: str, dashes: str) -> str:
+    """Apply the enabled ASCII-folding transforms to one prose segment."""
+    if dashes == "ascii":
+        # Em-dash before en-dash; both sources vanish, so the pass is idempotent.
+        text = text.replace("—", "---").replace("–", "--")
+    if ellipsis == "ascii":
+        text = text.replace("…", "...")
+    if quotes == "ascii":
+        text = (
+            text.replace("“", '"').replace("”", '"')
+            .replace("‘", "'").replace("’", "'")
+        )
+    return text
+
+
+def _smart_typography(md: str, *, quotes: str, ellipsis: str, dashes: str) -> str:
+    """Fold Unicode typography to ASCII in prose, never inside code or a URL.
+
+    With every option at its default the pass returns the text unchanged. Code
+    spans/blocks, images, links, autolinks, and reference-definition lines are
+    matched and re-emitted verbatim so a quote or dash inside a URL or a code
+    sample is never rewritten (#171)."""
+    if quotes == "preserve" and ellipsis == "preserve" and dashes == "preserve":
+        return md
+    out: list[str] = []
+    pos = 0
+    for m in _TYPO_PROTECT_RE.finditer(md):
+        out.append(_fold_typography(md[pos:m.start()], quotes=quotes, ellipsis=ellipsis, dashes=dashes))
+        out.append(m.group(0))
+        pos = m.end()
+    out.append(_fold_typography(md[pos:], quotes=quotes, ellipsis=ellipsis, dashes=dashes))
+    return "".join(out)
+
+
 # Deterministic heading anchors (#152). A document-level post-pass appends a
 # Pandoc/mkdocs `{#slug}` attribute to each ATX heading so the same heading
 # lands at the same anchor across renderers. Off by default so existing output
@@ -1993,6 +2055,9 @@ def convert_document(
     emit_heading_anchors: bool = False,
     pair_quote_attribution: bool = False,
     extract_abbreviations: bool = False,
+    smart_typography_quotes: str = "preserve",
+    smart_typography_ellipsis: str = "preserve",
+    smart_typography_dashes: str = "preserve",
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -2099,6 +2164,16 @@ def convert_document(
         tail = render_abbreviation_tail(abbreviation_defs)
         if tail:
             full = full + "\n\n" + tail
+
+    # Fold Unicode typography to ASCII in prose (#171). Runs last so it also
+    # normalizes any appended tail blocks; protects code and URLs (including the
+    # reference-definition lines added above). No-op at the default settings.
+    full = _smart_typography(
+        full,
+        quotes=smart_typography_quotes,
+        ellipsis=smart_typography_ellipsis,
+        dashes=smart_typography_dashes,
+    )
 
     if front_matter:
         fm = build_front_matter(pdf_path, doc)
@@ -2448,6 +2523,24 @@ def main() -> int:
         action="store_true",
         help="Emit *[ABBR]: expansion lines from a two-column abbreviation glossary section (opt-in, #163)",
     )
+    parser.add_argument(
+        "--smart-typography-quotes",
+        choices=("preserve", "ascii"),
+        default="preserve",
+        help="Fold curly quotes to straight ASCII (opt-in, #171)",
+    )
+    parser.add_argument(
+        "--smart-typography-ellipsis",
+        choices=("preserve", "ascii"),
+        default="preserve",
+        help="Fold an ellipsis character to ... (opt-in, #171)",
+    )
+    parser.add_argument(
+        "--smart-typography-dashes",
+        choices=("preserve", "ascii"),
+        default="preserve",
+        help="Fold en/em dash to --/--- (opt-in, #171)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -2474,6 +2567,9 @@ def main() -> int:
         emit_heading_anchors=args.emit_heading_anchors,
         pair_quote_attribution=args.pair_quote_attribution,
         extract_abbreviations=args.extract_abbreviations,
+        smart_typography_quotes=args.smart_typography_quotes,
+        smart_typography_ellipsis=args.smart_typography_ellipsis,
+        smart_typography_dashes=args.smart_typography_dashes,
     )
     return 0
 

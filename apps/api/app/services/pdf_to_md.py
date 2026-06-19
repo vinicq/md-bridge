@@ -181,6 +181,9 @@ def convert_pdf_bytes(
                 emit_heading_anchors=opts.emit_heading_anchors,
                 pair_quote_attribution=opts.pair_quote_attribution,
                 extract_abbreviations=opts.extract_abbreviations,
+                smart_typography_quotes=opts.smart_typography_quotes,
+                smart_typography_ellipsis=opts.smart_typography_ellipsis,
+                smart_typography_dashes=opts.smart_typography_dashes,
             )
 
         md_text = md_path.read_text(encoding="utf-8")
