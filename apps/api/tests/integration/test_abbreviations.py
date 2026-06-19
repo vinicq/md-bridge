@@ -18,7 +18,6 @@ import sys
 
 import pymupdf
 import pytest
-
 from app.schemas.convert import PdfToMdOptions
 from app.services.pdf_to_md import convert_pdf_bytes
 
