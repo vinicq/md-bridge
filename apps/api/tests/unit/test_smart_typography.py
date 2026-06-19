@@ -60,6 +60,26 @@ def test_urls_are_never_touched():
     assert "text---here" in out  # surrounding prose still folded
 
 
+def test_prose_after_reference_definition_is_folded():
+    # The reference-definition arm must stop at its own line (#322 Codex P2):
+    # under re.DOTALL a greedy `.*$` would protect every later paragraph.
+    mod = pdf_to_md_module()
+    src = "[1]: http://x/a–b\n\nNext—paragraph here."
+    out = mod._smart_typography(src, **ALL_ASCII)
+    assert "[1]: http://x/a–b" in out  # definition URL intact
+    assert "Next---paragraph here." in out  # prose after it still folds
+
+
+def test_balanced_paren_link_destination_is_protected():
+    # A link destination with balanced parens then a smart char must not be
+    # half-folded (#322 Codex P2): the whole URL is protected.
+    mod = pdf_to_md_module()
+    src = "[x](http://e/Foo_(bar)–baz) and prose—here"
+    out = mod._smart_typography(src, **ALL_ASCII)
+    assert "http://e/Foo_(bar)–baz" in out  # URL en-dash intact
+    assert "prose---here" in out  # surrounding prose folded
+
+
 def test_is_idempotent():
     mod = pdf_to_md_module()
     src = "a—b…“x” `keep —this`"

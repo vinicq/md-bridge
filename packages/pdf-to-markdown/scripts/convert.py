@@ -242,12 +242,16 @@ def _collapse_reference_links(md: str, threshold: int) -> str:
 # lines are appended by `_collapse_reference_links` and are NOT covered by its
 # own tokenizer, so they are protected explicitly here, #171 review.)
 _TYPO_PROTECT_RE = re.compile(
+    # Only the fenced-code arm spans lines (DOTALL); every other arm is
+    # line-bounded with [^\n] so DOTALL's `.` cannot run past the line. The
+    # link/image destinations allow one level of balanced parens, mirroring
+    # `_REF_LINK_TOKEN_RE`, so a URL like `Foo_(bar)` is captured whole (#171).
     r"(?P<fence>^(?P<fence_marker>```|~~~)[^\n]*\n.*?^(?P=fence_marker)[^\n]*$)"
     r"|(?P<indented>^(?: {4}|\t)[^\n]*$)"
-    r"|(?P<refdef>^ {0,3}\[[^\]]+\]:\s+\S+.*$)"
+    r"|(?P<refdef>^ {0,3}\[[^\]]+\]:[^\n]+$)"
     r"|(?P<code>`+[^`]*`+)"
-    r"|(?P<image>!\[[^\]]*\]\([^)]*\))"
-    r"|(?P<link>\[[^\]]*\]\([^)]*\))"
+    r"|(?P<image>!\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))+\))"
+    r"|(?P<link>\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))+\))"
     r"|(?P<autolink><[^>\s]+>)",
     re.MULTILINE | re.DOTALL,
 )
