@@ -607,6 +607,7 @@ class DocProfile:
     autolink_urls: bool = False  # opt-in: wrap bare http(s) URLs in body text as autolinks (#157)
     autolink_emails: bool = False  # opt-in: wrap bare email addresses in body text as autolinks (#157)
     extract_abbreviations: bool = False  # opt-in: emit *[ABBR]: defs from a glossary section (#163)
+    caption_alt_text: bool = False  # opt-in: use a caption line below an image as its alt text (#149)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
@@ -1646,15 +1647,13 @@ def convert_page(
     except Exception:
         page_links = []
 
-    image_items: list[tuple[float, str]] = []
+    image_items: list[tuple[float, float, str]] = []
     if images_dir is not None:
         image_items = extract_page_images(page, images_dir, pdf_stem)
 
     items: list[tuple[float, str, object]] = []
     for t in tables:
         items.append((t.bbox[1], "table", t))
-    for y, md in image_items:
-        items.append((y, "image", md))
 
     parsed_blocks: list[Block] = []
     for raw_block in page_text_dict(page).get("blocks", []):
@@ -1679,7 +1678,33 @@ def convert_page(
 
     annotate_spans_with_links(parsed_blocks, page_links)
     drop_rule_strikethroughs(parsed_blocks, page)
+
+    # Pair each image with a small-font caption line just below it and use that
+    # text as the image's alt (#149). Off by default: alt stays empty and the
+    # caption line is emitted as ordinary prose, so --with-images output is
+    # unchanged. A caption is claimed by at most one image.
+    caption_blocks: set[int] = set()
+    for top_y, bottom_y, rel in image_items:
+        alt = ""
+        if profile.caption_alt_text:
+            best: Block | None = None
+            best_gap = CAPTION_MAX_GAP
+            for block in parsed_blocks:
+                if id(block) in caption_blocks or block.dominant_size > profile.small_size:
+                    continue
+                gap = block.bbox[1] - bottom_y
+                if 0 <= gap <= best_gap:
+                    best, best_gap = block, gap
+            if best is not None:
+                candidate = _caption_alt(best.text)
+                if candidate:
+                    alt = candidate
+                    caption_blocks.add(id(best))
+        items.append((top_y, "image", f"![{alt}]({rel})"))
+
     for block in parsed_blocks:
+        if id(block) in caption_blocks:
+            continue  # consumed as an image alt; do not also emit as prose
         items.append((block.bbox[1], "block", block))
 
     items.sort(key=lambda it: it[0])
@@ -2003,10 +2028,26 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
     return "\n\n".join(out_parts)
 
 
-def extract_page_images(page: fitz.Page, images_dir: Path, pdf_stem: str) -> list[tuple[float, str]]:
+# Caption-as-alt pairing (#149). A figure caption usually sits in a small-font
+# line within ~two body lines below the image; that line is the natural alt
+# text. Opt-in, and only relevant under --with-images (the default path extracts
+# no images, so output stays unchanged).
+CAPTION_MAX_GAP = 24.0  # pt below the image bottom to look for a caption line
+
+
+def _caption_alt(text: str) -> str:
+    """Sanitize a caption line into image alt text: collapse whitespace, strip
+    surrounding quotes, and escape `]` so the `![...]()` syntax stays intact."""
+    alt = re.sub(r"\s+", " ", text).strip()
+    alt = alt.strip("\"'“”‘’").strip()
+    return alt.replace("]", "\\]")
+
+
+def extract_page_images(page: fitz.Page, images_dir: Path, pdf_stem: str) -> list[tuple[float, float, str]]:
     """Save each image on the page to <images_dir>/<pdf_stem>/p{N}_img{I}.<ext>
-    and return [(top_y, markdown_ref), ...] for placement in reading order."""
-    out: list[tuple[float, str]] = []
+    and return [(top_y, bottom_y, rel_path), ...] for placement in reading order.
+    The bottom edge lets the caller pair a caption line just below the image (#149)."""
+    out: list[tuple[float, float, str]] = []
     doc = page.parent
     page_no = page.number + 1
     target_dir = images_dir / pdf_stem
@@ -2028,13 +2069,14 @@ def extract_page_images(page: fitz.Page, images_dir: Path, pdf_stem: str) -> lis
         bbox = info.get("bbox", (0.0, 0.0, 0.0, 0.0))
         try:
             top_y = float(bbox[1])
+            bottom_y = float(bbox[3])
         except (TypeError, IndexError, ValueError):
-            top_y = 0.0
+            top_y = bottom_y = 0.0
         filename = f"p{page_no}_img{idx + 1}.{ext}"
         target_dir.mkdir(parents=True, exist_ok=True)
         (target_dir / filename).write_bytes(img["image"])
         rel = f"images/{pdf_stem}/{filename}".replace("\\", "/")
-        out.append((top_y, f"![]({rel})"))
+        out.append((top_y, bottom_y, rel))
     return out
 
 
@@ -2062,9 +2104,11 @@ def convert_document(
     smart_typography_quotes: str = "preserve",
     smart_typography_ellipsis: str = "preserve",
     smart_typography_dashes: str = "preserve",
+    caption_alt_text: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
+    profile.caption_alt_text = caption_alt_text
     profile.detect_blockquotes = detect_blockquotes
     profile.cluster_headings = cluster_headings
     profile.allow_html = allow_html
@@ -2461,6 +2505,7 @@ def main() -> int:
     parser.add_argument("-o", "--output", type=Path, required=True)
     parser.add_argument("--page-break", action="store_true", help="Insert --- between pages")
     parser.add_argument("--with-images", action="store_true", help="Extract images to ./images/<pdf>/ and reference them in the .md")
+    parser.add_argument("--caption-alt-text", action="store_true", help="Use a small-font caption line below an image as its alt text (opt-in, #149)")
     parser.add_argument("--no-front-matter", action="store_true", help="Skip YAML front matter")
     parser.add_argument(
         "--detect-blockquotes",
@@ -2574,6 +2619,7 @@ def main() -> int:
         smart_typography_quotes=args.smart_typography_quotes,
         smart_typography_ellipsis=args.smart_typography_ellipsis,
         smart_typography_dashes=args.smart_typography_dashes,
+        caption_alt_text=args.caption_alt_text,
     )
     return 0
 

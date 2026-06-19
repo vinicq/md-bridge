@@ -42,6 +42,9 @@ class PdfToMdOptions(BaseModel):
     smart_typography_quotes: Literal["preserve", "ascii"] = "preserve"
     smart_typography_ellipsis: Literal["preserve", "ascii"] = "preserve"
     smart_typography_dashes: Literal["preserve", "ascii"] = "preserve"
+    # Use a small-font caption line below an image as its alt text (#149).
+    # Off by default and only relevant with with_images.
+    caption_alt_text: bool = False
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")
