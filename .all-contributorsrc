@@ -51,8 +51,8 @@
         "code",
         "doc",
         "test",
-        "infra",
-        "translation"
+        "translation",
+        "a11y"
       ]
     },
     {
