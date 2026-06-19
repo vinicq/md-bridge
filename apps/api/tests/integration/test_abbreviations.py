@@ -80,8 +80,9 @@ def test_two_column_glossary_emits_tail_when_enabled():
         filename="abbr.pdf",
         options=PdfToMdOptions(extract_abbreviations=True),
     ).md
-    for token, expansion in TWO_COLUMN_ROWS:
-        assert f"*[{token}]: {expansion}" in md
+    expected = [f"*[{token}]: {expansion}" for token, expansion in TWO_COLUMN_ROWS]
+    missing = [line for line in expected if line not in md]
+    assert missing == []
     # The tail is sorted by token and sits at the document end.
     assert md.index("*[GQM]:") < md.index("*[MLM]:") < md.index("*[NLP]:")
 

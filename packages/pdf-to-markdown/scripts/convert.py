@@ -1377,6 +1377,7 @@ _ABBR_MIN_PAIRS = 2  # a lone row is detection noise; require a real table
 _ABBR_COL_GAP_MIN = 24.0  # min x-gap (pt) between the two columns
 _ABBR_COL_TOL = 6.0  # x tolerance (pt) when pinning a row to the modal column
 _ABBR_MAX_PAGES = 6  # a glossary rarely spans more pages; bounds the scan
+_ABBR_INLINE_MIN_DENSITY = 0.5  # inline pages must be mostly entries, not prose
 
 
 def _fold_heading(text: str) -> str:
@@ -1411,21 +1412,19 @@ def _pair_two_columns(cells: list[tuple[float, float, str]]) -> dict[str, str]:
     baseline into (token, expansion). First token wins on a collision."""
     if len(cells) < 2 * _ABBR_MIN_PAIRS:
         return {}
-    sorted_x = sorted(x for x, _, _ in cells)
-    best_gap = 0.0
-    split: float | None = None
-    for a, b in zip(sorted_x, sorted_x[1:], strict=False):
-        if b - a > best_gap:
-            best_gap = b - a
-            split = (a + b) / 2
-    if split is None or best_gap < _ABBR_COL_GAP_MIN:
+    # Column anchors are the two most populated x positions, not the widest gap:
+    # a glossary's token and expansion columns each repeat on every row, whereas
+    # page furniture (a lone right-aligned page number, a running header) forms
+    # no populous column. Picking by frequency keeps furniture from hijacking the
+    # split and pins it out below.
+    x_counts = Counter(round(x) for x, _, _ in cells)
+    populous = [x for x, n in x_counts.most_common() if n >= _ABBR_MIN_PAIRS]
+    if len(populous) < 2:
         return {}
-    left = [c for c in cells if c[0] < split]
-    right = [c for c in cells if c[0] >= split]
-    if len(left) < _ABBR_MIN_PAIRS or len(right) < _ABBR_MIN_PAIRS:
+    modal_left, modal_right = sorted(populous[:2])
+    if modal_right - modal_left < _ABBR_COL_GAP_MIN:
         return {}
-    modal_left = Counter(round(x) for x, _, _ in left).most_common(1)[0][0]
-    modal_right = Counter(round(x) for x, _, _ in right).most_common(1)[0][0]
+    split = (modal_left + modal_right) / 2
 
     rows: dict[int, dict[str, list[tuple[float, str]]]] = {}
     for x, y, text in cells:
@@ -1467,6 +1466,13 @@ def _pair_inline_rows(rows: list[tuple[float, float, str]]) -> dict[str, str]:
         if len(parts) == 2:
             _add_pair(defs, parts[0], parts[1].strip())
     return defs
+
+
+def _inline_page_ok(defs: dict[str, str], rows: list[tuple[float, float, str]]) -> bool:
+    """An inline glossary page must hold at least the floor of pairs and be
+    mostly entries (a running header or page number is the only non-entry on a
+    real page; a body page is mostly prose and fails the density gate)."""
+    return len(defs) >= _ABBR_MIN_PAIRS and len(defs) >= _ABBR_INLINE_MIN_DENSITY * max(1, len(rows))
 
 
 def collect_abbreviation_definitions(doc: fitz.Document, profile: DocProfile) -> dict[str, str]:
@@ -1516,20 +1522,28 @@ def collect_abbreviation_definitions(doc: fitz.Document, profile: DocProfile) ->
             # body page (where the columnar gap is gone but a stray line could
             # still parse inline) cannot leak rows into the glossary.
             first_rows = rows_of(pi, heading_y)
-            defs = _pair_two_columns(first_rows)
-            extractor = _pair_two_columns
-            if len(defs) < _ABBR_MIN_PAIRS:
-                defs = _pair_inline_rows(first_rows)
-                extractor = _pair_inline_rows
-            if len(defs) < _ABBR_MIN_PAIRS:
-                continue  # not a glossary (e.g. a TOC entry for "Lista de Siglas")
+            two_col = _pair_two_columns(first_rows)
+            if len(two_col) >= _ABBR_MIN_PAIRS:
+                extractor, defs = _pair_two_columns, dict(two_col)
+            else:
+                inline = _pair_inline_rows(first_rows)
+                if not _inline_page_ok(inline, first_rows):
+                    continue  # not a glossary (e.g. a TOC entry for "Lista de Siglas")
+                extractor, defs = _pair_inline_rows, dict(inline)
             for offset in range(1, _ABBR_MAX_PAGES):
                 page_idx = pi + offset
                 if page_idx >= len(pages_lines):
                     break
-                page_defs = extractor(rows_of(page_idx, None))
-                if not page_defs:
-                    break  # the glossary ended
+                rows = rows_of(page_idx, None)
+                page_defs = extractor(rows)
+                # A continuation page must still read as a glossary. For the
+                # inline layout that also means mostly-entries, so a body page
+                # with a stray acronym-led line (e.g. "API calls ...") cannot
+                # leak a bogus definition into the tail.
+                if len(page_defs) < _ABBR_MIN_PAIRS:
+                    break
+                if extractor is _pair_inline_rows and not _inline_page_ok(page_defs, rows):
+                    break
                 for token, expansion in page_defs.items():
                     defs.setdefault(token, expansion)
             return defs
