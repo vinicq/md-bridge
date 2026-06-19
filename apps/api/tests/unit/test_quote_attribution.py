@@ -40,3 +40,20 @@ def test_multiparagraph_quote_keeps_internal_separators():
     md = "> para one\n>\n> para two\n\n— Author"
     out = mod._pair_quote_attribution(md)
     assert out == "> para one\n>\n> para two\n>\n> — Author"
+
+
+def test_page_break_separator_is_not_folded():
+    # A `---` page separator (or any thematic break) after a quote must not be
+    # swallowed as an attribution, even though it starts with a dash run.
+    mod = pdf_to_md_module()
+    for sep in ("---", "***", "___", "- - -"):
+        md = f"> quote ending a page\n\n{sep}\n\nnext page"
+        assert mod._pair_quote_attribution(md) == md
+
+
+def test_quote_inside_fenced_code_is_not_folded():
+    # A `>` line and a dash line living inside a fence are a code sample, not a
+    # blockquote with an attribution, and must pass through untouched.
+    mod = pdf_to_md_module()
+    md = "```\n> sample quote\n\n— inside the fence\n```"
+    assert mod._pair_quote_attribution(md) == md

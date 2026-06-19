@@ -298,16 +298,36 @@ def _emit_heading_anchors(md: str) -> str:
 # ever fires after a `>` block, which the converter emits solely under
 # detect_blockquotes, so default output stays byte-identical.
 _ATTRIBUTION_RE = re.compile("^\\s*(?:—|–|―|--)\\s*\\S")
+# A thematic break / page separator (`---`, `***`, `___`, `- - -`) starts with a
+# dash run too, so it must be excluded from attribution binding or a page break
+# emitted by --page-break would be swallowed into the quote above it.
+_THEMATIC_BREAK_RE = re.compile(r"^\s*([-*_])(?:\s*\1){2,}\s*$")
 
 
 def _pair_quote_attribution(md: str) -> str:
     """Fold a standalone dash-introduced attribution line into the blockquote
-    immediately above it, as a trailing `>` paragraph."""
+    immediately above it, as a trailing `>` paragraph. Skips fenced code (a `>`
+    line inside a fence is a code sample, not a quote) and never binds a
+    thematic break or page separator."""
     lines = md.split("\n")
     out: list[str] = []
     n = len(lines)
     i = 0
+    in_fence = False
+    fence_marker = ""
     while i < n:
+        stripped = lines[i].lstrip()
+        if not in_fence and (stripped.startswith("```") or stripped.startswith("~~~")):
+            in_fence, fence_marker = True, stripped[:3]
+            out.append(lines[i])
+            i += 1
+            continue
+        if in_fence:
+            if stripped.startswith(fence_marker):
+                in_fence = False
+            out.append(lines[i])
+            i += 1
+            continue
         if not lines[i].startswith(">"):
             out.append(lines[i])
             i += 1
@@ -317,15 +337,17 @@ def _pair_quote_attribution(md: str) -> str:
             i += 1
         quote = lines[start:i]
         # A single blank line then a one-line dash attribution (itself followed
-        # by a blank or EOF) binds to the quote above it.
+        # by a blank or EOF, and not a thematic break) binds to the quote above.
+        attr = lines[i + 1] if i + 1 < n else ""
         if (
             i + 1 < n
             and lines[i].strip() == ""
-            and _ATTRIBUTION_RE.match(lines[i + 1])
+            and _ATTRIBUTION_RE.match(attr)
+            and not _THEMATIC_BREAK_RE.match(attr)
             and (i + 2 >= n or lines[i + 2].strip() == "")
         ):
             quote.append(">")
-            quote.append(f"> {lines[i + 1].strip()}")
+            quote.append(f"> {attr.strip()}")
             out.extend(quote)
             i += 2
             continue
