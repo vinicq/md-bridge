@@ -180,6 +180,7 @@ def convert_pdf_bytes(
                 reference_link_threshold=opts.reference_link_threshold,
                 emit_heading_anchors=opts.emit_heading_anchors,
                 pair_quote_attribution=opts.pair_quote_attribution,
+                extract_abbreviations=opts.extract_abbreviations,
             )
 
         md_text = md_path.read_text(encoding="utf-8")

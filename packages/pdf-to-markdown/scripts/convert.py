@@ -540,6 +540,7 @@ class DocProfile:
     footnote_numbers: frozenset = frozenset()  # collected footnote numbers to rewrite as [^N] (#148)
     autolink_urls: bool = False  # opt-in: wrap bare http(s) URLs in body text as autolinks (#157)
     autolink_emails: bool = False  # opt-in: wrap bare email addresses in body text as autolinks (#157)
+    extract_abbreviations: bool = False  # opt-in: emit *[ABBR]: defs from a glossary section (#163)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
@@ -1326,6 +1327,222 @@ def render_footnote_tail(definitions: dict[int, str]) -> str:
     return "\n".join(f"[^{n}]: {definitions[n]}" for n in sorted(definitions))
 
 
+# Abbreviation glossary extraction (#163). Technical PDFs carry a "List of
+# Abbreviations / Acronyms / Siglas / Abreviaturas" page laid out as two
+# columns: a short token on the left, its expansion on the right, sharing a
+# baseline. A pre-scan finds that section by its locale-aware heading and
+# clusters the two columns into `*[ABBR]: expansion` lines, which the
+# markdown-to-pdf renderer's `abbr` extension expands wherever the token
+# appears later. Off by default so output stays byte-identical; the raw
+# glossary is left in the body untouched, so the feature is purely additive.
+#
+# Folded (accent-stripped, lowercased) headings that introduce a glossary. A
+# bare "Glossary"/"Definitions" heading is deliberately absent: those are prose
+# definition lists, not two-column abbreviation tables, and an ISO-style
+# numbered "3 Terms, definitions and abbreviations" clause never folds to an
+# exact term either, so neither triggers detection.
+_ABBR_HEADING_TERMS = frozenset(
+    {
+        # English
+        "abbreviations",
+        "acronyms",
+        "abbreviations and acronyms",
+        "list of abbreviations",
+        "list of acronyms",
+        "list of abbreviations and acronyms",
+        # Portuguese
+        "abreviaturas",
+        "siglas",
+        "abreviacoes",
+        "abreviaturas e siglas",
+        "siglas e abreviaturas",
+        "lista de abreviaturas",
+        "lista de siglas",
+        "lista de abreviacoes",
+        "lista de abreviaturas e siglas",
+        "lista de siglas e abreviaturas",
+        "lista de siglas e acronimos",
+        "lista de abreviaturas e acronimos",
+        # Spanish
+        "acronimos",
+        "abreviaciones",
+        "siglas y acronimos",
+        "lista de acronimos",
+        "lista de abreviaciones",
+        "lista de siglas y acronimos",
+    }
+)
+_ABBR_MAX_TOKEN_LEN = 10  # longest left-column token treated as an abbreviation
+_ABBR_MIN_PAIRS = 2  # a lone row is detection noise; require a real table
+_ABBR_COL_GAP_MIN = 24.0  # min x-gap (pt) between the two columns
+_ABBR_COL_TOL = 6.0  # x tolerance (pt) when pinning a row to the modal column
+_ABBR_MAX_PAGES = 6  # a glossary rarely spans more pages; bounds the scan
+
+
+def _fold_heading(text: str) -> str:
+    """Lowercase, strip accents (NFKD drop combining), collapse whitespace."""
+    folded = unicodedata.normalize("NFKD", text)
+    ascii_text = "".join(c for c in folded if not unicodedata.combining(c))
+    return re.sub(r"\s+", " ", ascii_text).strip().lower()
+
+
+def _looks_like_abbreviation(token: str) -> bool:
+    """A single whitespace-free token, <= max length, mostly uppercase.
+
+    The whitespace and length gates reject a prose line that lands in the left
+    column (e.g. a paragraph after the table, or a TOC entry title); the
+    uppercase ratio rejects an ordinary lowercase word."""
+    if not token or " " in token or len(token) > _ABBR_MAX_TOKEN_LEN:
+        return False
+    letters = [c for c in token if c.isalpha()]
+    if len(letters) < 2:
+        return False
+    upper = sum(1 for c in letters if c.isupper())
+    return upper / len(letters) >= 0.6
+
+
+def _pair_two_columns(cells: list[tuple[float, float, str]]) -> dict[str, str]:
+    """Split same-section lines into two columns and pair them by baseline.
+
+    `cells` is `(x0, y, text)` per line. The columns are separated at the widest
+    horizontal gap (>= _ABBR_COL_GAP_MIN); each side must hold at least
+    _ABBR_MIN_PAIRS lines. Rows are pinned to the modal column x (within
+    _ABBR_COL_TOL) so a stray wide line does not pair, then grouped by rounded
+    baseline into (token, expansion). First token wins on a collision."""
+    if len(cells) < 2 * _ABBR_MIN_PAIRS:
+        return {}
+    sorted_x = sorted(x for x, _, _ in cells)
+    best_gap = 0.0
+    split: float | None = None
+    for a, b in zip(sorted_x, sorted_x[1:], strict=False):
+        if b - a > best_gap:
+            best_gap = b - a
+            split = (a + b) / 2
+    if split is None or best_gap < _ABBR_COL_GAP_MIN:
+        return {}
+    left = [c for c in cells if c[0] < split]
+    right = [c for c in cells if c[0] >= split]
+    if len(left) < _ABBR_MIN_PAIRS or len(right) < _ABBR_MIN_PAIRS:
+        return {}
+    modal_left = Counter(round(x) for x, _, _ in left).most_common(1)[0][0]
+    modal_right = Counter(round(x) for x, _, _ in right).most_common(1)[0][0]
+
+    rows: dict[int, dict[str, list[tuple[float, str]]]] = {}
+    for x, y, text in cells:
+        if x < split and abs(round(x) - modal_left) <= _ABBR_COL_TOL:
+            rows.setdefault(round(y), {"l": [], "r": []})["l"].append((x, text))
+        elif x >= split and abs(round(x) - modal_right) <= _ABBR_COL_TOL:
+            rows.setdefault(round(y), {"l": [], "r": []})["r"].append((x, text))
+
+    defs: dict[str, str] = {}
+    for key in sorted(rows):
+        left_cells = rows[key]["l"]
+        right_cells = rows[key]["r"]
+        if not left_cells or not right_cells:
+            continue
+        token = " ".join(t for _, t in sorted(left_cells)).strip()
+        expansion = " ".join(t for _, t in sorted(right_cells)).strip()
+        _add_pair(defs, token, expansion)
+    return defs
+
+
+def _add_pair(defs: dict[str, str], token: str, expansion: str) -> None:
+    """Validate (token, expansion) and record it; first token wins."""
+    if not _looks_like_abbreviation(token):
+        return
+    if len(expansion) <= len(token) or not any(c.isalpha() for c in expansion):
+        return
+    defs.setdefault(token, expansion)
+
+
+def _pair_inline_rows(rows: list[tuple[float, float, str]]) -> dict[str, str]:
+    """Pair the other common glossary layout: one line per entry, the
+    abbreviation as the leading token and the expansion as the rest of the same
+    line (`AR Assertion Roulette`). Split on the first whitespace; the
+    abbreviation guards reject ordinary prose (a sentence opens with a
+    Capitalized word that is mostly lowercase, so its first token fails)."""
+    defs: dict[str, str] = {}
+    for _, _, text in rows:
+        parts = text.split(None, 1)
+        if len(parts) == 2:
+            _add_pair(defs, parts[0], parts[1].strip())
+    return defs
+
+
+def collect_abbreviation_definitions(doc: fitz.Document, profile: DocProfile) -> dict[str, str]:
+    """Find a two-column abbreviation glossary and return {token: expansion}.
+
+    Pairing is done per page: a glossary page carries only the two columns, so
+    the column gap survives, whereas a body page mixes x positions and yields no
+    pairs. The scan starts at a heading whose folded text is a locale
+    abbreviation term and walks following pages until one stops yielding pairs.
+    A table-of-contents entry like "Lista de Siglas" (whose page holds section
+    titles, not abbreviations) yields nothing and is skipped in favour of the
+    real glossary later (#163). Returns {} when no heading qualifies."""
+    pages_lines: list[list[tuple[float, float, float, str]]] = []  # per page: (x0, y0, size, text)
+    for page in doc:
+        lines: list[tuple[float, float, float, str]] = []
+        for raw_block in page.get_text("dict").get("blocks", []):
+            if raw_block.get("type") != 0:
+                continue
+            block = parse_block(raw_block)
+            if block is None:
+                continue
+            for line in block.lines:
+                text = line.text.strip()
+                if text:
+                    lines.append((line.bbox[0], round(line.bbox[1], 1), line.dominant_size, text))
+        pages_lines.append(lines)
+
+    def rows_of(page_idx: int, above_y: float | None) -> list[tuple[float, float, str]]:
+        out: list[tuple[float, float, str]] = []
+        for x0, y0, size, text in pages_lines[page_idx]:
+            if above_y is not None and y0 <= above_y:
+                continue  # skip the heading line and anything over it
+            if profile.heading_level(size) is not None:
+                continue  # a later section heading is not a glossary row
+            out.append((x0, y0, text))
+        return out
+
+    for pi, lines in enumerate(pages_lines):
+        for _x0, heading_y, _, text in lines:
+            if _fold_heading(text) not in _ABBR_HEADING_TERMS:
+                continue
+            # The first page after the heading must itself yield a real table,
+            # which both rejects a table-of-contents entry and fixes the layout
+            # mode. Two real layouts exist: side-by-side columns, or one line
+            # per entry with the abbreviation as the leading token. The chosen
+            # extractor is then the only one applied to continuation pages, so a
+            # body page (where the columnar gap is gone but a stray line could
+            # still parse inline) cannot leak rows into the glossary.
+            first_rows = rows_of(pi, heading_y)
+            defs = _pair_two_columns(first_rows)
+            extractor = _pair_two_columns
+            if len(defs) < _ABBR_MIN_PAIRS:
+                defs = _pair_inline_rows(first_rows)
+                extractor = _pair_inline_rows
+            if len(defs) < _ABBR_MIN_PAIRS:
+                continue  # not a glossary (e.g. a TOC entry for "Lista de Siglas")
+            for offset in range(1, _ABBR_MAX_PAGES):
+                page_idx = pi + offset
+                if page_idx >= len(pages_lines):
+                    break
+                page_defs = extractor(rows_of(page_idx, None))
+                if not page_defs:
+                    break  # the glossary ended
+                for token, expansion in page_defs.items():
+                    defs.setdefault(token, expansion)
+            return defs
+    return {}
+
+
+def render_abbreviation_tail(definitions: dict[str, str]) -> str:
+    """Document-tail block of python-markdown `*[TOKEN]: expansion` lines, sorted
+    by token for determinism (#163). The `abbr` extension treats these as
+    position-independent, so the tail placement is idiomatic, not a compromise."""
+    return "\n".join(f"*[{token}]: {definitions[token]}" for token in sorted(definitions))
+
+
 def convert_page(
     page: fitz.Page,
     profile: DocProfile,
@@ -1761,6 +1978,7 @@ def convert_document(
     reference_link_threshold: int = 0,
     emit_heading_anchors: bool = False,
     pair_quote_attribution: bool = False,
+    extract_abbreviations: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -1783,6 +2001,12 @@ def convert_document(
         profile.heading_thresholds = cluster_heading_bands(
             profile.size_histogram, profile.body_size, max_level=max_heading_level
         )
+    abbreviation_defs: dict[str, str] = {}
+    if extract_abbreviations:
+        # Pre-scan for a two-column glossary; emitted as a tail block below so
+        # the `abbr` extension expands the tokens wherever they appear (#163).
+        abbreviation_defs = collect_abbreviation_definitions(doc, profile)
+
     recurring_furniture = find_recurring_furniture(doc) if subtract_running_furniture else frozenset()
     toc = doc.get_toc()
 
@@ -1853,6 +2077,14 @@ def convert_document(
     # (#173). Off by default; no-op unless detect_blockquotes produced a `>`.
     if pair_quote_attribution:
         full = _pair_quote_attribution(full)
+
+    # Append `*[TOKEN]: expansion` definitions from a detected glossary (#163).
+    # Position-independent for the `abbr` extension, so the document tail is the
+    # idiomatic spot. Off by default; empty when no glossary qualified.
+    if abbreviation_defs:
+        tail = render_abbreviation_tail(abbreviation_defs)
+        if tail:
+            full = full + "\n\n" + tail
 
     if front_matter:
         fm = build_front_matter(pdf_path, doc)
@@ -2197,6 +2429,11 @@ def main() -> int:
         action="store_true",
         help="Fold a dash-introduced attribution line into the blockquote above it (opt-in, #173)",
     )
+    parser.add_argument(
+        "--extract-abbreviations",
+        action="store_true",
+        help="Emit *[ABBR]: expansion lines from a two-column abbreviation glossary section (opt-in, #163)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -2222,6 +2459,7 @@ def main() -> int:
         reference_link_threshold=args.reference_link_threshold,
         emit_heading_anchors=args.emit_heading_anchors,
         pair_quote_attribution=args.pair_quote_attribution,
+        extract_abbreviations=args.extract_abbreviations,
     )
     return 0
 
