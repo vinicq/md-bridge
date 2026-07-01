@@ -51,7 +51,7 @@ jobs:
         # Needed so the amd64 runner can build the linux/arm64 image via
         # emulation. The Oracle Cloud Always Free deploy recipe + Apple
         # Silicon devs both need the arm64 manifest.
-        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3  # v4.1.0
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8  # v4.2.0
         with:
           platforms: arm64
 
@@ -106,7 +106,7 @@ jobs:
     steps:
       - name: Set up QEMU
         if: matrix.platform == 'linux/arm64'
-        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3  # v4.1.0
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8  # v4.2.0
         with:
           platforms: arm64
 
