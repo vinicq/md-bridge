@@ -10,7 +10,12 @@ dependencies = [
     # python-multipart 0.0.27+ closes GHSA-mj87-hwqh-73pj, GHSA-pp6c-gr5w-3c5g,
     # GHSA-wp53-j4wj-2cfg (malicious-input resource exhaustion).
     "python-multipart>=0.0.27",
-    "PyMuPDF>=1.24",
+    # PyMuPDF drives PDF text extraction, so the committed golden fixtures depend
+    # on its output. A minor bump shifts extraction enough to trip the 2% drift
+    # gate (1.27 -> 1.28 drifts 7-48% across the corpus), so it is capped below
+    # the next minor. A bump is a reviewed PR that regenerates the golden via
+    # --update-golden, same policy as python-docx below.
+    "PyMuPDF>=1.27.2.3,<1.28",
     # pypdf 6.10.2+ closes 22 GHSAs accumulated through the 5.x and 6.x lines
     # (XMP exhaustion, FlateDecode/startxref long-runtimes, outline loops).
     "pypdf>=6.10.2",
@@ -44,8 +49,10 @@ dev = [
     # tests: asserts that never run, checks that pass by construction, tests with
     # no oracle. Dev/CI tooling only, zero runtime deps, never shipped in the
     # runtime install or the Docker image. The CI gate fails on HIGH-confidence
-    # findings (exit 20); LOW findings stay non-blocking.
-    "falsegreen>=0.2",
+    # findings (exit 20); LOW findings stay non-blocking. Capped below the next
+    # minor: a gate that decides CI pass/fail must not change its verdict on an
+    # unreviewed float, so a bump is a deliberate PR.
+    "falsegreen>=0.4.0,<0.10",
 ]
 
 [build-system]
