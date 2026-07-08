@@ -23,6 +23,7 @@ from app.schemas.convert import (
 from app.services.inspect import inspect_pdf_bytes
 from app.services.mupdf_log import capture_mupdf_warnings
 from app.services.ocr import get_lang as ocr_lang
+from app.services.ocr import get_max_pages as ocr_max_pages
 from app.services.ocr import is_enabled as ocr_enabled
 from app.services.ocr import ocr_pdf_bytes
 from app.services.packages_loader import pdf_to_md_module
@@ -127,6 +128,21 @@ def convert_pdf_bytes(
     diagnostics = inspect_pdf_bytes(pdf_bytes, filename)
     if diagnostics.needs_ocr:
         if ocr_enabled():
+            # Guard the 300-DPI rasterization before it starts: a scan past the
+            # configured page budget is rejected up front instead of pinning CPU
+            # and memory on a document that was never going to finish in time.
+            # The default budget is unlimited, so self-hosted conversion is
+            # unaffected; a hosted deployment sets MD_BRIDGE_OCR_MAX_PAGES. (#208)
+            cap = ocr_max_pages()
+            if cap and diagnostics.pages > cap:
+                raise ApiError(
+                    413,
+                    "ocr_too_many_pages",
+                    f"This scan has {diagnostics.pages} pages, over the OCR cap "
+                    f"of {cap}. Raise or unset MD_BRIDGE_OCR_MAX_PAGES to "
+                    "convert it.",
+                    detail={"pages": diagnostics.pages, "max_pages": cap},
+                )
             # A partial OCR install (binary present but the language traineddata
             # missing) raises pytesseract's TesseractError; surface it as a typed
             # error instead of a code-less 500. The shipped runtime-ocr image is
