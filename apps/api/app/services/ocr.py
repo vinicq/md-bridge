@@ -23,6 +23,31 @@ def get_lang() -> str:
     return os.getenv("MD_BRIDGE_OCR_LANG", DEFAULT_OCR_LANG)
 
 
+# OCR rasterizes every page at 300 DPI (see `ocr_pdf_bytes`), so a very long
+# scan is a memory/time bomb on a shared or hosted deployment. The cap is the
+# guard the docstring already asks callers to enforce. Default 0 means "no cap":
+# a self-hosted operator converting their own documents keeps the permissive
+# behavior and byte-identical output, while a hosted demo sets the env var to a
+# finite page budget. (#208)
+DEFAULT_OCR_MAX_PAGES = 0
+
+
+def get_max_pages() -> int:
+    """Page budget for the OCR pre-pass; 0 (the default) disables the cap.
+
+    A malformed or non-numeric `MD_BRIDGE_OCR_MAX_PAGES` falls back to the
+    permissive default rather than failing the request.
+    """
+    raw = os.getenv("MD_BRIDGE_OCR_MAX_PAGES")
+    if raw is None or not raw.strip():
+        return DEFAULT_OCR_MAX_PAGES
+    try:
+        value = int(raw.strip())
+    except ValueError:
+        return DEFAULT_OCR_MAX_PAGES
+    return value if value > 0 else DEFAULT_OCR_MAX_PAGES
+
+
 def ocr_stack_available() -> bool:
     """True when both halves of the OCR stack are installed: the Tesseract
     binary on PATH and the `pytesseract` Python binding (the `[ocr]` extra)."""

@@ -23,6 +23,7 @@ from app.schemas.convert import (
 from app.services.inspect import inspect_pdf_bytes
 from app.services.mupdf_log import capture_mupdf_warnings
 from app.services.ocr import get_lang as ocr_lang
+from app.services.ocr import get_max_pages as ocr_max_pages
 from app.services.ocr import is_enabled as ocr_enabled
 from app.services.ocr import ocr_pdf_bytes
 from app.services.packages_loader import pdf_to_md_module
@@ -126,7 +127,15 @@ def convert_pdf_bytes(
     ocr_applied = False
     diagnostics = inspect_pdf_bytes(pdf_bytes, filename)
     if diagnostics.needs_ocr:
-        if ocr_enabled():
+        # OCR rasterizes every page at 300 DPI, so a scan past the configured
+        # page budget is a memory/time risk on a shared or hosted deployment.
+        # The cap gates the OCR pre-pass, not conversion itself: over the cap we
+        # take the same not-OCR path as a lean install, so `force=True` still
+        # yields a raw conversion instead of a hard 413. Default budget 0 =
+        # unlimited, so self-hosted conversion stays byte-identical. (#208)
+        cap = ocr_max_pages()
+        over_cap = ocr_enabled() and bool(cap) and diagnostics.pages > cap
+        if ocr_enabled() and not over_cap:
             # A partial OCR install (binary present but the language traineddata
             # missing) raises pytesseract's TesseractError; surface it as a typed
             # error instead of a code-less 500. The shipped runtime-ocr image is
@@ -143,6 +152,15 @@ def convert_pdf_bytes(
                 ) from exc
             ocr_applied = True
         elif not force:
+            if over_cap:
+                raise ApiError(
+                    413,
+                    "ocr_too_many_pages",
+                    f"This scan has {diagnostics.pages} pages, over the OCR cap "
+                    f"of {cap}. Raise or unset MD_BRIDGE_OCR_MAX_PAGES, or retry "
+                    "with force to convert it without OCR.",
+                    detail={"pages": diagnostics.pages, "max_pages": cap},
+                )
             raise ApiError(
                 422,
                 "ocr_required",
@@ -150,6 +168,8 @@ def convert_pdf_bytes(
                 "Enable OCR to convert it, or retry with force to convert anyway.",
                 detail={"docs": OCR_DOCS_URL},
             )
+        # force=True with OCR unavailable or the scan over the cap falls through
+        # to a raw conversion: near-empty markdown is the caller's explicit choice.
     with _tempdir() as tmp:
         safe_stem = Path(filename).stem or "document"
         pdf_path = tmp / f"{safe_stem}.pdf"
