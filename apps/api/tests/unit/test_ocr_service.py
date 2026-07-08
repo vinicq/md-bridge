@@ -49,7 +49,9 @@ def test_ocr_reads_spanish_with_the_default_language_set(
     assert "DOCUMENTO" in text
 
 
-def test_accented_spanish_requires_the_spa_model(scanned_accented_spanish_pdf_bytes):
+def test_accented_spanish_requires_the_spa_model(
+    scanned_accented_spanish_pdf_bytes, monkeypatch
+):
     # #204: the accent-free Spanish test above round-trips through `eng` alone, so
     # it never proves `spa` does work. This one does. On a scan-like render of
     # accented Spanish, the default `eng+por+spa` set recovers accented characters
@@ -59,12 +61,19 @@ def test_accented_spanish_requires_the_spa_model(scanned_accented_spanish_pdf_by
     # recovered set would be empty.
     from app.services.ocr import get_lang
 
+    # Clear any MD_BRIDGE_OCR_LANG override so this exercises the built-in default
+    # (the thing under test), not a value exported by the environment or leaked by
+    # a prior test.
+    monkeypatch.delenv("MD_BRIDGE_OCR_LANG", raising=False)
+    default_lang = get_lang()
+    assert "spa" in default_lang  # guard: we really are testing the default set
+
     accents = "ñáóéíúü"
     eng_only = _extract_text(
         ocr_pdf_bytes(scanned_accented_spanish_pdf_bytes, lang="eng")
     )
     default = _extract_text(
-        ocr_pdf_bytes(scanned_accented_spanish_pdf_bytes, lang=get_lang())
+        ocr_pdf_bytes(scanned_accented_spanish_pdf_bytes, lang=default_lang)
     )
 
     recovered = {c for c in accents if c in default} - {c for c in accents if c in eng_only}
