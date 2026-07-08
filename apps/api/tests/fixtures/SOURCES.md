@@ -71,6 +71,19 @@ of uncertain provenance.
 - **Retrieved:** 2026-06-02
 - **SHA-256:** `f27b42346a0652fec8792ee0d69bf09e7f53f78e71dce883552f5ccfef5cb2c3`
 
+## Fonts
+
+- `DejaVuSans.ttf` — DejaVu Sans (Book), an accent-capable TrueType font used to
+  render the scan-like accented-Spanish OCR fixture (`test_ocr_service.py`,
+  #204). The stock `PIL.ImageFont.load_default()` bitmap font has no accent
+  glyphs, so it cannot prove the `spa` traineddata does real work.
+  - **License:** DejaVu Fonts License (Bitstream Vera + Arev derivative), free
+    and redistributable, including bundling in source repositories.
+  - **Source:** vendored copy from the matplotlib project
+    (`matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf`).
+  - **Retrieved:** 2026-07-08
+  - **SHA-256:** `3fdf69cabf06049ea70a00b5919340e2ce1e6d02b0cc3c4b44fb6801bd1e0d22`
+
 ## Existing fixtures (pre-#28)
 
 - `istqb-ctal-ta-syllabus-en.pdf` — ISTQB CTAL-TA syllabus, CC BY-NC-ND 4.0. The canonical regression document; see `tests/regression/test_istqb_regression.py`.
