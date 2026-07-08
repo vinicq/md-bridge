@@ -47,3 +47,28 @@ def test_ocr_reads_spanish_with_the_default_language_set(
     assert "INFORME" in text
     assert "PRUEBA" in text
     assert "DOCUMENTO" in text
+
+
+def test_accented_spanish_requires_the_spa_model(scanned_accented_spanish_pdf_bytes):
+    # #204: the accent-free Spanish test above round-trips through `eng` alone, so
+    # it never proves `spa` does work. This one does. On a scan-like render of
+    # accented Spanish, the default `eng+por+spa` set recovers accented characters
+    # (ñ / á / ó / é / í) that the `eng` model drops. The assertion is on the set
+    # difference rather than one fixed glyph, so it does not hinge on which accent
+    # survives a given render: if `spa` were dropped, both runs would agree and the
+    # recovered set would be empty.
+    from app.services.ocr import get_lang
+
+    accents = "ñáóéíúü"
+    eng_only = _extract_text(
+        ocr_pdf_bytes(scanned_accented_spanish_pdf_bytes, lang="eng")
+    )
+    default = _extract_text(
+        ocr_pdf_bytes(scanned_accented_spanish_pdf_bytes, lang=get_lang())
+    )
+
+    recovered = {c for c in accents if c in default} - {c for c in accents if c in eng_only}
+    assert recovered, (
+        "spa should recover accented characters eng drops. "
+        f"eng={eng_only!r} default={default!r}"
+    )

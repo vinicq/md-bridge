@@ -60,6 +60,56 @@ def scanned_pdf_bytes() -> bytes:
 
 
 @pytest.fixture
+def dejavu_font_path() -> Path:
+    """Accent-capable TTF committed for the spa-model OCR regression (#204)."""
+    here = Path(__file__).resolve().parent
+    p = here / "fixtures" / "DejaVuSans.ttf"
+    assert p.exists(), f"committed font missing: {p}"
+    return p
+
+
+@pytest.fixture
+def scanned_accented_spanish_pdf_bytes(dejavu_font_path: Path) -> bytes:
+    """An image-only PDF of accented Spanish, rendered with an accent-capable font
+    and given deterministic scan-like softening (#204).
+
+    The softening (downscale/upscale + blur, no RNG so it is byte-reproducible)
+    is what exposes the model difference: the `eng` model drops the diacritics
+    while `eng+por+spa` recovers them. A clean render or the stock bitmap font
+    would not, so this is the fixture that actually proves `spa` is required.
+    """
+    Image = pytest.importorskip("PIL.Image")
+    ImageDraw = pytest.importorskip("PIL.ImageDraw")
+    ImageFont = pytest.importorskip("PIL.ImageFont")
+    ImageFilter = pytest.importorskip("PIL.ImageFilter")
+
+    w, h = 1800, 320
+    image = Image.new("RGB", (w, h), "white")
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.truetype(str(dejavu_font_path), 60)
+    draw.text((40, 110), "niño configuración español análisis", fill="black", font=font)
+
+    # Scan-like softening via downscale/upscale + blur (deterministic, no RNG).
+    # Counter-intuitively this is what makes the spa model matter: with crisp
+    # glyphs every model reads confident ASCII and the accents vanish for all,
+    # but under this softening the spa language priors disambiguate toward the
+    # accented Spanish forms while eng alone drops them.
+    small = image.resize((int(w * 0.55), int(h * 0.55)), Image.BILINEAR)
+    image = small.resize((w, h), Image.BILINEAR).filter(ImageFilter.GaussianBlur(1.1))
+
+    png = io.BytesIO()
+    image.save(png, format="PNG")
+
+    doc = pymupdf.open()
+    try:
+        page = doc.new_page(width=w * 0.5, height=h * 0.5)
+        page.insert_image(page.rect, stream=png.getvalue())
+        return doc.tobytes()
+    finally:
+        doc.close()
+
+
+@pytest.fixture
 def scanned_spanish_pdf_bytes() -> bytes:
     """An image-only PDF carrying Spanish words, for the auto-language OCR test.
 
