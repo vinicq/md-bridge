@@ -45,6 +45,11 @@ class PdfToMdOptions(BaseModel):
     # Use a small-font caption line below an image as its alt text (#149).
     # Off by default and only relevant with with_images.
     caption_alt_text: bool = False
+    # Map source checkbox glyphs (and OCR bracket sequences) to GFM task-list
+    # items (#172). Off by default so output stays byte-identical; task_list_extended
+    # additionally recognizes the todo-md `[-]` in-progress marker.
+    detect_task_lists: bool = False
+    task_list_extended: bool = False
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")
