@@ -291,6 +291,61 @@ def _smart_typography(md: str, *, quotes: str, ellipsis: str, dashes: str) -> st
     return "".join(out)
 
 
+# GFM task-list normalization (#172). A document-tail post-pass that maps
+# checkbox glyphs and OCR bracket sequences to `- [ ]` / `- [x]`. Only the
+# unambiguous checkbox glyphs are mapped; the bullet glyphs the converter
+# already uses as list markers (`■`, `▪`, `•`, ...) are deliberately excluded so
+# a plain bullet list is never mistaken for a checklist. Off by default so the
+# output stays byte-identical.
+_TASK_UNCHECKED = frozenset({"☐", "□", "▢"})
+_TASK_CHECKED = frozenset({"☑", "☒", "✓", "✔", "✗", "✘"})
+_TASK_GLYPH_RE = re.compile(
+    r"^(?P<indent>\s*)(?:[-*+]\s+)?"
+    r"(?P<box>[" + re.escape("".join(_TASK_UNCHECKED | _TASK_CHECKED)) + r"])"
+    r"\s+(?P<rest>\S.*)$"
+)
+# OCR / plain-text bracket form: optional bullet, then `[ ]`, `[x]`, `[X]`, or
+# `[-]` (in-progress, extended mode only), then the item text. The brackets may
+# arrive backslash-escaped: the converter escapes literal `[`/`]` in body text,
+# so an OCR'd `[ ]` reaches this post-pass as `\[ \]`.
+_TASK_BRACKET_RE = re.compile(
+    r"^(?P<indent>\s*)(?:[-*+]\s+)?\\?\[(?P<mark>[ xX-])\\?\]\s+(?P<rest>\S.*)$"
+)
+_FENCE_RE = re.compile(r"^\s*(```|~~~)")
+
+
+def _normalize_task_lists(md: str, *, extended: bool) -> str:
+    """Rewrite checkbox glyphs and bracket sequences into GFM task-list items.
+
+    Idempotent: an already-canonical `- [ ]` / `- [x]` line maps to itself. Lines
+    inside fenced code blocks, blockquotes, and tables are left untouched (the
+    regex anchors on leading whitespace plus an optional bullet only). The
+    todo-md `[-]` in-progress marker is recognized only when `extended` is set;
+    otherwise it is left as literal text.
+    """
+    lines = md.split("\n")
+    in_fence = False
+    for i, line in enumerate(lines):
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        glyph = _TASK_GLYPH_RE.match(line)
+        if glyph:
+            mark = "x" if glyph.group("box") in _TASK_CHECKED else " "
+            lines[i] = f"{glyph.group('indent')}- [{mark}] {glyph.group('rest')}"
+            continue
+        bracket = _TASK_BRACKET_RE.match(line)
+        if bracket:
+            raw = bracket.group("mark")
+            if raw == "-" and not extended:
+                continue
+            mark = raw.lower() if raw != " " else " "
+            lines[i] = f"{bracket.group('indent')}- [{mark}] {bracket.group('rest')}"
+    return "\n".join(lines)
+
+
 # Deterministic heading anchors (#152). A document-level post-pass appends a
 # Pandoc/mkdocs `{#slug}` attribute to each ATX heading so the same heading
 # lands at the same anchor across renderers. Off by default so existing output
@@ -2112,6 +2167,8 @@ def convert_document(
     smart_typography_ellipsis: str = "preserve",
     smart_typography_dashes: str = "preserve",
     caption_alt_text: bool = False,
+    detect_task_lists: bool = False,
+    task_list_extended: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -2219,6 +2276,11 @@ def convert_document(
         tail = render_abbreviation_tail(abbreviation_defs)
         if tail:
             full = full + "\n\n" + tail
+
+    # Map checkbox glyphs / bracket sequences to GFM task-list items (#172).
+    # Runs on the assembled body before typography folding; off by default.
+    if detect_task_lists:
+        full = _normalize_task_lists(full, extended=task_list_extended)
 
     # Fold Unicode typography to ASCII in prose (#171). Runs last so it also
     # normalizes any appended tail blocks; protects code and URLs (including the

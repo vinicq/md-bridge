@@ -205,6 +205,8 @@ def convert_pdf_bytes(
                 smart_typography_ellipsis=opts.smart_typography_ellipsis,
                 smart_typography_dashes=opts.smart_typography_dashes,
                 caption_alt_text=opts.caption_alt_text,
+                detect_task_lists=opts.detect_task_lists,
+                task_list_extended=opts.task_list_extended,
             )
 
         md_text = md_path.read_text(encoding="utf-8")
