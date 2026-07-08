@@ -299,37 +299,50 @@ def _smart_typography(md: str, *, quotes: str, ellipsis: str, dashes: str) -> st
 # output stays byte-identical.
 _TASK_UNCHECKED = frozenset({"☐", "□", "▢"})
 _TASK_CHECKED = frozenset({"☑", "☒", "✓", "✔", "✗", "✘"})
+# Leading indent is capped at 3 spaces: 4+ spaces (or a tab) is a Markdown
+# indented code block, which must never be rewritten. The optional list marker
+# may be raw (`- `, converter-emitted) or backslash-escaped (`\- `, from a
+# source hyphen the converter escaped because it classified the line as prose).
+_TASK_INDENT = r"(?P<indent> {0,3})(?:\\?[-*+]\s+)?"
 _TASK_GLYPH_RE = re.compile(
-    r"^(?P<indent>\s*)(?:[-*+]\s+)?"
-    r"(?P<box>[" + re.escape("".join(_TASK_UNCHECKED | _TASK_CHECKED)) + r"])"
-    r"\s+(?P<rest>\S.*)$"
+    r"^" + _TASK_INDENT
+    + r"(?P<box>[" + re.escape("".join(_TASK_UNCHECKED | _TASK_CHECKED)) + r"])"
+    + r"\s+(?P<rest>\S.*)$"
 )
-# OCR / plain-text bracket form: optional bullet, then `[ ]`, `[x]`, `[X]`, or
-# `[-]` (in-progress, extended mode only), then the item text. The brackets may
-# arrive backslash-escaped: the converter escapes literal `[`/`]` in body text,
-# so an OCR'd `[ ]` reaches this post-pass as `\[ \]`.
+# OCR / plain-text bracket form: `[ ]`, `[x]`, `[X]`, or `[-]` (in-progress,
+# extended mode only). The brackets may arrive backslash-escaped: the converter
+# escapes literal `[`/`]` in body text, so an OCR'd `[ ]` reaches this post-pass
+# as `\[ \]`.
 _TASK_BRACKET_RE = re.compile(
-    r"^(?P<indent>\s*)(?:[-*+]\s+)?\\?\[(?P<mark>[ xX-])\\?\]\s+(?P<rest>\S.*)$"
+    r"^" + _TASK_INDENT + r"\\?\[(?P<mark>[ xX-])\\?\]\s+(?P<rest>\S.*)$"
 )
-_FENCE_RE = re.compile(r"^\s*(```|~~~)")
+# 3+ backticks or tildes; the fence is closed only by the same character type,
+# so a `~~~` line inside a ``` block stays literal content.
+_FENCE_RE = re.compile(r"^\s*(?P<fence>`{3,}|~{3,})")
 
 
 def _normalize_task_lists(md: str, *, extended: bool) -> str:
     """Rewrite checkbox glyphs and bracket sequences into GFM task-list items.
 
     Idempotent: an already-canonical `- [ ]` / `- [x]` line maps to itself. Lines
-    inside fenced code blocks, blockquotes, and tables are left untouched (the
-    regex anchors on leading whitespace plus an optional bullet only). The
-    todo-md `[-]` in-progress marker is recognized only when `extended` is set;
-    otherwise it is left as literal text.
+    inside fenced code blocks (matched by opening marker type), indented code
+    (4+ spaces), blockquotes, and tables are left untouched. The todo-md `[-]`
+    in-progress marker is recognized only when `extended` is set; otherwise it is
+    left as literal text.
     """
     lines = md.split("\n")
-    in_fence = False
+    fence_char: str | None = None
     for i, line in enumerate(lines):
-        if _FENCE_RE.match(line):
-            in_fence = not in_fence
+        fm = _FENCE_RE.match(line)
+        if fm:
+            marker = fm.group("fence")[0]
+            if fence_char is None:
+                fence_char = marker
+            elif marker == fence_char:
+                fence_char = None
+            # a different marker while inside a fence is code content, not a close
             continue
-        if in_fence:
+        if fence_char is not None:
             continue
         glyph = _TASK_GLYPH_RE.match(line)
         if glyph:
@@ -2659,6 +2672,16 @@ def main() -> int:
         default="preserve",
         help="Fold en/em dash to --/--- (opt-in, #171)",
     )
+    parser.add_argument(
+        "--detect-task-lists",
+        action="store_true",
+        help="Map source checkbox glyphs / bracket sequences to GFM task-list items (opt-in, #172)",
+    )
+    parser.add_argument(
+        "--task-list-extended",
+        action="store_true",
+        help="Also recognize the todo-md [-] in-progress marker (requires --detect-task-lists, #172)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -2689,6 +2712,8 @@ def main() -> int:
         smart_typography_ellipsis=args.smart_typography_ellipsis,
         smart_typography_dashes=args.smart_typography_dashes,
         caption_alt_text=args.caption_alt_text,
+        detect_task_lists=args.detect_task_lists,
+        task_list_extended=args.task_list_extended,
     )
     return 0
 

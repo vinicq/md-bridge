@@ -55,6 +55,32 @@ def test_backslash_escaped_brackets_are_canonicalized(norm):
     assert norm(r"\[x\] Ship it", extended=False) == "- [x] Ship it"
 
 
+def test_escaped_hyphen_bullet_before_a_checkbox(norm):
+    # The most common source form `- [ ] item`: the converter classifies the
+    # ASCII hyphen as prose (not a bullet) and escapes it, so the pass receives
+    # `\- \[ \] item` / `\- ☐ item`.
+    assert norm(r"\- \[ \] Buy milk", extended=False) == "- [ ] Buy milk"
+    assert norm(r"\- ☐ Buy milk", extended=False) == "- [ ] Buy milk"
+
+
+def test_indented_code_is_not_rewritten(norm):
+    # 4+ leading spaces is a Markdown indented code block; a checkbox glyph or
+    # bracket there is literal sample text, not a task item.
+    assert norm("    ☐ literal in code", extended=False) == "    ☐ literal in code"
+    assert norm("    [ ] literal in code", extended=False) == "    [ ] literal in code"
+    # up to 3 spaces is still a normal (possibly nested) item
+    assert norm("   ☐ nested", extended=False) == "   - [ ] nested"
+
+
+def test_fence_closes_only_on_matching_marker(norm):
+    # A ~~~ line inside a ``` block is code content, not a fence close, so a
+    # checkbox after it stays literal; the real close resumes normalization.
+    src = "```\n~~~\n☐ still code\n```\n☑ real one"
+    out = norm(src, extended=False)
+    assert "☐ still code" in out
+    assert out.endswith("- [x] real one")
+
+
 def test_already_canonical_task_items_are_idempotent(norm):
     src = "- [ ] Buy milk\n- [x] Ship it"
     assert norm(src, extended=False) == src
