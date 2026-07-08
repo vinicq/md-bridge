@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import io
 import shutil
+import sys
 
 import pymupdf
 import pytest
@@ -50,6 +51,22 @@ def test_scan_over_cap_returns_413(monkeypatch):
     assert exc.value.status_code == 413
     assert exc.value.code == "ocr_too_many_pages"
     assert exc.value.extra_detail == {"pages": 2, "max_pages": 1}
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="convert_document holds the PyMuPDF handle; tempdir cleanup fails on Windows",
+)
+def test_force_converts_over_cap_without_ocr(monkeypatch):
+    # The escape hatch over the real pipeline: force past the cap skips OCR and
+    # still returns a conversion (no Tesseract needed, since OCR is bypassed).
+    monkeypatch.setenv("MD_BRIDGE_OCR_ENABLED", "1")
+    monkeypatch.setenv("MD_BRIDGE_OCR_MAX_PAGES", "1")
+    pdf = _scanned_pdf(pages=2)
+
+    result = convert_pdf_bytes(pdf, filename="forced.pdf", force=True)
+
+    assert result.ocr_applied is False
 
 
 @pytest.mark.skipif(

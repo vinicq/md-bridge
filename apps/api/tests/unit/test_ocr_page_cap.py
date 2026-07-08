@@ -97,3 +97,22 @@ def test_cap_disabled_never_blocks(monkeypatch, ocr_enabled_no_binary):
     with pytest.raises(ApiError) as exc:
         pdf_to_md.convert_pdf_bytes(b"%PDF-1.4 stub", filename="scan.pdf")
     assert exc.value.code == "ocr_failed"
+
+
+def test_force_over_cap_skips_ocr_and_converts(monkeypatch, ocr_enabled_no_binary):
+    # force=True is the documented "convert anyway" escape hatch. Over the cap it
+    # must skip OCR (ocr_pdf_bytes is stubbed to raise, so any call fails the
+    # test) and fall through to a raw conversion instead of returning 413.
+    monkeypatch.setenv("MD_BRIDGE_OCR_MAX_PAGES", "1")
+    monkeypatch.setattr(pdf_to_md, "inspect_pdf_bytes", _stub_inspect(pages=5))
+
+    class _StubMod:
+        def convert_document(self, pdf_path, md_path, **_kw):
+            md_path.write_text("# forced\n\nbody\n", encoding="utf-8")
+
+    monkeypatch.setattr(pdf_to_md, "pdf_to_md_module", lambda: _StubMod())
+
+    result = pdf_to_md.convert_pdf_bytes(
+        b"%PDF-1.4 stub", filename="forced.pdf", force=True
+    )
+    assert result.ocr_applied is False
