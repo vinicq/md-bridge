@@ -71,9 +71,12 @@ Convert a PDF into structured Markdown using deterministic heuristics.
 ```
 
 - `page_break` (default `false`): when `true`, inserts a `---` between pages.
-- `with_images` (default `false`): when `true`, the converter extracts images
-  to a temporary folder. The HTTP API does not serve images back, so use the
-  CLI from `packages/pdf-to-markdown` if you want them.
+- `with_images` (default `false`): when `true`, images are embedded inline in
+  the Markdown as base64 `data:` URIs (`![alt](data:image/png;base64,...)`), so
+  the response is self-contained and needs no separate files. Two things to
+  know: base64 inflates the payload by about a third, and github.com's Markdown
+  sanitizer strips `data:` image URIs (so inline images do not render there,
+  though VS Code, Obsidian, pandoc, and browsers do).
 - `front_matter` (default `true`): adds a YAML preamble with `title`,
   `author`, `date`, `source`, `pages`.
 - `lang` (default `"pt-BR"`): informational tag stored in the front matter.

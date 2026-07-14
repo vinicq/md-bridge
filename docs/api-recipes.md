@@ -131,7 +131,7 @@ The `options` field is a JSON string. All fields are optional.
 | Field | Type | Default | What it does |
 |---|---|---|---|
 | `page_break` | bool | `false` | Inserts `---` between pages |
-| `with_images` | bool | `false` | Extracts images to `images/<pdf_stem>/` |
+| `with_images` | bool | `false` | Embeds images inline as base64 `data:` URIs (self-contained `.md`) |
 | `front_matter` | bool | `true` | Emits YAML front matter at the top |
 | `lang` | string | `"pt-BR"` | Affects warning translations only |
 

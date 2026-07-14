@@ -97,8 +97,6 @@ def _build_warnings(md_body: str, options: PdfToMdOptions, pages: int) -> list[s
     plain_chars = len(re.sub(r"\s+", "", md_body))
     if plain_chars < max(80, pages * 40):
         warnings.append("needs_ocr")
-    if options.with_images:
-        warnings.append("images_not_persisted")
     return warnings
 
 
@@ -176,10 +174,12 @@ def convert_pdf_bytes(
         md_path = tmp / f"{safe_stem}.md"
         pdf_path.write_bytes(pdf_bytes)
 
-        # `extract_images=False` is forced. With_images=True would write to a
-        # neighbour directory; we never want side effects outside the tempdir.
-        # The MuPDF C runtime logs non-fatal resource warnings while parsing
-        # malformed PDFs; capture them onto the logger instead of bare stderr.
+        # `extract_images=False` stays forced: writing image files to a
+        # neighbour directory is a side effect we never want on the server. When
+        # the caller asks for images, we inline them as base64 data URIs instead
+        # (#372), which keeps the .md self-contained and touches no disk outside
+        # the tempdir. The MuPDF C runtime logs non-fatal resource warnings while
+        # parsing malformed PDFs; capture them onto the logger, not bare stderr.
         with capture_mupdf_warnings(log, filename=filename):
             mod.convert_document(
                 pdf_path,
@@ -187,6 +187,7 @@ def convert_pdf_bytes(
                 page_break=opts.page_break,
                 debug=False,
                 extract_images=False,
+                inline_images=opts.with_images,
                 front_matter=opts.front_matter,
                 detect_blockquotes=opts.detect_blockquotes,
                 cluster_headings=opts.cluster_headings,

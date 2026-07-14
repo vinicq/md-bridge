@@ -51,6 +51,11 @@ This package is vendored by `md-bridge` but works as a standalone CLI.
    - `--with-images`: extract images to `output/images/<pdf-stem>/` and
      reference them in the `.md` (default: off, no images pulled into the
      markdown)
+   - `--inline-images`: embed images inline as base64 `data:` URIs so the `.md`
+     is self-contained with no image files (overrides `--with-images`). Handy to
+     move or email the file with its images intact. Trade-offs: base64 grows the
+     file by ~1/3, and github.com does not render `data:` images (VS Code,
+     pandoc, and browsers do).
    - `--no-front-matter`: skip YAML front matter
    - `--debug`: print inferred profile plus TOC entry count
 
