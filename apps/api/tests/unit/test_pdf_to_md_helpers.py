@@ -80,9 +80,21 @@ def test_build_warnings_silent_on_normal_text():
     assert warnings == []
 
 
-def test_build_warnings_emits_images_not_persisted_code():
-    """Image extraction enabled → `images_not_persisted` code, regardless of locale."""
+def test_build_warnings_no_images_not_persisted_with_images():
+    """with_images no longer warns: images are now inlined as data URIs (#372),
+    so nothing is dropped and the old `images_not_persisted` code is gone."""
     body = "Lorem ipsum " * 100
     opts = PdfToMdOptions(with_images=True)
     warnings = _build_warnings(md_body=body, options=opts, pages=2)
-    assert warnings == ["images_not_persisted"]
+    assert "images_not_persisted" not in warnings
+
+
+def test_build_warnings_ignores_inline_image_data_for_ocr_check():
+    """A sparse-text page with a big inline image still warns needs_ocr: the
+    base64 data URI must not count toward the text-density heuristic (#372)."""
+    payload = "A" * 5000  # stand-in for a base64 blob: all non-whitespace
+    body = f"Hi\n\n![fig](data:image/png;base64,{payload})\n"
+    warnings = _build_warnings(
+        md_body=body, options=PdfToMdOptions(with_images=True), pages=1
+    )
+    assert "needs_ocr" in warnings

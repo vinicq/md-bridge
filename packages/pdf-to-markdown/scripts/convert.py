@@ -16,6 +16,7 @@ Detects:
 from __future__ import annotations
 
 import argparse
+import base64
 import io
 import logging
 import re
@@ -1698,6 +1699,7 @@ def convert_page(
     *,
     images_dir: Path | None = None,
     pdf_stem: str = "",
+    inline_images: bool = False,
     skip_header_footer: bool = True,
     recurring_furniture: frozenset[str] = frozenset(),
 ) -> str:
@@ -1716,8 +1718,8 @@ def convert_page(
         page_links = []
 
     image_items: list[tuple[float, float, str]] = []
-    if images_dir is not None:
-        image_items = extract_page_images(page, images_dir, pdf_stem)
+    if images_dir is not None or inline_images:
+        image_items = extract_page_images(page, images_dir, pdf_stem, inline=inline_images)
 
     items: list[tuple[float, str, object]] = []
     for t in tables:
@@ -2115,15 +2117,20 @@ def _caption_alt(text: str) -> str:
     return alt.replace("]", "\\]")
 
 
-def extract_page_images(page: fitz.Page, images_dir: Path, pdf_stem: str) -> list[tuple[float, float, float, float, str]]:
-    """Save each image on the page to <images_dir>/<pdf_stem>/p{N}_img{I}.<ext>
-    and return [(top_y, bottom_y, left_x, right_x, rel_path), ...] for placement
-    in reading order. The bottom edge and x-span let the caller pair a caption
-    line that sits just below AND horizontally overlaps the image (#149)."""
+def extract_page_images(
+    page: fitz.Page, images_dir: Path | None, pdf_stem: str, inline: bool = False
+) -> list[tuple[float, float, float, float, str]]:
+    """Return [(top_y, bottom_y, left_x, right_x, ref), ...] for each image on the
+    page, in reading order. The bottom edge and x-span let the caller pair a
+    caption line that sits just below AND horizontally overlaps the image (#149).
+
+    `ref` is either a relative file path (default: image is written to
+    <images_dir>/<pdf_stem>/p{N}_img{I}.<ext>) or, when `inline` is set, a base64
+    `data:` URI so the Markdown carries the image with no external file (#372).
+    Inline needs no images_dir and writes nothing to disk."""
     out: list[tuple[float, float, float, float, str]] = []
     doc = page.parent
     page_no = page.number + 1
-    target_dir = images_dir / pdf_stem
     try:
         infos = page.get_image_info(hashes=False, xrefs=True)
     except TypeError:
@@ -2147,11 +2154,16 @@ def extract_page_images(page: fitz.Page, images_dir: Path, pdf_stem: str) -> lis
             right_x = float(bbox[2])
         except (TypeError, IndexError, ValueError):
             top_y = bottom_y = left_x = right_x = 0.0
-        filename = f"p{page_no}_img{idx + 1}.{ext}"
-        target_dir.mkdir(parents=True, exist_ok=True)
-        (target_dir / filename).write_bytes(img["image"])
-        rel = f"images/{pdf_stem}/{filename}".replace("\\", "/")
-        out.append((top_y, bottom_y, left_x, right_x, rel))
+        if inline:
+            b64 = base64.b64encode(img["image"]).decode("ascii")
+            ref = f"data:image/{ext};base64,{b64}"
+        else:
+            filename = f"p{page_no}_img{idx + 1}.{ext}"
+            target_dir = images_dir / pdf_stem
+            target_dir.mkdir(parents=True, exist_ok=True)
+            (target_dir / filename).write_bytes(img["image"])
+            ref = f"images/{pdf_stem}/{filename}".replace("\\", "/")
+        out.append((top_y, bottom_y, left_x, right_x, ref))
     return out
 
 
@@ -2162,6 +2174,7 @@ def convert_document(
     page_break: bool = False,
     debug: bool = False,
     extract_images: bool = False,
+    inline_images: bool = False,
     front_matter: bool = True,
     detect_blockquotes: bool = False,
     cluster_headings: bool = False,
@@ -2239,6 +2252,7 @@ def convert_document(
     for page in doc:
         page_md = convert_page(
             page, profile, images_dir=images_dir, pdf_stem=pdf_stem,
+            inline_images=inline_images,
             recurring_furniture=recurring_furniture,
         )
         if page_md.strip():
@@ -2587,6 +2601,7 @@ def main() -> int:
     parser.add_argument("-o", "--output", type=Path, required=True)
     parser.add_argument("--page-break", action="store_true", help="Insert --- between pages")
     parser.add_argument("--with-images", action="store_true", help="Extract images to ./images/<pdf>/ and reference them in the .md")
+    parser.add_argument("--inline-images", action="store_true", help="Embed images inline as base64 data URIs so the .md is self-contained (no image files); overrides --with-images (#372)")
     parser.add_argument("--caption-alt-text", action="store_true", help="Use a small-font caption line below an image as its alt text (opt-in, #149)")
     parser.add_argument("--no-front-matter", action="store_true", help="Skip YAML front matter")
     parser.add_argument(
@@ -2694,7 +2709,8 @@ def main() -> int:
         args.output,
         page_break=args.page_break,
         debug=args.debug,
-        extract_images=args.with_images,
+        extract_images=args.with_images and not args.inline_images,
+        inline_images=args.inline_images,
         front_matter=not args.no_front_matter,
         detect_blockquotes=args.detect_blockquotes,
         cluster_headings=args.cluster_headings,
