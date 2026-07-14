@@ -13,6 +13,7 @@ from pathlib import Path
 
 import fitz
 
+from app.errors import ApiError
 from app.schemas.convert import FontUsage, InspectPdfResponse
 from app.services.mupdf_log import capture_mupdf_warnings
 from app.services.packages_loader import pdf_inspect_module
@@ -26,6 +27,16 @@ def inspect_pdf_bytes(pdf_bytes: bytes, filename: str) -> InspectPdfResponse:
     tmp_path.write_bytes(pdf_bytes)
     try:
         with capture_mupdf_warnings(log, filename=filename), fitz.open(tmp_path) as doc:
+            # PyMuPDF auto-detects other formats (PNG, EPUB, XPS, ...) and opens
+            # them without raising, so a non-PDF renamed to .pdf would otherwise
+            # get 200 diagnostics from a PDF-only endpoint. Reject anything that
+            # is not actually a PDF with the same typed 422. (#360)
+            if not doc.is_pdf:
+                raise ApiError(
+                    422,
+                    "invalid_pdf",
+                    "The uploaded file is not a valid PDF or is corrupted.",
+                )
             size_counter: Counter[float] = Counter()
             font_counter: Counter[tuple[float, str]] = Counter()
             samples: dict[tuple[float, str], str] = {}
@@ -81,6 +92,18 @@ def inspect_pdf_bytes(pdf_bytes: bytes, filename: str) -> InspectPdfResponse:
             tagged=tagged,
             needs_ocr=needs_ocr,
         )
+    except fitz.FileDataError as exc:
+        # A corrupted or non-PDF upload is a client error, not a server fault.
+        # Without this guard PyMuPDF's FileDataError bubbles to the generic
+        # handler as a plain-text 500, breaking the {error:{code,message}}
+        # contract. Both callers (pdf-to-md and inspect-pdf) route through here,
+        # so the 422 lands on both. The raw message names the server tempdir
+        # path, so it is not forwarded as detail. (#360)
+        raise ApiError(
+            422,
+            "invalid_pdf",
+            "The uploaded file is not a valid PDF or is corrupted.",
+        ) from exc
     finally:
         try:
             tmp_path.unlink(missing_ok=True)
