@@ -27,6 +27,16 @@ def inspect_pdf_bytes(pdf_bytes: bytes, filename: str) -> InspectPdfResponse:
     tmp_path.write_bytes(pdf_bytes)
     try:
         with capture_mupdf_warnings(log, filename=filename), fitz.open(tmp_path) as doc:
+            # PyMuPDF auto-detects other formats (PNG, EPUB, XPS, ...) and opens
+            # them without raising, so a non-PDF renamed to .pdf would otherwise
+            # get 200 diagnostics from a PDF-only endpoint. Reject anything that
+            # is not actually a PDF with the same typed 422. (#360)
+            if not doc.is_pdf:
+                raise ApiError(
+                    422,
+                    "invalid_pdf",
+                    "The uploaded file is not a valid PDF or is corrupted.",
+                )
             size_counter: Counter[float] = Counter()
             font_counter: Counter[tuple[float, str]] = Counter()
             samples: dict[tuple[float, str], str] = {}
