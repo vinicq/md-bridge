@@ -18,7 +18,6 @@ from pathlib import Path
 
 import pymupdf
 import pytest
-
 from app.services.packages_loader import pdf_to_md_module
 
 _PNG_SIG = b"\x89PNG\r\n\x1a\n"
