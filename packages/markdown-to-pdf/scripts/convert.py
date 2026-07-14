@@ -284,10 +284,12 @@ def egress_allowed(url: str, base_dir: Path) -> bool:
     return False
 
 
-def _install_egress_guard(page, base_dir: Path) -> None:
-    """Abort any request the egress policy denies. Opt out with
-    MD_BRIDGE_ALLOW_EGRESS=1 for a self-hoster who deliberately wants the old
-    network-fetching behavior."""
+def _install_egress_guard(context, base_dir: Path) -> None:
+    """Abort every request and WebSocket the egress policy denies. Installed on
+    the browser context, not a single page: page.route misses a popup's first
+    navigation and does not see WebSocket traffic at all, so a script that opens
+    a popup or a ws:// socket would otherwise slip past. Opt out with
+    MD_BRIDGE_ALLOW_EGRESS=1 for a self-hoster who wants the old fetching."""
     if os.environ.get("MD_BRIDGE_ALLOW_EGRESS") == "1":
         return
 
@@ -297,7 +299,17 @@ def _install_egress_guard(page, base_dir: Path) -> None:
         else:
             route.abort()
 
-    page.route("**/*", _guard)
+    def _ws_guard(ws):
+        # A WebSocketRoute reaches the server only if we connect it. Every ws://
+        # and wss:// is a network scheme the policy denies, so this closes them
+        # all without ever opening the upstream connection.
+        if egress_allowed(ws.url, base_dir):
+            ws.connect_to_server()
+        else:
+            ws.close()
+
+    context.route("**/*", _guard)
+    context.route_web_socket("**/*", _ws_guard)
 
 
 def render_to_pdf(html: str, pdf_path: Path, base_url: Path, pdf_kwargs: dict | None = None) -> None:
@@ -305,8 +317,9 @@ def render_to_pdf(html: str, pdf_path: Path, base_url: Path, pdf_kwargs: dict | 
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
-            page = browser.new_page()
-            _install_egress_guard(page, base_url)
+            context = browser.new_context()
+            _install_egress_guard(context, base_url)
+            page = context.new_page()
             # <base href> already lives in <head> (build_html), so relative URLs
             # resolve at parse time. With egress blocked, "load" is the
             # deterministic wait: aborted requests settle it without the extra

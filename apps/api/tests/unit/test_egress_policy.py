@@ -44,3 +44,57 @@ def test_file_absolute_system_path_denied(tmp_path):
     # inside a fresh render tempdir.
     probe = Path("/etc/passwd").resolve()
     assert mod.egress_allowed(probe.as_uri(), tmp_path) is False
+
+
+class _FakeContext:
+    """Records the routes the guard installs, so the wiring is checked without
+    a real browser."""
+
+    def __init__(self):
+        self.request_handler = None
+        self.ws_handler = None
+
+    def route(self, pattern, handler):
+        self.request_handler = handler
+
+    def route_web_socket(self, pattern, handler):
+        self.ws_handler = handler
+
+
+class _FakeWsRoute:
+    def __init__(self, url):
+        self.url = url
+        self.connected = False
+        self.closed = False
+
+    def connect_to_server(self):
+        self.connected = True
+
+    def close(self):
+        self.closed = True
+
+
+def test_guard_installs_request_and_websocket_routes(tmp_path):
+    # page.route alone misses WebSockets and a popup's first navigation (#363
+    # Codex review), so the guard must register a WebSocket route too.
+    ctx = _FakeContext()
+    mod._install_egress_guard(ctx, tmp_path)
+    assert ctx.request_handler is not None
+    assert ctx.ws_handler is not None
+
+
+def test_websocket_guard_closes_network_socket(tmp_path):
+    ctx = _FakeContext()
+    mod._install_egress_guard(ctx, tmp_path)
+    route = _FakeWsRoute("ws://127.0.0.1:9999/socket")
+    ctx.ws_handler(route)
+    assert route.closed is True
+    assert route.connected is False
+
+
+def test_guard_skipped_when_egress_opt_out(tmp_path, monkeypatch):
+    monkeypatch.setenv("MD_BRIDGE_ALLOW_EGRESS", "1")
+    ctx = _FakeContext()
+    mod._install_egress_guard(ctx, tmp_path)
+    assert ctx.request_handler is None
+    assert ctx.ws_handler is None
