@@ -18,9 +18,12 @@ from __future__ import annotations
 
 import argparse
 import io
+import os
 import re
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 import markdown
 import yaml
@@ -104,18 +107,25 @@ def escape_html(s: str) -> str:
     )
 
 
-def build_html(body_html: str, fm: dict, lang: str, css_blocks: list[str]) -> str:
+def build_html(
+    body_html: str, fm: dict, lang: str, css_blocks: list[str], base_uri: str = ""
+) -> str:
     # safe_load can return non-string scalars (a date, a number) or even a list
     # for `title:`; coerce so escape_html always receives a string.
     title = fm.get("title") or "Document"
     if not isinstance(title, str):
         title = str(title)
     style = "\n".join(f"<style>\n{css}\n</style>" for css in css_blocks)
+    # The <base> lives in <head> so relative URLs resolve at parse time against
+    # the render tempdir, which is what the egress guard confines file: loads to
+    # (#363). No base_uri (e.g. the unit tests) leaves the historic output.
+    base_tag = f'  <base href="{escape_html(base_uri)}">\n' if base_uri else ""
     return (
         '<!DOCTYPE html>\n'
         f'<html lang="{lang}">\n'
         '<head>\n'
         '  <meta charset="utf-8">\n'
+        f'{base_tag}'
         f'  <title>{escape_html(title)}</title>\n'
         f'{style}\n'
         '</head>\n'
@@ -246,20 +256,63 @@ def resolve_pdf_kwargs(page_setup: dict | None, fm: dict) -> dict:
     return kwargs
 
 
+# Egress policy for the render sandbox (#363). The renderer must stay offline
+# and deterministic (identity contract): a user document that references an
+# external URL must not make Chromium reach the network (SSRF on a hosted
+# instance), and a file: URL must not escape the render tempdir (local file
+# disclosure). The policy decides by scheme; it is orthogonal to which HTML tags
+# are allowed, so renderer features (#143/#159/#164) widen a tag allowlist, never
+# this egress policy.
+_INERT_SCHEMES = frozenset({"data", "blob", "about", ""})
+
+
+def egress_allowed(url: str, base_dir: Path) -> bool:
+    """True if Chromium may load `url` while rendering. data:/blob:/about: are
+    inert and always allowed; file: is allowed only inside base_dir; every
+    network scheme (http, https, ws, ftp, ...) is denied."""
+    parsed = urlparse(url)
+    scheme = parsed.scheme.lower()
+    if scheme in _INERT_SCHEMES:
+        return True
+    if scheme == "file":
+        try:
+            target = Path(url2pathname(parsed.path)).resolve()
+        except (ValueError, OSError):
+            return False
+        base = base_dir.resolve()
+        return target == base or base in target.parents
+    return False
+
+
+def _install_egress_guard(page, base_dir: Path) -> None:
+    """Abort any request the egress policy denies. Opt out with
+    MD_BRIDGE_ALLOW_EGRESS=1 for a self-hoster who deliberately wants the old
+    network-fetching behavior."""
+    if os.environ.get("MD_BRIDGE_ALLOW_EGRESS") == "1":
+        return
+
+    def _guard(route):
+        if egress_allowed(route.request.url, base_dir):
+            route.continue_()
+        else:
+            route.abort()
+
+    page.route("**/*", _guard)
+
+
 def render_to_pdf(html: str, pdf_path: Path, base_url: Path, pdf_kwargs: dict | None = None) -> None:
-    base_uri = base_url.resolve().as_uri() + "/"
     kwargs = pdf_kwargs if pdf_kwargs is not None else resolve_pdf_kwargs(None, {})
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
             page = browser.new_page()
-            page.set_content(html, wait_until="networkidle")
-            # Resolve relative URLs (for images) by injecting a <base>
-            page.evaluate(
-                "(href) => { let b = document.querySelector('base');"
-                " if (!b) { b = document.createElement('base'); document.head.prepend(b); } b.href = href; }",
-                base_uri,
-            )
+            _install_egress_guard(page, base_url)
+            # <base href> already lives in <head> (build_html), so relative URLs
+            # resolve at parse time. With egress blocked, "load" is the
+            # deterministic wait: aborted requests settle it without the extra
+            # networkidle timer, and a runaway inline script trips the timeout
+            # instead of hanging the worker forever.
+            page.set_content(html, wait_until="load", timeout=30000)
             page.pdf(path=str(pdf_path), **kwargs)
         finally:
             browser.close()
@@ -283,12 +336,14 @@ def convert(
         else:
             print(f"[warn] CSS not found: {css}", file=sys.stderr)
 
-    html = build_html(body_html, fm, lang, css_blocks)
+    base_dir = md_path.parent
+    base_uri = base_dir.resolve().as_uri() + "/"
+    html = build_html(body_html, fm, lang, css_blocks, base_uri=base_uri)
     # Token substitution for header/footer reads the same front matter, so the
     # print clock is never consulted (#243). page_setup=None keeps the historic
     # page geometry exactly.
     pdf_kwargs = resolve_pdf_kwargs(page_setup, fm)
-    render_to_pdf(html, pdf_path, base_url=md_path.parent, pdf_kwargs=pdf_kwargs)
+    render_to_pdf(html, pdf_path, base_url=base_dir, pdf_kwargs=pdf_kwargs)
     print(f"Wrote {pdf_path}")
 
 
