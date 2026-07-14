@@ -32,6 +32,14 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # typescript-eslint (8.64.0, mais nova liberada) trava o peer em
+      # typescript ">=4.8.4 <6.1.0". Um major do TS quebra o npm ci com
+      # ERESOLVE. O bump de major fica manual, quando o toolchain de lint
+      # acompanhar; ate la o dependabot nao abre esse PR fadado a falhar.
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
     labels:
       - dependencies
       - frontend
