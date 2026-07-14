@@ -94,7 +94,12 @@ def _build_warnings(md_body: str, options: PdfToMdOptions, pages: int) -> list[s
     # and now count toward the char total. The hard 422 ocr_required gate lives
     # in inspect.py and reads raw PDF chars, independent of this informational
     # warning, so dropping the strip does not move the OCR boundary.
-    plain_chars = len(re.sub(r"\s+", "", md_body))
+    #
+    # Drop image markdown before counting: an inline base64 data URI (#372) adds
+    # thousands of non-whitespace characters that are not extractable text, and
+    # would otherwise mask a sparse-text scan and suppress the needs_ocr warning.
+    text_only = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", md_body)
+    plain_chars = len(re.sub(r"\s+", "", text_only))
     if plain_chars < max(80, pages * 40):
         warnings.append("needs_ocr")
     return warnings
