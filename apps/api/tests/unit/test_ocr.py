@@ -45,6 +45,21 @@ def test_page_timeout_maps_to_ocr_failed_naming_the_page(monkeypatch):
     assert captured.get("timeout") == ocr.DEFAULT_OCR_PAGE_TIMEOUT
 
 
+def test_tesseract_error_is_not_mislabeled_as_timeout(monkeypatch):
+    # TesseractError (e.g. partially installed language data) subclasses
+    # RuntimeError. It must propagate so the caller's language-data guidance
+    # applies, not get swallowed into a misleading "timed out" message (#364).
+    import pytesseract
+
+    def _setup_failure(*args, **kwargs):
+        raise pytesseract.TesseractError(1, "missing language data")
+
+    monkeypatch.setattr(pytesseract, "image_to_pdf_or_hocr", _setup_failure)
+
+    with pytest.raises(pytesseract.TesseractError):
+        ocr.ocr_pdf_bytes(_one_page_pdf(), lang="eng")
+
+
 def test_page_timeout_env_override(monkeypatch):
     monkeypatch.setenv("MD_BRIDGE_OCR_PAGE_TIMEOUT", "5")
     assert ocr.get_page_timeout() == 5

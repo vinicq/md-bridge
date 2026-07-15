@@ -128,8 +128,14 @@ def ocr_pdf_bytes(pdf_bytes: bytes, lang: str = DEFAULT_OCR_LANG) -> bytes:
                 pdf_page_bytes = pytesseract.image_to_pdf_or_hocr(
                     img, lang=lang, extension="pdf", timeout=timeout
                 )
+            except pytesseract.TesseractError:
+                # A non-zero Tesseract exit (e.g. partially installed language
+                # data) is not a timeout. TesseractError subclasses RuntimeError,
+                # so re-raise it here and let the caller's language-data guidance
+                # handle it instead of mislabeling it as a timeout (#364).
+                raise
             except RuntimeError as exc:
-                # pytesseract raises RuntimeError when it kills a run that
+                # pytesseract raises a plain RuntimeError when it kills a run that
                 # exceeded the timeout. Name the page so the operator can raise
                 # the budget or split the document (#364).
                 raise ApiError(
