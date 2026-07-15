@@ -145,6 +145,10 @@ def convert_pdf_bytes(
             # complete, so this guards hand-rolled installs.
             try:
                 pdf_bytes = ocr_pdf_bytes(pdf_bytes, lang=ocr_lang())
+            except ApiError:
+                # ocr_pdf_bytes already raised a typed error (e.g. the per-page
+                # timeout naming the page, #364); let it through unwrapped.
+                raise
             except Exception as exc:
                 raise ApiError(
                     500,
