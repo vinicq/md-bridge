@@ -42,8 +42,10 @@ export function MdToDocx() {
   const handleFiles = (files: File[]) => batch.add(files)
 
   const onConvertAll = async () => {
-    await batch.runAll()
-    setToast({ kind: 'ok', message: t.mdToDocx.success })
+    const summary = await batch.runAll()
+    // Success toast only when something converted; a failed batch shows the
+    // error on the row and must not be contradicted by a green toast (#353).
+    if (summary.done > 0) setToast({ kind: 'ok', message: t.mdToDocx.success })
   }
 
   const onConvertPasted = async () => {
@@ -52,8 +54,8 @@ export function MdToDocx() {
     batch.add([file])
     // The newly-added item is queued; flush so runAll sees it.
     await Promise.resolve()
-    await batch.runAll()
-    setToast({ kind: 'ok', message: t.mdToDocx.success })
+    const summary = await batch.runAll()
+    if (summary.done > 0) setToast({ kind: 'ok', message: t.mdToDocx.success })
   }
 
   const onDownload = (item: BatchItem<Blob>) => {

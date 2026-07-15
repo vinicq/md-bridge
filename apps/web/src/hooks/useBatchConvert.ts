@@ -2,6 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type BatchStatus = 'queued' | 'converting' | 'done' | 'error'
 
+/** Outcome of a single runAll() pass, read from the real post-run state so the
+ *  caller can pick a toast that matches what happened (#353). */
+export interface BatchRunSummary {
+  /** Items this run actually processed (queued at snapshot time, still present). */
+  processed: number
+  done: number
+  failed: number
+}
+
 export interface BatchItem<TResult> {
   id: string
   file: File
@@ -137,8 +146,8 @@ export function useBatchConvert<TResult>({
 
   // Snapshot the current queue and process each `queued` item in order. New
   // items added while the run is in flight stay queued until the next call.
-  const runAll = useCallback(async () => {
-    if (running) return
+  const runAll = useCallback(async (): Promise<BatchRunSummary> => {
+    if (running) return { processed: 0, done: 0, failed: 0 }
     const ctrl = new AbortController()
     abortRef.current = ctrl
     setRunning(true)
@@ -205,6 +214,17 @@ export function useBatchConvert<TResult>({
     }
 
     setRunning(false)
+
+    // Read the outcome from the live ref, not the stale `items` closure the
+    // caller captured before awaiting: only items still present are counted, so
+    // a mid-run remove drops out of the summary too (#353, #357).
+    const targetSet = new Set(targets)
+    const processed = itemsRef.current.filter((it) => targetSet.has(it.id))
+    return {
+      processed: processed.length,
+      done: processed.filter((it) => it.status === 'done').length,
+      failed: processed.filter((it) => it.status === 'error').length,
+    }
   }, [convert, convertTimeoutMs, patch, running, toBlobUrl])
 
   return { items, running, add, remove, move, moveTo, clear, skip, runAll }
