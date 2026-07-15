@@ -71,8 +71,10 @@ export function PdfToMd() {
   const handleFiles = (files: File[]) => batch.add(files)
 
   const onConvertAll = async () => {
-    await batch.runAll()
-    setToast({ kind: 'ok', message: t.pdfToMd.success })
+    const summary = await batch.runAll()
+    // Success toast only when something converted; a failed batch shows the
+    // error on the row and must not be contradicted by a green toast (#353).
+    if (summary.done > 0) setToast({ kind: 'ok', message: t.pdfToMd.success })
   }
 
   const onDownload = (item: BatchItem<PdfToMdResponse>) => {

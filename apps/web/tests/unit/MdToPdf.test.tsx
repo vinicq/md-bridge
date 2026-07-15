@@ -71,4 +71,22 @@ describe('MdToPdf', () => {
     },
     10000,
   )
+
+  it('shows no success toast when the whole batch fails (#353)', async () => {
+    vi.mocked(convertMdToPdf).mockRejectedValue(new Error('Failed to fetch'))
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+
+    const file = new File(['# Hello'], 'sample.md', { type: 'text/markdown' })
+    fireEvent.drop(screen.getByLabelText('Drop a Markdown file or click to choose'), {
+      dataTransfer: { files: [file], items: [] as unknown as DataTransferItemList },
+    })
+    await screen.findByTitle('sample.md')
+    await user.click(screen.getByRole('button', { name: 'Convert all' }))
+
+    // The row lands in error and the success toast never appears.
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalledTimes(1), { timeout: 5000 })
+    await screen.findByText('Error')
+    expect(screen.queryByText('PDF ready.')).toBeNull()
+  }, 10000)
 })
