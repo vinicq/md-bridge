@@ -460,6 +460,37 @@ test.describe('theme-picker load-error a11y', () => {
   }
 })
 
+// The theme toggle in the header carries its accessible name from the typed
+// catalog now (#354). Seed a non-EN locale and confirm the localized name
+// renders and axe stays clean, so a pt/es screen reader is not read English.
+test.describe('localized theme toggle a11y (#354)', () => {
+  const TOGGLE_NAME: Record<'pt' | 'es', RegExp> = {
+    pt: /mudar para o tema (claro|escuro)/i,
+    es: /cambiar al modo (claro|oscuro)/i,
+  }
+  for (const locale of ['pt', 'es'] as const) {
+    test(`theme toggle exposes a localized name and passes axe [${locale}]`, async ({ page }) => {
+      await page.addInitScript((l) => window.localStorage.setItem('md-bridge:locale', l), locale)
+      await page.goto('/', { waitUntil: 'networkidle' })
+
+      await expect(page.getByRole('button', { name: TOGGLE_NAME[locale] })).toBeVisible()
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze()
+      const criticalSerious = results.violations.filter(
+        (v) => v.impact === 'critical' || v.impact === 'serious',
+      )
+      expect(
+        criticalSerious,
+        `critical/serious with localized theme toggle [${locale}]: ${criticalSerious
+          .map((v) => v.id)
+          .join(', ')}`,
+      ).toHaveLength(0)
+    })
+  }
+})
+
 // After conversion the page shows a Markdown preview region. Audit that loaded
 // state for axe violations — the empty-state sweeps above don't cover it.
 test.describe('pdf-to-md post-conversion a11y', () => {

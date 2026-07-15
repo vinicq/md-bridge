@@ -124,11 +124,22 @@ interface Dictionary {
     skip: string
     skipLabel: (name: string) => string
     dragLabel: (name: string) => string
+    // Remove/reorder controls. Visible labels (moveUp/moveDown) and their
+    // aria counterparts are separate so #358 can reuse the reorder keys.
+    removeLabel: (name: string) => string
+    moveUp: string
+    moveDown: string
+    moveUpLabel: (name: string) => string
+    moveDownLabel: (name: string) => string
     errorTimeout: string
     errorSkipped: string
     pdfBundleName: string
     mdBundleName: string
     docxBundleName: string
+  }
+  themeToggle: {
+    toLight: string
+    toDark: string
   }
   diag: {
     title: string
@@ -318,11 +329,20 @@ const en: Dictionary = {
     skip: 'Skip',
     skipLabel: (name) => `skip ${name}`,
     dragLabel: (name) => `Drag to reorder ${name}`,
+    removeLabel: (name) => `Remove ${name}`,
+    moveUp: 'Up',
+    moveDown: 'Down',
+    moveUpLabel: (name) => `Move ${name} up`,
+    moveDownLabel: (name) => `Move ${name} down`,
     errorTimeout: 'Timed out',
     errorSkipped: 'Skipped',
     pdfBundleName: 'pdfs.zip',
     mdBundleName: 'markdown.zip',
     docxBundleName: 'docx.zip',
+  },
+  themeToggle: {
+    toLight: 'Switch to light mode',
+    toDark: 'Switch to dark mode',
   },
   diag: {
     title: 'PDF diagnostics',
@@ -514,11 +534,20 @@ const pt: Dictionary = {
     skip: 'Pular',
     skipLabel: (name) => `pular ${name}`,
     dragLabel: (name) => `Arrastar para reordenar ${name}`,
+    removeLabel: (name) => `Remover ${name}`,
+    moveUp: 'Subir',
+    moveDown: 'Descer',
+    moveUpLabel: (name) => `Mover ${name} para cima`,
+    moveDownLabel: (name) => `Mover ${name} para baixo`,
     errorTimeout: 'Tempo esgotado',
     errorSkipped: 'Pulado',
     pdfBundleName: 'pdfs.zip',
     mdBundleName: 'markdown.zip',
     docxBundleName: 'docx.zip',
+  },
+  themeToggle: {
+    toLight: 'Mudar para o tema claro',
+    toDark: 'Mudar para o tema escuro',
   },
   diag: {
     title: 'Diagnóstico do PDF',
@@ -710,11 +739,20 @@ const es: Dictionary = {
     skip: 'Omitir',
     skipLabel: (name) => `omitir ${name}`,
     dragLabel: (name) => `Arrastrar para reordenar ${name}`,
+    removeLabel: (name) => `Quitar ${name}`,
+    moveUp: 'Subir',
+    moveDown: 'Bajar',
+    moveUpLabel: (name) => `Mover ${name} hacia arriba`,
+    moveDownLabel: (name) => `Mover ${name} hacia abajo`,
     errorTimeout: 'Tiempo agotado',
     errorSkipped: 'Omitido',
     pdfBundleName: 'pdfs.zip',
     mdBundleName: 'markdown.zip',
     docxBundleName: 'docx.zip',
+  },
+  themeToggle: {
+    toLight: 'Cambiar al modo claro',
+    toDark: 'Cambiar al modo oscuro',
   },
   diag: {
     title: 'Diagnóstico del PDF',

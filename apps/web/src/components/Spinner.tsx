@@ -2,10 +2,11 @@ import './Spinner.css'
 
 interface SpinnerProps {
   size?: number
-  label?: string
+  // Required so no caller silently ships the Portuguese default to en/es (#354).
+  label: string
 }
 
-export function Spinner({ size = 24, label = 'Carregando' }: SpinnerProps) {
+export function Spinner({ size = 24, label }: SpinnerProps) {
   return (
     <span className="spinner" role="status" aria-label={label} style={{ width: size, height: size }}>
       <svg viewBox="0 0 50 50" width={size} height={size} aria-hidden="true">

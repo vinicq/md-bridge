@@ -184,6 +184,53 @@ describe('BatchPanel reorder', () => {
     expect(names(container)).toEqual(['a.pdf', 'b.pdf', 'c.pdf'])
   })
 
+  it('exposes localized remove/move aria-labels in pt (#354)', () => {
+    render(
+      <I18nProvider initialLocale="pt">
+        <BatchPanel
+          items={[makeItem('a.pdf'), makeItem('b.pdf')]}
+          running={false}
+          onConvertAll={() => undefined}
+          onClear={() => undefined}
+          onRemove={() => undefined}
+          onMove={() => undefined}
+          onMoveTo={() => undefined}
+          onDownload={() => undefined}
+          downloadLabel="Baixar .md"
+        />
+      </I18nProvider>,
+    )
+    expect(screen.getByRole('button', { name: 'Remover a.pdf' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Mover a.pdf para cima' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Mover a.pdf para baixo' })).toBeInTheDocument()
+    // Visible reorder button labels are localized too, not the English Up/Down.
+    expect(screen.getAllByText('Subir').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Descer').length).toBeGreaterThan(0)
+  })
+
+  it('renders the localized unknown-error fallback, not the raw browser message (#354)', () => {
+    const item = makeItem('a.pdf')
+    item.status = 'error'
+    item.error = { code: 'unknown', message: 'Failed to fetch' }
+    render(
+      <I18nProvider initialLocale="pt">
+        <BatchPanel
+          items={[item]}
+          running={false}
+          onConvertAll={() => undefined}
+          onClear={() => undefined}
+          onRemove={() => undefined}
+          onMove={() => undefined}
+          onMoveTo={() => undefined}
+          onDownload={() => undefined}
+          downloadLabel="Baixar .md"
+        />
+      </I18nProvider>,
+    )
+    expect(screen.getByText('Falha desconhecida')).toBeInTheDocument()
+    expect(screen.queryByText('Failed to fetch')).toBeNull()
+  })
+
   it('disables all reorder paths while running', async () => {
     const user = userEvent.setup()
     const { container } = render(<Harness running />)

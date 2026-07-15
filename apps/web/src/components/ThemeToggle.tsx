@@ -1,18 +1,21 @@
+import { useTranslation } from '../i18n'
 import { useTheme } from '../theme'
 import './ThemeToggle.css'
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme()
+  const { t } = useTranslation()
 
   const isDark = theme === 'dark'
+  const label = isDark ? t.themeToggle.toLight : t.themeToggle.toDark
 
   return (
     <button
       type="button"
       className="theme-toggle"
       onClick={toggleTheme}
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={label}
+      title={label}
       aria-pressed={isDark}
     >
       {isDark ? (
