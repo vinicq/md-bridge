@@ -50,6 +50,25 @@ describe('DropZone', () => {
     expect(screen.getByText(/drop a pdf/i)).toBeInTheDocument()
   })
 
+  it('keeps the highlight over a child and clears only when leaving the zone (#359)', () => {
+    renderWithI18n(<DropZone accept=".pdf" acceptLabel="PDF" onFiles={() => undefined} />)
+    const zone = screen.getByRole('button')
+
+    // Drag enters the zone.
+    fireEvent.dragEnter(zone)
+    expect(zone.className).toMatch(/is-over/)
+
+    // Pointer crosses onto a child: the child's dragenter and the container's
+    // dragleave both bubble here. Net depth stays > 0, so the highlight holds.
+    fireEvent.dragEnter(zone)
+    fireEvent.dragLeave(zone)
+    expect(zone.className).toMatch(/is-over/)
+
+    // The final dragleave takes the drag out of the zone: highlight clears.
+    fireEvent.dragLeave(zone)
+    expect(zone.className).not.toMatch(/is-over/)
+  })
+
   it('is keyboard-activatable via Enter', () => {
     const onFiles = vi.fn()
     renderWithI18n(<DropZone accept=".pdf" acceptLabel="PDF" onFiles={onFiles} />)
