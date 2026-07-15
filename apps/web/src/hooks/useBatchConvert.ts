@@ -91,6 +91,10 @@ export function useBatchConvert<TResult>({
   }, [])
 
   const remove = useCallback((id: string) => {
+    // Abort an in-flight conversion for this item so removing it mid-run stops
+    // the upload instead of letting it finish invisibly (#357). No-op if the
+    // item is still queued or already done.
+    itemCtrlsRef.current.get(id)?.abort()
     setItems((prev) => {
       const target = prev.find((it) => it.id === id)
       if (target?.blobUrl) {
@@ -160,6 +164,9 @@ export function useBatchConvert<TResult>({
 
     for (const id of targets) {
       if (ctrl.signal.aborted) break
+      // Re-check the live ref, not the start-of-run snapshot: an item the user
+      // removed after clicking convert must not spend an upload (#357).
+      if (!itemsRef.current.some((it) => it.id === id)) continue
       const file = snapshot.find((it) => it.id === id)?.file
       if (!file) continue
       patch(id, { status: 'converting' })

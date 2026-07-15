@@ -157,6 +157,56 @@ describe('useBatchConvert', () => {
     expect(result.current.running).toBe(false)
   })
 
+  it('does not convert a queued item removed mid-run (#357)', async () => {
+    // gate.pdf hangs so the run is in flight; remove-me.pdf is still queued when
+    // we drop it; after.pdf follows so the loop keeps going past the hole. We
+    // skip gate.pdf to advance, and the loop must reach after.pdf without ever
+    // converting the removed remove-me.pdf.
+    const convert = makeConvert({ 'remove-me.pdf': 'resolve', 'after.pdf': 'resolve' })
+    const { result } = renderHook(() => useBatchConvert<Res>({ convert }))
+
+    act(() => result.current.add([pdf('gate.pdf'), pdf('remove-me.pdf'), pdf('after.pdf')]))
+    let run!: Promise<unknown>
+    act(() => {
+      run = result.current.runAll()
+    })
+    await settle()
+    expect(result.current.items[0].status).toBe('converting')
+
+    const gateId = result.current.items[0].id
+    const removeId = result.current.items[1].id
+    await act(async () => {
+      result.current.remove(removeId) // drop the queued item mid-run
+      result.current.skip(gateId) // release the gate so the loop advances
+      await run
+    })
+
+    const converted = convert.mock.calls.map((c) => (c[0] as File).name)
+    // The loop reached after.pdf (proving it advanced past the hole) but never
+    // touched the removed item.
+    expect(converted).toContain('after.pdf')
+    expect(converted).not.toContain('remove-me.pdf')
+  })
+
+  it('aborts the in-flight request when a converting item is removed (#357)', async () => {
+    const convert = makeConvert({})
+    const { result } = renderHook(() => useBatchConvert<Res>({ convert }))
+
+    act(() => result.current.add([pdf('stuck.pdf')]))
+    act(() => {
+      void result.current.runAll()
+    })
+    await settle()
+    expect(result.current.items[0].status).toBe('converting')
+
+    // The signal handed to convert() must abort when the item is removed.
+    const signal = convert.mock.calls[0][1] as AbortSignal
+    expect(signal.aborted).toBe(false)
+    const convertingId = result.current.items[0].id
+    act(() => result.current.remove(convertingId))
+    expect(signal.aborted).toBe(true)
+  })
+
   it('reorders queued items by direction and drop target', () => {
     const convert = makeConvert({})
     const { result } = renderHook(() => useBatchConvert<Res>({ convert }))
