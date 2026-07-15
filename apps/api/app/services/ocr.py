@@ -7,6 +7,8 @@ import shutil
 
 import pymupdf
 
+from app.errors import ApiError
+
 _TRUTHY = {"1", "true", "yes", "on"}
 _FALSY = {"0", "false", "no", "off"}
 
@@ -46,6 +48,29 @@ def get_max_pages() -> int:
     except ValueError:
         return DEFAULT_OCR_MAX_PAGES
     return value if value > 0 else DEFAULT_OCR_MAX_PAGES
+
+
+# Per-page wall-clock budget for the Tesseract call. MD_BRIDGE_OCR_MAX_PAGES
+# caps how many pages run, not how long one page may take, so a single dense
+# page could pin the worker thread forever. The repo rule is that every
+# subprocess invocation carries an explicit timeout (#364).
+DEFAULT_OCR_PAGE_TIMEOUT = 60
+
+
+def get_page_timeout() -> int:
+    """Seconds a single page's Tesseract run may take before it is killed.
+
+    A malformed or non-positive `MD_BRIDGE_OCR_PAGE_TIMEOUT` falls back to the
+    default rather than failing the request.
+    """
+    raw = os.getenv("MD_BRIDGE_OCR_PAGE_TIMEOUT")
+    if raw is None or not raw.strip():
+        return DEFAULT_OCR_PAGE_TIMEOUT
+    try:
+        value = int(raw.strip())
+    except ValueError:
+        return DEFAULT_OCR_PAGE_TIMEOUT
+    return value if value > 0 else DEFAULT_OCR_PAGE_TIMEOUT
 
 
 def ocr_stack_available() -> bool:
@@ -91,16 +116,35 @@ def ocr_pdf_bytes(pdf_bytes: bytes, lang: str = DEFAULT_OCR_LANG) -> bytes:
     import pytesseract
     from PIL import Image
 
+    timeout = get_page_timeout()
     src = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     out = pymupdf.open()
     try:
-        for page in src:
+        for page_index, page in enumerate(src):
             pix = page.get_pixmap(dpi=300)
             img = Image.open(io.BytesIO(pix.tobytes("png")))
 
-            pdf_page_bytes = pytesseract.image_to_pdf_or_hocr(
-                img, lang=lang, extension="pdf"
-            )
+            try:
+                pdf_page_bytes = pytesseract.image_to_pdf_or_hocr(
+                    img, lang=lang, extension="pdf", timeout=timeout
+                )
+            except pytesseract.TesseractError:
+                # A non-zero Tesseract exit (e.g. partially installed language
+                # data) is not a timeout. TesseractError subclasses RuntimeError,
+                # so re-raise it here and let the caller's language-data guidance
+                # handle it instead of mislabeling it as a timeout (#364).
+                raise
+            except RuntimeError as exc:
+                # pytesseract raises a plain RuntimeError when it kills a run that
+                # exceeded the timeout. Name the page so the operator can raise
+                # the budget or split the document (#364).
+                raise ApiError(
+                    500,
+                    "ocr_failed",
+                    f"OCR timed out on page {page_index + 1} after {timeout}s. "
+                    "Raise MD_BRIDGE_OCR_PAGE_TIMEOUT or split the document.",
+                    detail=str(exc),
+                ) from exc
             page_pdf = pymupdf.open(stream=pdf_page_bytes, filetype="pdf")
             try:
                 out.insert_pdf(page_pdf)
