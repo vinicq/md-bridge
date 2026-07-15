@@ -1,4 +1,4 @@
-import { useState, type DragEvent, type KeyboardEvent } from 'react'
+import { useId, useState, type DragEvent, type KeyboardEvent } from 'react'
 import { useTranslation } from '../i18n'
 import type { BatchItem } from '../hooks/useBatchConvert'
 import { Button } from './Button'
@@ -58,6 +58,9 @@ export function BatchPanel<TResult>({
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dropTargetId, setDropTargetId] = useState<string | null>(null)
   const [grabbedId, setGrabbedId] = useState<string | null>(null)
+  // Announced through an aria-live region after each keyboard move/grab (#358).
+  const [announcement, setAnnouncement] = useState('')
+  const reorderInstructionsId = useId()
   if (items.length === 0) return null
 
   // The hook leaves timeout/skip errors with an empty message and only a code,
@@ -79,7 +82,13 @@ export function BatchPanel<TResult>({
 
   const move = (id: string, direction: -1 | 1) => {
     if (!canReorder) return
+    const from = items.findIndex((it) => it.id === id)
+    const to = from + direction
+    // Ignore no-op moves at the ends so the live region never announces a
+    // position that did not change.
+    if (from === -1 || to < 0 || to >= items.length) return
     onMove(id, direction)
+    setAnnouncement(t.batch.movedTo(items[from].file.name, to + 1, items.length))
   }
 
   const handleDragStart = (event: DragEvent<HTMLButtonElement>, id: string) => {
@@ -138,6 +147,16 @@ export function BatchPanel<TResult>({
         <span className="batch__progress" aria-live="polite">{t.batch.progress(done, items.length)}</span>
       </header>
 
+      {/* Keyboard-reorder affordance for screen readers: the instruction is
+          referenced by each row via aria-describedby, and moves are announced
+          in the polite live region below (#358). */}
+      <p id={reorderInstructionsId} className="visually-hidden">
+        {t.batch.reorderInstructions}
+      </p>
+      <div className="visually-hidden" role="status" aria-live="polite">
+        {announcement}
+      </div>
+
       <ul className="batch__list">
         {items.map((item, index) => {
           const isSelected = item.id === selectedId
@@ -157,7 +176,7 @@ export function BatchPanel<TResult>({
               key={item.id}
               className={rowClass}
               tabIndex={0}
-              aria-grabbed={isGrabbed}
+              aria-describedby={canReorder ? reorderInstructionsId : undefined}
               onKeyDown={(event) => handleRowKeyDown(event, item.id)}
               onDragOver={(event) => {
                 if (!canReorder) return

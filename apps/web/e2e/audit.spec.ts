@@ -233,6 +233,12 @@ test.describe('batch reorder controls a11y (#27)', () => {
     await expect(page.getByRole('button', { name: /move code-sample\.pdf up/i }))
       .toBeEnabled()
 
+    // #358: rows describe the keyboard interaction and no longer use the
+    // deprecated aria-grabbed.
+    const rows = page.locator('.batch__row')
+    await expect(rows.first()).toHaveAttribute('aria-describedby', /\S/)
+    expect(await rows.first().getAttribute('aria-grabbed')).toBeNull()
+
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze()
