@@ -151,6 +151,7 @@ python -m pip install -e ".[dev,ocr]"
 # Optional: export MD_BRIDGE_OCR_ENABLED=0   # force OCR off even when installed
 # Optional: export MD_BRIDGE_OCR_LANG=eng    # pin a single language pack
 # Optional: export MD_BRIDGE_OCR_MAX_PAGES=50  # reject scans past N pages (0 = no cap)
+# Optional: export MD_BRIDGE_OCR_PAGE_TIMEOUT=60  # per-page Tesseract timeout in seconds
 
 # Docker: build the OCR-enabled API image target.
 docker build -f apps/api/Dockerfile --target runtime-ocr -t md-bridge-api:ocr
