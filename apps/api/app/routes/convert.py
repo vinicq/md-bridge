@@ -9,6 +9,7 @@ import time
 from urllib.parse import quote
 
 from fastapi import APIRouter, File, Form, Query, UploadFile
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response
 from pydantic import ValidationError
 
@@ -132,11 +133,15 @@ def _read_options(raw: str | None, model):
     try:
         return model.model_validate(data)
     except ValidationError as exc:
+        # A field_validator that raises ValueError leaves that exception object
+        # in each error's `ctx` on Pydantic v2, and json.dumps cannot serialize
+        # it: passing exc.errors() straight through made the error handler itself
+        # 500 (#361). jsonable_encoder coerces the ctx to strings.
         raise ApiError(
             422,
             "invalid_options",
             "options payload failed validation",
-            detail=exc.errors(),
+            detail=jsonable_encoder(exc.errors()),
         ) from exc
 
 
