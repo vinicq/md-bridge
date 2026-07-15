@@ -460,6 +460,50 @@ test.describe('theme-picker load-error a11y', () => {
   }
 })
 
+// The success toast now carries a focusable, labeled dismiss button (#355).
+// The static route sweep never renders a toast, so drive a conversion, pin the
+// toast open by focusing the button (which pauses the auto-dismiss), and audit.
+test.describe('success toast a11y (#355)', () => {
+  test('toast dismiss button is labeled and passes axe', async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem('md-bridge:locale', 'en'))
+    await page.route('**/api/pdf-to-md', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          md: '# hi\n\ncontent',
+          front_matter: {},
+          warnings: [],
+          stats: { headings: 1, tables: 0, bullets: 0 },
+        }),
+      }),
+    )
+    await page.goto('/convert/pdf-to-md')
+    await page.locator('input[type="file"]').setInputFiles(ISTQB)
+    await page.getByRole('button', { name: /convert all/i }).click()
+
+    const dismiss = page.getByRole('button', { name: /dismiss notification/i })
+    await expect(dismiss).toBeVisible({ timeout: 30_000 })
+    // Focus pauses the auto-dismiss so axe cannot race the timeout.
+    await dismiss.focus()
+
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze()
+    const criticalSerious = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    )
+    expect(
+      criticalSerious,
+      `critical/serious with success toast: ${criticalSerious.map((v) => v.id).join(', ')}`,
+    ).toHaveLength(0)
+
+    // Activating it dismisses the toast (keyboard-reachable close).
+    await dismiss.click()
+    await expect(dismiss).toBeHidden()
+  })
+})
+
 // The theme toggle in the header carries its accessible name from the typed
 // catalog now (#354). Seed a non-EN locale and confirm the localized name
 // renders and axe stays clean, so a pt/es screen reader is not read English.

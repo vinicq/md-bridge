@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { BatchPanel } from '../components/BatchPanel'
 import { Button } from '../components/Button'
 import { ConvertButton } from '../components/ConvertButton'
@@ -19,7 +19,11 @@ export function MdToDocx() {
   const { t } = useTranslation()
   const [pasted, setPasted] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string } | null>(null)
+  const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string; id: number } | null>(
+    null,
+  )
+  // Per-notification id so <Toast> is keyed by identity (#355).
+  const toastSeq = useRef(0)
 
   const batch = useBatchConvert<Blob>({
     convert: (file, signal) => convertMdToDocx(file, {}, signal),
@@ -45,7 +49,7 @@ export function MdToDocx() {
     const summary = await batch.runAll()
     // Success toast only when something converted; a failed batch shows the
     // error on the row and must not be contradicted by a green toast (#353).
-    if (summary.done > 0) setToast({ kind: 'ok', message: t.mdToDocx.success })
+    if (summary.done > 0) setToast({ kind: 'ok', message: t.mdToDocx.success, id: (toastSeq.current += 1) })
   }
 
   const onConvertPasted = async () => {
@@ -55,7 +59,7 @@ export function MdToDocx() {
     // The newly-added item is queued; flush so runAll sees it.
     await Promise.resolve()
     const summary = await batch.runAll()
-    if (summary.done > 0) setToast({ kind: 'ok', message: t.mdToDocx.success })
+    if (summary.done > 0) setToast({ kind: 'ok', message: t.mdToDocx.success, id: (toastSeq.current += 1) })
   }
 
   const onDownload = (item: BatchItem<Blob>) => {
@@ -136,7 +140,15 @@ export function MdToDocx() {
           <MarkdownPreview markdown={previewMarkdown} empty={t.mdToDocx.previewEmpty} />
         </div>
       </div>
-      {toast && <Toast {...toast} onDismiss={() => setToast(null)} />}
+      {toast && (
+        <Toast
+          key={toast.id}
+          kind={toast.kind}
+          message={toast.message}
+          dismissLabel={t.toast.dismiss}
+          onDismiss={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

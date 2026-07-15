@@ -199,6 +199,9 @@ pre {
   position: fixed;
   right: var(--s-6);
   bottom: var(--s-6);
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
   background: var(--c-bg-elev);
   border: 1px solid var(--c-rule);
   border-left: 3px solid var(--c-accent);
@@ -207,6 +210,27 @@ pre {
   font-size: var(--fs-xs);
   max-width: 380px;
   z-index: 50;
+}
+
+.toast__dismiss {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-1, 4px);
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.toast__dismiss:hover {
+  background: var(--c-rule);
 }
 
 .toast--ok {

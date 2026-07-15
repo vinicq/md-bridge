@@ -24,7 +24,13 @@ export function MdToPdf() {
   const { t } = useTranslation()
   const [pasted, setPasted] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string } | null>(null)
+  const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string; id: number } | null>(
+    null,
+  )
+  // Bumped per notification so <Toast> is keyed by identity: a replacement
+  // toast remounts with a fresh timer, while parent re-renders keep the key
+  // stable so the countdown is not reset (#355).
+  const toastSeq = useRef(0)
   const { themes, status: themesStatus, error: themesError } = useThemes()
   const [theme, setTheme] = useState<string>(initialTheme)
 
@@ -100,7 +106,7 @@ export function MdToPdf() {
     // Only claim success when a conversion actually succeeded. A failed batch
     // already shows the error on the row, so a green toast would contradict it
     // (#353); an empty run (nothing queued) shows nothing.
-    if (summary.done > 0) setToast({ kind: 'ok', message: t.mdToPdf.success })
+    if (summary.done > 0) setToast({ kind: 'ok', message: t.mdToPdf.success, id: (toastSeq.current += 1) })
   }
 
   const onConvertPasted = async () => {
@@ -110,7 +116,7 @@ export function MdToPdf() {
     // The newly-added item is queued; flush so runAll sees it.
     await Promise.resolve()
     const summary = await batch.runAll()
-    if (summary.done > 0) setToast({ kind: 'ok', message: t.mdToPdf.success })
+    if (summary.done > 0) setToast({ kind: 'ok', message: t.mdToPdf.success, id: (toastSeq.current += 1) })
   }
 
   const onDownload = (item: BatchItem<Blob>) => {
@@ -205,7 +211,15 @@ export function MdToPdf() {
           )}
         </div>
       </div>
-      {toast && <Toast {...toast} onDismiss={() => setToast(null)} />}
+      {toast && (
+        <Toast
+          key={toast.id}
+          kind={toast.kind}
+          message={toast.message}
+          dismissLabel={t.toast.dismiss}
+          onDismiss={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

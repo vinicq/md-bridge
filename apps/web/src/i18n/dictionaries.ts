@@ -141,6 +141,9 @@ interface Dictionary {
     toLight: string
     toDark: string
   }
+  toast: {
+    dismiss: string
+  }
   diag: {
     title: string
     pages: string
@@ -343,6 +346,9 @@ const en: Dictionary = {
   themeToggle: {
     toLight: 'Switch to light mode',
     toDark: 'Switch to dark mode',
+  },
+  toast: {
+    dismiss: 'Dismiss notification',
   },
   diag: {
     title: 'PDF diagnostics',
@@ -549,6 +555,9 @@ const pt: Dictionary = {
     toLight: 'Mudar para o tema claro',
     toDark: 'Mudar para o tema escuro',
   },
+  toast: {
+    dismiss: 'Fechar notificação',
+  },
   diag: {
     title: 'Diagnóstico do PDF',
     pages: 'Páginas',
@@ -753,6 +762,9 @@ const es: Dictionary = {
   themeToggle: {
     toLight: 'Cambiar al modo claro',
     toDark: 'Cambiar al modo oscuro',
+  },
+  toast: {
+    dismiss: 'Cerrar notificación',
   },
   diag: {
     title: 'Diagnóstico del PDF',
