@@ -5,7 +5,6 @@ import asyncio
 import json
 import logging
 import re
-import tempfile
 import time
 from urllib.parse import quote
 
@@ -146,14 +145,6 @@ def _read_options(raw: str | None, model):
         ) from exc
 
 
-# Uploads accumulate in a spooled temp file: small ones stay in RAM, larger
-# ones spill to disk past this threshold. That avoids the previous 2x peak from
-# growing a bytearray and then copying it into bytes (#365). The bytes returned
-# at the end are byte-identical to the old path, so conversion output is
-# unchanged.
-_UPLOAD_SPOOL_MAX_BYTES = 8 * 1024 * 1024
-
-
 async def _read_upload(upload: UploadFile, expected_suffix: str, expected_label: str) -> bytes:
     name = upload.filename or ""
     if not name.lower().endswith(expected_suffix):
@@ -163,22 +154,21 @@ async def _read_upload(upload: UploadFile, expected_suffix: str, expected_label:
             f"Expected a {expected_label} file (.{expected_suffix.lstrip('.')}) but got: {name or 'unnamed upload'}",
         )
 
-    total = 0
-    with tempfile.SpooledTemporaryFile(max_size=_UPLOAD_SPOOL_MAX_BYTES) as spool:
-        while True:
-            chunk = await upload.read(1024 * 1024)
-            if not chunk:
-                break
-            total += len(chunk)
-            if total > MAX_UPLOAD_BYTES:
-                raise ApiError(
-                    413,
-                    "payload_too_large",
-                    f"Upload exceeds {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
-                )
-            spool.write(chunk)
-        spool.seek(0)
-        return spool.read()
+    # FastAPI has already parsed the body into an UploadFile (Starlette spools it
+    # to a temp file past its own threshold), so read it once into the final
+    # bytes instead of growing a bytearray and copying it into bytes (the old 2x
+    # peak, #365) or mirroring it into a second temp file. Bounding the read at
+    # cap+1 enforces MAX_UPLOAD_BYTES without pulling an over-cap upload fully
+    # into memory: a file at or under the cap comes back whole, a larger one
+    # yields cap+1 bytes and trips the 413.
+    data = await upload.read(MAX_UPLOAD_BYTES + 1)
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise ApiError(
+            413,
+            "payload_too_large",
+            f"Upload exceeds {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
+        )
+    return data
 
 
 # Chars that would corrupt a Content-Disposition value if left in the filename:
