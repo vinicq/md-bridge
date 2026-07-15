@@ -55,6 +55,32 @@ describe('Toast', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
+  it('gives a replacement notification a fresh timer when the key changes (#355)', () => {
+    // The pages key <Toast> by a per-notification id, so a new toast replacing
+    // a visible one remounts with a full duration instead of inheriting the
+    // previous countdown.
+    const onDismiss = vi.fn()
+    const { rerender } = render(
+      <Toast key="a" message="first" duration={500} dismissLabel="Dismiss" onDismiss={onDismiss} />,
+    )
+    act(() => {
+      vi.advanceTimersByTime(400)
+    })
+    rerender(
+      <Toast key="b" message="second" duration={500} dismissLabel="Dismiss" onDismiss={onDismiss} />,
+    )
+    // 400ms into the fresh timer: a stale timer would already have fired at
+    // 500ms from the first mount (100ms ago).
+    act(() => {
+      vi.advanceTimersByTime(400)
+    })
+    expect(onDismiss).not.toHaveBeenCalled()
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
+    expect(onDismiss).toHaveBeenCalledTimes(1)
+  })
+
   it('pauses the auto-dismiss timer while the pointer is over the toast', () => {
     const onDismiss = vi.fn()
     render(<Toast message="hover me" duration={500} dismissLabel="Dismiss" onDismiss={onDismiss} />)

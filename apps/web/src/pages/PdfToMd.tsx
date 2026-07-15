@@ -30,7 +30,11 @@ function downloadText(filename: string, text: string) {
 export function PdfToMd() {
   const { t } = useTranslation()
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string } | null>(null)
+  const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string; id: number } | null>(
+    null,
+  )
+  // Per-notification id so <Toast> is keyed by identity (#355).
+  const toastSeq = useRef(0)
 
   const batch = useBatchConvert<PdfToMdResponse>({
     convert: (file, signal) => convertPdfToMd(file, {}, signal),
@@ -74,7 +78,7 @@ export function PdfToMd() {
     const summary = await batch.runAll()
     // Success toast only when something converted; a failed batch shows the
     // error on the row and must not be contradicted by a green toast (#353).
-    if (summary.done > 0) setToast({ kind: 'ok', message: t.pdfToMd.success })
+    if (summary.done > 0) setToast({ kind: 'ok', message: t.pdfToMd.success, id: (toastSeq.current += 1) })
   }
 
   const onDownload = (item: BatchItem<PdfToMdResponse>) => {
@@ -179,7 +183,15 @@ export function PdfToMd() {
           </section>
         </div>
       </div>
-      {toast && <Toast {...toast} dismissLabel={t.toast.dismiss} onDismiss={() => setToast(null)} />}
+      {toast && (
+        <Toast
+          key={toast.id}
+          kind={toast.kind}
+          message={toast.message}
+          dismissLabel={t.toast.dismiss}
+          onDismiss={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }
