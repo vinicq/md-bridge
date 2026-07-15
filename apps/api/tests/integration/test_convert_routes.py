@@ -51,6 +51,19 @@ def test_content_disposition_survives_quote_in_filename():
     assert _parsed_filename(cd) == "evilname.docx", cd
 
 
+def test_content_disposition_ascii_fallback_for_non_ascii_name():
+    # An all-non-ASCII stem must still yield a usable ASCII fallback name, not
+    # an extension-only hidden file, for clients that ignore filename* (#362).
+    client = _client()
+    body, headers = _raw_multipart("レポート.md")
+    resp = client.post("/api/md-to-docx", content=body, headers=headers)
+    assert resp.status_code == 200, resp.text
+    cd = resp.headers["content-disposition"]
+    assert 'filename="document.docx"' in cd, cd
+    # The real name survives in filename* (percent-encoded UTF-8).
+    assert "filename*=UTF-8''" in cd, cd
+
+
 def test_content_disposition_strips_path_separators():
     client = _client()
     body, headers = _raw_multipart("../../etc/passwd.md")

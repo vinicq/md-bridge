@@ -180,7 +180,12 @@ def _download_headers(source_name: str | None, ext: str) -> dict[str, str]:
     stem = (source_name or "document").rsplit(".", 1)[0]
     safe = _UNSAFE_FILENAME.sub("", stem).strip() or "document"
     name = f"{safe}{ext}"
-    ascii_name = name.encode("ascii", "ignore").decode() or f"document{ext}"
+    # Build the ASCII fallback from the stem, not the whole name: for an
+    # all-non-ASCII stem (e.g. `レポート`) encoding the full name would leave
+    # only the extension, so clients that ignore `filename*` would save a
+    # hidden `.pdf`. Fall back to `document` when the ASCII stem is empty.
+    ascii_stem = safe.encode("ascii", "ignore").decode().strip() or "document"
+    ascii_name = f"{ascii_stem}{ext}"
     disposition = f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(name)}"
     return {"Content-Disposition": disposition}
 
