@@ -154,19 +154,21 @@ async def _read_upload(upload: UploadFile, expected_suffix: str, expected_label:
             f"Expected a {expected_label} file (.{expected_suffix.lstrip('.')}) but got: {name or 'unnamed upload'}",
         )
 
-    data = bytearray()
-    while True:
-        chunk = await upload.read(1024 * 1024)
-        if not chunk:
-            break
-        data.extend(chunk)
-        if len(data) > MAX_UPLOAD_BYTES:
-            raise ApiError(
-                413,
-                "payload_too_large",
-                f"Upload exceeds {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
-            )
-    return bytes(data)
+    # FastAPI has already parsed the body into an UploadFile (Starlette spools it
+    # to a temp file past its own threshold), so read it once into the final
+    # bytes instead of growing a bytearray and copying it into bytes (the old 2x
+    # peak, #365) or mirroring it into a second temp file. Bounding the read at
+    # cap+1 enforces MAX_UPLOAD_BYTES without pulling an over-cap upload fully
+    # into memory: a file at or under the cap comes back whole, a larger one
+    # yields cap+1 bytes and trips the 413.
+    data = await upload.read(MAX_UPLOAD_BYTES + 1)
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise ApiError(
+            413,
+            "payload_too_large",
+            f"Upload exceeds {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
+        )
+    return data
 
 
 # Chars that would corrupt a Content-Disposition value if left in the filename:
