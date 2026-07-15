@@ -231,6 +231,26 @@ describe('BatchPanel reorder', () => {
     expect(screen.queryByText('Failed to fetch')).toBeNull()
   })
 
+  it('exposes reorder instructions via aria-describedby and drops aria-grabbed (#358)', () => {
+    render(<Harness />)
+    const rows = screen.getAllByRole('listitem')
+    const describedBy = rows[0].getAttribute('aria-describedby')
+    expect(describedBy).toBeTruthy()
+    expect(rows[0]).not.toHaveAttribute('aria-grabbed')
+    const instructions = document.getElementById(describedBy as string)
+    expect(instructions?.textContent ?? '').toMatch(/space to grab/i)
+  })
+
+  it('announces the new position in a live region after a keyboard move (#358)', () => {
+    render(<Harness />)
+    const rows = screen.getAllByRole('listitem')
+    rows[1].focus()
+    fireEvent.keyDown(rows[1], { key: 'ArrowUp', altKey: true })
+    expect(screen.getByRole('status').textContent ?? '').toMatch(
+      /b\.pdf moved to position 1 of 3/i,
+    )
+  })
+
   it('disables all reorder paths while running', async () => {
     const user = userEvent.setup()
     const { container } = render(<Harness running />)

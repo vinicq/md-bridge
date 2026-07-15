@@ -131,6 +131,11 @@ interface Dictionary {
     moveDown: string
     moveUpLabel: (name: string) => string
     moveDownLabel: (name: string) => string
+    // Keyboard-reorder a11y (#358): discoverable instruction + live announcements.
+    reorderInstructions: string
+    grabbed: (name: string) => string
+    released: (name: string) => string
+    movedTo: (name: string, position: number, total: number) => string
     errorTimeout: string
     errorSkipped: string
     pdfBundleName: string
@@ -337,6 +342,11 @@ const en: Dictionary = {
     moveDown: 'Down',
     moveUpLabel: (name) => `Move ${name} up`,
     moveDownLabel: (name) => `Move ${name} down`,
+    reorderInstructions:
+      'Press Space to grab this file, then use the arrow keys to move it. Press Space again to drop it.',
+    grabbed: (name) => `${name} grabbed`,
+    released: (name) => `${name} released`,
+    movedTo: (name, position, total) => `${name} moved to position ${position} of ${total}`,
     errorTimeout: 'Timed out',
     errorSkipped: 'Skipped',
     pdfBundleName: 'pdfs.zip',
@@ -545,6 +555,11 @@ const pt: Dictionary = {
     moveDown: 'Descer',
     moveUpLabel: (name) => `Mover ${name} para cima`,
     moveDownLabel: (name) => `Mover ${name} para baixo`,
+    reorderInstructions:
+      'Pressione Espaço para pegar este arquivo, depois use as setas para movê-lo. Pressione Espaço de novo para soltar.',
+    grabbed: (name) => `${name} pego`,
+    released: (name) => `${name} solto`,
+    movedTo: (name, position, total) => `${name} movido para a posição ${position} de ${total}`,
     errorTimeout: 'Tempo esgotado',
     errorSkipped: 'Pulado',
     pdfBundleName: 'pdfs.zip',
@@ -753,6 +768,11 @@ const es: Dictionary = {
     moveDown: 'Bajar',
     moveUpLabel: (name) => `Mover ${name} hacia arriba`,
     moveDownLabel: (name) => `Mover ${name} hacia abajo`,
+    reorderInstructions:
+      'Pulsa Espacio para agarrar este archivo, luego usa las flechas para moverlo. Pulsa Espacio de nuevo para soltarlo.',
+    grabbed: (name) => `${name} agarrado`,
+    released: (name) => `${name} soltado`,
+    movedTo: (name, position, total) => `${name} movido a la posición ${position} de ${total}`,
     errorTimeout: 'Tiempo agotado',
     errorSkipped: 'Omitido',
     pdfBundleName: 'pdfs.zip',
