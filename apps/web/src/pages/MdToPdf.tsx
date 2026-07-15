@@ -28,10 +28,21 @@ export function MdToPdf() {
   const { themes, status: themesStatus, error: themesError } = useThemes()
   const [theme, setTheme] = useState<string>(initialTheme)
 
+  // Reconcile the persisted slug against the server catalog (#356). A slug that
+  // no longer exists (a renamed/removed theme or a stale localStorage value)
+  // would leave the picker unselected and post an invalid theme to the API, so
+  // fall back to default once the catalog is known. Derived rather than a
+  // setState effect: no extra render, and the raw persisted value is left
+  // intact so a theme that returns to the registry is honored again.
+  const activeTheme =
+    themesStatus === 'ready' && !themes.some((it) => it.slug === theme) ? 'default' : theme
+
   const batch = useBatchConvert<Blob>({
-    // The theme is captured per render, so a run always uses the current
-    // selection (#24); switching theme re-runs the queue via the effect below.
-    convert: (file, signal) => convertMdToPdf(file, { theme, page_setup: DEFAULT_PAGE_SETUP }, signal),
+    // activeTheme is captured per render, so a run always uses the current
+    // (reconciled) selection (#24); switching theme re-runs the queue via the
+    // effect below.
+    convert: (file, signal) =>
+      convertMdToPdf(file, { theme: activeTheme, page_setup: DEFAULT_PAGE_SETUP }, signal),
     toBlobUrl: (blob) => URL.createObjectURL(blob),
     // 10-minute ceiling so a backgrounded tab cannot leave an item stuck in
     // flight forever (issue #138). Removing this line restores the old
@@ -50,10 +61,12 @@ export function MdToPdf() {
     if (typeof window !== 'undefined') window.localStorage.setItem(THEME_STORAGE_KEY, theme)
   }, [theme])
 
-  // Re-run the queue when the theme changes so the preview reflects the new
-  // theme without a manual re-click. Skip the first render (initial mount) and
-  // any run in flight. Re-feeding the same File objects keeps the hook's
-  // single-pass model untouched.
+  // Re-run the queue when the effective theme changes so the preview reflects
+  // the new theme without a manual re-click. Keying on activeTheme (not theme)
+  // also heals the reconciliation race: if the catalog loads after a batch
+  // already ran with a stale slug, activeTheme flips to default and the batch
+  // re-runs with a valid theme (#356). Skip the first render and any run in
+  // flight. Re-feeding the same File objects keeps the hook's single-pass model.
   const didMount = useRef(false)
   useEffect(() => {
     if (!didMount.current) {
@@ -68,9 +81,9 @@ export function MdToPdf() {
       await Promise.resolve()
       await batch.runAll()
     })()
-    // Only the theme drives this re-run; batch helpers are stable refs.
+    // Only the effective theme drives this re-run; batch helpers are stable refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theme])
+  }, [activeTheme])
 
   // Pick up the latest completed item so the preview follows the run. Derived
   // during render so the user's explicit selection wins when it is still
@@ -123,7 +136,7 @@ export function MdToPdf() {
 
       <ThemePicker
         themes={themes}
-        value={theme}
+        value={activeTheme}
         onChange={setTheme}
         label={t.themePicker.label}
         loadingLabel={t.themePicker.loading}
