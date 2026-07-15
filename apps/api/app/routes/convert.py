@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import re
+import tempfile
 import time
 from urllib.parse import quote
 
@@ -145,6 +146,14 @@ def _read_options(raw: str | None, model):
         ) from exc
 
 
+# Uploads accumulate in a spooled temp file: small ones stay in RAM, larger
+# ones spill to disk past this threshold. That avoids the previous 2x peak from
+# growing a bytearray and then copying it into bytes (#365). The bytes returned
+# at the end are byte-identical to the old path, so conversion output is
+# unchanged.
+_UPLOAD_SPOOL_MAX_BYTES = 8 * 1024 * 1024
+
+
 async def _read_upload(upload: UploadFile, expected_suffix: str, expected_label: str) -> bytes:
     name = upload.filename or ""
     if not name.lower().endswith(expected_suffix):
@@ -154,19 +163,22 @@ async def _read_upload(upload: UploadFile, expected_suffix: str, expected_label:
             f"Expected a {expected_label} file (.{expected_suffix.lstrip('.')}) but got: {name or 'unnamed upload'}",
         )
 
-    data = bytearray()
-    while True:
-        chunk = await upload.read(1024 * 1024)
-        if not chunk:
-            break
-        data.extend(chunk)
-        if len(data) > MAX_UPLOAD_BYTES:
-            raise ApiError(
-                413,
-                "payload_too_large",
-                f"Upload exceeds {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
-            )
-    return bytes(data)
+    total = 0
+    with tempfile.SpooledTemporaryFile(max_size=_UPLOAD_SPOOL_MAX_BYTES) as spool:
+        while True:
+            chunk = await upload.read(1024 * 1024)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > MAX_UPLOAD_BYTES:
+                raise ApiError(
+                    413,
+                    "payload_too_large",
+                    f"Upload exceeds {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
+                )
+            spool.write(chunk)
+        spool.seek(0)
+        return spool.read()
 
 
 # Chars that would corrupt a Content-Disposition value if left in the filename:
