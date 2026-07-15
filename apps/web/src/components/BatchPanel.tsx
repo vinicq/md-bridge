@@ -126,10 +126,7 @@ export function BatchPanel<TResult>({
     }
     if (event.key === ' ') {
       event.preventDefault()
-      const name = items.find((it) => it.id === id)?.file.name ?? ''
-      const willGrab = grabbedId !== id
-      setGrabbedId(willGrab ? id : null)
-      setAnnouncement(willGrab ? t.batch.grabbed(name) : t.batch.released(name))
+      setGrabbedId((prev) => (prev === id ? null : id))
       return
     }
     if (grabbedId === id && event.key === 'ArrowUp') {
