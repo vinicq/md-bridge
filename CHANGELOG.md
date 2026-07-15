@@ -15,6 +15,90 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-07-15
+
+### Added
+
+- **Self-contained Markdown with inline images.** `pdf-to-md` can embed
+  extracted images as base64 `data:` URIs instead of dropping them or
+  writing sidecar files, so a single `.md` travels intact. The API
+  `with_images` flag turns it on and the CLI exposes `--inline-images`.
+  (#372, #373)
+- **GFM task lists.** Source checkbox glyphs map to `- [ ]` / `- [x]`
+  items behind `detect_task_lists`, off by default so output stays
+  byte-identical. (#172)
+- **OCR page cap.** `MD_BRIDGE_OCR_MAX_PAGES` bounds how many pages the OCR
+  pre-pass rasterizes on a shared or hosted deployment; `0` (the default)
+  keeps it unbounded. (#208)
+- **OCR per-page timeout.** `MD_BRIDGE_OCR_PAGE_TIMEOUT` (default 60s)
+  bounds how long a single page's Tesseract run may take. A timed-out page
+  returns `ocr_failed` naming the page instead of pinning the worker
+  thread. (#364)
+- **Keyboard-dismissable toasts.** Success and warning toasts carry a
+  focusable, localized close button that also pauses the auto-dismiss
+  while it has focus. (#355)
+
+### Changed
+
+- **The Markdown to PDF renderer is offline-only.** It no longer fetches
+  external resources and blocks network egress, WebSocket, popup, and
+  `file:` escapes, so a hostile Markdown document cannot reach the network
+  or the filesystem through Chromium. (#363, #369, #371)
+- **Batch keyboard reorder is discoverable and standards-based.** Rows
+  describe the Space-to-grab, arrow-to-move interaction through
+  `aria-describedby` and announce each move in a live region, replacing
+  the deprecated `aria-grabbed`. (#358)
+- **Batch and chrome strings are fully localized.** The remove and reorder
+  controls, the theme toggle, the spinner label, and unknown-error text
+  come from the typed en/pt/es catalog instead of leaking English or
+  Portuguese. (#354)
+- **Uploads are read once instead of buffered twice.** The upload reader
+  reads the parsed upload a single time, bounded at the size cap, instead
+  of growing a bytearray and copying it into bytes, roughly halving peak
+  memory. (#365)
+
+### Fixed
+
+- **`Content-Disposition` is well-formed for any filename.** The download
+  header strips quotes, CR/LF, and path separators from the name and adds
+  an RFC 5987 `filename*`, closing a header-injection path. (#362)
+- **Invalid options return `422`, not `500`.** A rejected `allow_html`
+  value no longer crashes the error handler while it serializes the
+  validation error. (#361)
+- **A corrupt or non-PDF upload returns the `422` error envelope** instead
+  of a plain-text `500`. (#360, #370)
+- **The success toast no longer fires over a failed batch,** and it
+  survives parent re-renders instead of resetting its timer on every
+  keystroke. (#353, #355)
+- **Removing a batch item mid-run** aborts its in-flight request and
+  unschedules it instead of finishing discarded work invisibly. (#357)
+- **A persisted theme slug missing from the server catalog** falls back to
+  `default` instead of leaving the picker unselected and posting a stale
+  slug. (#356)
+- **The drop-zone highlight no longer flickers** while the pointer drags
+  over child elements. (#359)
+
+## [0.5.0] — 2026-07-08
+
+### Added
+
+- Converter refinements: caption-derived image alt text (#149),
+  smart-typography ASCII folding for quotes, ellipses, and dashes (#171),
+  an abbreviation glossary emitted as `*[abbr]:` definitions (#163), quote
+  attribution paired with the blockquote above it (#173), deterministic
+  heading-anchor slugs (#152), reference-style links for repeated URLs
+  (#158), and autolinks for bare URLs and emails (#157).
+
+### Changed
+
+- The `/pdf-to-md` page replaces the compare and options panes with a
+  batch queue and drag-to-reorder. (#294, #304)
+
+See the [v0.5.0 release](https://github.com/vinicq/md-bridge/releases/tag/v0.5.0)
+for the full list.
+
+## [0.4.0] — 2026-06-08
+
 ### Added
 
 - **Theme system for Markdown → PDF.** A request can now pick a visual
@@ -27,6 +111,18 @@ If a section is empty in a release, the section is omitted entirely.
   `default.css`, so it carries only its own identity and inherits a
   complete base layout. An unknown slug returns `400 unknown_theme`.
   (#23 registry + endpoints, #22 CSS templates)
+- **Markdown to DOCX.** A `/convert/md-to-docx` page and `POST
+  /api/md-to-docx` render Markdown to a deterministic Word document, with
+  a format-pair registry behind `GET /api/formats`. (#60, #271, #279)
+- **Per-request page setup** for Markdown to PDF: page size, margins, and
+  a running header/footer. (#243, #272, #275)
+- Heading detection reaches H4-H6 (#234), hard line breaks are preserved
+  (#232), recurrent page headers and footers are subtracted (#221), font
+  sizes cluster into heading bands (#220), and the docs site ships in
+  three languages (PT, ES) with a selector. (#29)
+
+See the [v0.4.0 release](https://github.com/vinicq/md-bridge/releases/tag/v0.4.0)
+for the full list.
 
 ## [0.3.0] — 2026-06-01
 
@@ -493,7 +589,10 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/vinicq/md-bridge/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/vinicq/md-bridge/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/vinicq/md-bridge/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/vinicq/md-bridge/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/vinicq/md-bridge/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/vinicq/md-bridge/compare/v0.2.1...v0.2.2
