@@ -65,6 +65,10 @@ export function BatchPanel<TResult>({
   const errorText = (error: { code: string; message: string }): string => {
     if (error.code === 'timeout') return t.batch.errorTimeout
     if (error.code === 'skipped') return t.batch.errorSkipped
+    // A network/JS failure carries code 'unknown' and a raw browser message
+    // ("Failed to fetch"), which leaks English into a pt/es UI. Route it
+    // through the localized fallback; real API errors keep their message.
+    if (error.code === 'unknown' || !error.message) return t.errors.unknown
     return error.message
   }
 
@@ -208,7 +212,7 @@ export function BatchPanel<TResult>({
                 <Button
                   variant="icon"
                   onClick={() => onRemove(item.id)}
-                  aria-label={`remove ${item.file.name}`}
+                  aria-label={t.batch.removeLabel(item.file.name)}
                 >
                   ×
                 </Button>
@@ -216,17 +220,17 @@ export function BatchPanel<TResult>({
                   variant="icon"
                   onClick={() => move(item.id, -1)}
                   disabled={!canReorder || index === 0}
-                  aria-label={`move ${item.file.name} up`}
+                  aria-label={t.batch.moveUpLabel(item.file.name)}
                 >
-                  Up
+                  {t.batch.moveUp}
                 </Button>
                 <Button
                   variant="icon"
                   onClick={() => move(item.id, 1)}
                   disabled={!canReorder || index === items.length - 1}
-                  aria-label={`move ${item.file.name} down`}
+                  aria-label={t.batch.moveDownLabel(item.file.name)}
                 >
-                  Down
+                  {t.batch.moveDown}
                 </Button>
                 {item.status === 'done' && (
                   <Button variant="ghost" onClick={() => onDownload(item)}>

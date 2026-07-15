@@ -162,7 +162,13 @@ export function PdfToMd() {
             layout="strip"
             data={inspect.data}
             loading={inspect.status === 'loading'}
-            error={inspect.status === 'error' ? inspect.error?.message : null}
+            error={
+              inspect.status === 'error'
+                ? inspect.error?.code === 'unknown' || !inspect.error?.message
+                  ? t.errors.unknown
+                  : inspect.error.message
+                : null
+            }
           />
 
           <section className="md-output" aria-label={t.pdfToMd.previewLabel}>
