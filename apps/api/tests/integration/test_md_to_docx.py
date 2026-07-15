@@ -36,7 +36,10 @@ def test_md_to_docx_returns_a_valid_docx(client):
     )
     assert resp.status_code == 200, resp.text
     assert resp.headers["content-type"] == DOCX_MIME
-    assert resp.headers["content-disposition"] == 'attachment; filename="doc.docx"'
+    # Sanitized ASCII filename plus an RFC 5987 filename* (#362).
+    assert resp.headers["content-disposition"] == (
+        'attachment; filename="doc.docx"; filename*=UTF-8\'\'doc.docx'
+    )
 
     body = resp.content
     assert body[:4] == b"PK\x03\x04", "not a zip/docx"

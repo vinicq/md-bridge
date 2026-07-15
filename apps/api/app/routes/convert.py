@@ -4,7 +4,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import time
+from urllib.parse import quote
 
 from fastapi import APIRouter, File, Form, Query, UploadFile
 from fastapi.responses import Response
@@ -162,6 +164,32 @@ async def _read_upload(upload: UploadFile, expected_suffix: str, expected_label:
     return bytes(data)
 
 
+# Chars that would corrupt a Content-Disposition value if left in the filename:
+# a double quote closes the quoted-string early, CR/LF split the header, and
+# path separators let an upload name reach outside the intended stem (#362).
+_UNSAFE_FILENAME = re.compile(r'[\r\n"\\/]')
+
+
+def _download_headers(source_name: str | None, ext: str) -> dict[str, str]:
+    """Build a well-formed Content-Disposition for a converted download.
+
+    The source name is client-supplied, so sanitize the stem for the ASCII
+    `filename=` and add an RFC 5987 `filename*` so non-ASCII names survive
+    without breaking the header for older clients.
+    """
+    stem = (source_name or "document").rsplit(".", 1)[0]
+    safe = _UNSAFE_FILENAME.sub("", stem).strip() or "document"
+    name = f"{safe}{ext}"
+    # Build the ASCII fallback from the stem, not the whole name: for an
+    # all-non-ASCII stem (e.g. `レポート`) encoding the full name would leave
+    # only the extension, so clients that ignore `filename*` would save a
+    # hidden `.pdf`. Fall back to `document` when the ASCII stem is empty.
+    ascii_stem = safe.encode("ascii", "ignore").decode().strip() or "document"
+    ascii_name = f"{ascii_stem}{ext}"
+    disposition = f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(name)}"
+    return {"Content-Disposition": disposition}
+
+
 @router.post(
     "/api/pdf-to-md",
     response_model=PdfToMdResponse,
@@ -301,11 +329,10 @@ async def md_to_pdf(
         len(md_bytes),
         elapsed_ms,
     )
-    out_name = (file.filename or "document.md").rsplit(".", 1)[0] + ".pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{out_name}"'},
+        headers=_download_headers(file.filename, ".pdf"),
     )
 
 
@@ -389,11 +416,10 @@ async def md_to_docx(
         len(md_bytes),
         elapsed_ms,
     )
-    out_name = (file.filename or "document.md").rsplit(".", 1)[0] + ".docx"
     return Response(
         content=docx_bytes,
         media_type=DOCX_MIME,
-        headers={"Content-Disposition": f'attachment; filename="{out_name}"'},
+        headers=_download_headers(file.filename, ".docx"),
     )
 
 
