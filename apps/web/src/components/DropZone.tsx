@@ -100,6 +100,12 @@ export function DropZone({
   const [over, setOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  // Depth counter for drag enter/leave. Crossing into a child fires dragleave
+  // on the container before the child's dragenter; counting keeps the highlight
+  // steady until the drag truly leaves the zone (#359). A counter rather than
+  // relatedTarget/contains because some engines (and jsdom) report a null
+  // relatedTarget on dragleave.
+  const dragDepth = useRef(0)
 
   const handleFiles = useCallback(
     (selected: File[]) => {
@@ -117,6 +123,7 @@ export function DropZone({
 
   const onDrop = async (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
+    dragDepth.current = 0
     setOver(false)
     if (disabled) return
     const files = await readDroppedFiles(
@@ -127,12 +134,24 @@ export function DropZone({
     handleFiles(multiple ? files : files.slice(0, 1))
   }
 
+  const onDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    if (disabled) return
+    dragDepth.current += 1
+    setOver(true)
+  }
+
   const onDragOver = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     if (!disabled) setOver(true)
   }
 
-  const onDragLeave = () => setOver(false)
+  const onDragLeave = () => {
+    // Balance the enter count; only drop the highlight once the drag has left
+    // the zone and all of its children (#359).
+    dragDepth.current = Math.max(0, dragDepth.current - 1)
+    if (dragDepth.current === 0) setOver(false)
+  }
 
   return (
     <div className="dropzone-wrapper">
@@ -154,6 +173,7 @@ export function DropZone({
       <div
         className={`dropzone ${over ? 'is-over' : ''} ${disabled ? 'is-disabled' : ''}`.trim()}
         onDrop={onDrop}
+        onDragEnter={onDragEnter}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         role="button"

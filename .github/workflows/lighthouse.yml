@@ -40,7 +40,11 @@ jobs:
           const { readdirSync, readFileSync, statSync } = require('node:fs')
           const { join } = require('node:path')
 
-          const maxBytes = 150 * 1024
+          // Raised from 150 to 160 KB (#358/#359): the localized a11y strings
+          // (keyboard reorder instructions, toast dismiss, live-region copy in
+          // en/pt/es) are real content that pushed the gzipped bundle just past
+          // the old line. 160 KB restores a working margin without inviting drift.
+          const maxBytes = 160 * 1024
           const root = 'apps/web/dist/assets'
 
           function walk(dir) {
