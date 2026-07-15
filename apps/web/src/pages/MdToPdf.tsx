@@ -61,10 +61,12 @@ export function MdToPdf() {
     if (typeof window !== 'undefined') window.localStorage.setItem(THEME_STORAGE_KEY, theme)
   }, [theme])
 
-  // Re-run the queue when the theme changes so the preview reflects the new
-  // theme without a manual re-click. Skip the first render (initial mount) and
-  // any run in flight. Re-feeding the same File objects keeps the hook's
-  // single-pass model untouched.
+  // Re-run the queue when the effective theme changes so the preview reflects
+  // the new theme without a manual re-click. Keying on activeTheme (not theme)
+  // also heals the reconciliation race: if the catalog loads after a batch
+  // already ran with a stale slug, activeTheme flips to default and the batch
+  // re-runs with a valid theme (#356). Skip the first render and any run in
+  // flight. Re-feeding the same File objects keeps the hook's single-pass model.
   const didMount = useRef(false)
   useEffect(() => {
     if (!didMount.current) {
@@ -79,9 +81,9 @@ export function MdToPdf() {
       await Promise.resolve()
       await batch.runAll()
     })()
-    // Only the theme drives this re-run; batch helpers are stable refs.
+    // Only the effective theme drives this re-run; batch helpers are stable refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theme])
+  }, [activeTheme])
 
   // Pick up the latest completed item so the preview follows the run. Derived
   // during render so the user's explicit selection wins when it is still
