@@ -72,6 +72,37 @@ describe('MdToPdf', () => {
     10000,
   )
 
+  it('reconciles a persisted theme slug absent from the server catalog (#356)', async () => {
+    // Seed a slug the mocked /themes payload ([default, academic]) does not
+    // contain. Once themes load, the page must fall back to default so the
+    // conversion posts a valid slug, not the stale one. Asserting the POSTED
+    // theme (not the <select> value) is what proves the reconciliation: a
+    // jsdom select falls back to its first option regardless.
+    window.localStorage.setItem('md-bridge:md-to-pdf:theme', 'github')
+    const user = userEvent.setup()
+    try {
+      render(wrap(<MdToPdf />, 'en'))
+      // Wait until themes have loaded (the academic option proves 'ready').
+      await screen.findByRole('option', { name: 'Academic' })
+
+      const file = new File(['# Hello'], 'sample.md', { type: 'text/markdown' })
+      fireEvent.drop(screen.getByLabelText('Drop a Markdown file or click to choose'), {
+        dataTransfer: { files: [file], items: [] as unknown as DataTransferItemList },
+      })
+      await screen.findByTitle('sample.md')
+      await user.click(screen.getByRole('button', { name: 'Convert all' }))
+
+      await waitFor(() => expect(convertMdToPdf).toHaveBeenCalled(), { timeout: 5000 })
+      expect(convertMdToPdf).toHaveBeenCalledWith(
+        expect.any(File),
+        expect.objectContaining({ theme: 'default' }),
+        expect.anything(),
+      )
+    } finally {
+      window.localStorage.removeItem('md-bridge:md-to-pdf:theme')
+    }
+  }, 10000)
+
   it('shows no success toast when the whole batch fails (#353)', async () => {
     vi.mocked(convertMdToPdf).mockRejectedValue(new Error('Failed to fetch'))
     const user = userEvent.setup()
