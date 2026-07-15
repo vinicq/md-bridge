@@ -205,7 +205,7 @@ export function MdToPdf() {
           )}
         </div>
       </div>
-      {toast && <Toast {...toast} onDismiss={() => setToast(null)} />}
+      {toast && <Toast {...toast} dismissLabel={t.toast.dismiss} onDismiss={() => setToast(null)} />}
     </div>
   )
 }

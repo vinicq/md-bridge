@@ -136,7 +136,7 @@ export function MdToDocx() {
           <MarkdownPreview markdown={previewMarkdown} empty={t.mdToDocx.previewEmpty} />
         </div>
       </div>
-      {toast && <Toast {...toast} onDismiss={() => setToast(null)} />}
+      {toast && <Toast {...toast} dismissLabel={t.toast.dismiss} onDismiss={() => setToast(null)} />}
     </div>
   )
 }
