@@ -1,0 +1,149 @@
+/* novel — book / long-form fiction: Garamond, centered chapter titles, indented justified prose, drop cap
+ *
+ * Stacks on top of default.css; only identity overrides live here. Override a
+ * single token by redefining it in a stylesheet stacked after this one.
+ *
+ * Renderer note: prints through headless Chromium, which ignores CSS `@page`
+ * margins and margin-box running headers/footers. Section numbering uses CSS
+ * counters (Chromium-safe); a repeating footer page number is not expressible
+ * yet (#243). */
+
+:root {
+  --novel-body: "EB Garamond", Garamond, "Palatino Linotype", Georgia, serif;
+  --novel-head: "EB Garamond", Garamond, Georgia, serif;
+  --novel-mono: "Courier New", monospace;
+  --novel-ink: #1a1512;
+  --novel-accent: #7a5c3a;
+  --novel-accent-light: #f2ece3;
+  --novel-rule: #b7a99a;
+}
+
+html { font-size: 12pt; }
+
+body {
+  font-family: var(--novel-body);
+  color: var(--novel-ink);
+  line-height: 1.75;
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 { font-family: var(--novel-head); color: var(--novel-ink); font-weight: 700; }
+h1 {
+  font-size: 22pt;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin: 1.4em 0 1.1em;
+}
+h2 {
+  font-variant: small-caps;
+  letter-spacing: .05em;
+  text-align: center;
+  border-bottom: none;
+  font-size: 15pt;
+}
+h3 { color: var(--novel-ink); font-size: 12pt; font-style: italic; }
+h4 { font-size: 11pt; color: var(--novel-ink); font-weight: 700; }
+h5, h6 { font-size: 10pt; color: var(--novel-accent); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+
+/* Lead drop cap on the opening paragraph. */
+h1 + p::first-letter {
+  float: left;
+  font-family: var(--novel-head);
+  font-size: 3.1em;
+  line-height: .82;
+  padding: .02em .08em 0 0;
+  color: var(--novel-accent);
+  font-weight: 700;
+}
+p + p { text-indent: 1.4em; margin-top: 0; }
+
+/* ── Text ── */
+p { margin: 0 0 .2em; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+a { color: var(--novel-accent); text-decoration: underline; }
+a:hover { text-decoration: underline; }
+small { font-size: 9pt; color: #666; }
+mark { background: var(--novel-accent-light); color: var(--novel-accent); padding: 0 .15em; }
+del { color: #999; }
+ins { text-decoration: underline; text-decoration-color: var(--novel-accent); }
+sup, sub { font-size: 75%; line-height: 0; }
+kbd {
+  font-family: "Courier New", monospace;
+  font-size: 8.5pt;
+  border: 1px solid var(--novel-rule);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0 .35em;
+  background: var(--novel-accent-light);
+}
+
+/* ── Lists ── */
+ul, ol { margin: .5em 0 .8em 1.4em; padding: 0; }
+li { margin: .22em 0; }
+li > ul, li > ol { margin: .2em 0 .2em 1.2em; }
+ol { list-style: decimal; }
+ol > li::marker { color: var(--novel-accent); font-weight: 700; }
+ul > li::marker { color: var(--novel-accent); }
+
+/* Description lists (definition-style content). */
+dl { margin: .6em 0; }
+dt { font-weight: 700; color: var(--novel-accent); margin-top: .5em; }
+dd { margin: 0 0 .3em 1.2em; }
+
+/* ── Code ── */
+code {
+  font-family: "Courier New", monospace;
+  font-size: 9.5pt;
+  background: var(--novel-accent-light);
+  color: var(--novel-accent);
+  border: 1px solid var(--novel-rule);
+  padding: .08em .3em;
+  border-radius: 3px;
+}
+pre {
+  font-family: "Courier New", monospace;
+  background: var(--novel-accent-light);
+  border: 1px solid var(--novel-rule);
+  font-size: 9pt;
+}
+pre code { background: transparent; color: inherit; border: none; padding: 0; }
+
+/* ── Tables ── */
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 10pt; page-break-inside: avoid; break-inside: avoid; }
+caption { caption-side: top; text-align: left; font-size: 9pt; color: #666; font-style: italic; margin-bottom: .3em; }
+th, td { border: none; border-bottom: 1px solid var(--novel-rule); padding: .4em .55em; text-align: left; }
+th { background: transparent; font-weight: 700; }
+
+/* ── Blockquote ── */
+blockquote {
+  border-left: none;
+  background: transparent;
+  font-style: italic;
+  text-align: center;
+  color: #4a3f36;
+  margin: 1.4em 2em;
+}
+blockquote p:last-child { margin-bottom: 0; }
+blockquote cite, blockquote footer { display: block; font-style: normal; font-size: 9pt; color: #777; margin-top: .3em; }
+
+/* ── Figures & media ── */
+img { max-width: 100%; }
+figure { margin: 1.2em 0; text-align: center; page-break-inside: avoid; break-inside: avoid; }
+figcaption { font-size: 9pt; color: #666; font-style: italic; margin-top: .3em; }
+
+/* ── Footnotes (GFM / Pandoc) ── */
+.footnotes { font-size: 9pt; color: #555; border-top: 1px solid var(--novel-rule); margin-top: 2em; padding-top: .6em; }
+a.footnote-ref, a.footnote-back { color: var(--novel-accent); }
+
+/* ── Rules ── */
+hr { border: none; border-top: 1px solid var(--novel-rule); margin: 1.8em 0; width: 32%; margin-left: auto; margin-right: auto; }
+
+/* ── Page-break hygiene ── */
+figure, table, pre, blockquote { page-break-inside: avoid; break-inside: avoid; }
+h1, h2, h3 { page-break-after: avoid; break-after: avoid; }

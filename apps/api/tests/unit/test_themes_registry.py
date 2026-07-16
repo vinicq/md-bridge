@@ -74,3 +74,36 @@ def test_templates_directory_contains_default():
     from app.config import MD_TO_PDF_TEMPLATES
 
     assert (MD_TO_PDF_TEMPLATES / "default.css").exists()
+
+
+# The redesign theme pack (#393): ten overlays on top of the eleven originals.
+# The registry scans the templates directory, so landing the files is enough;
+# these fail on a clean main where the overlays are absent.
+NEW_THEME_PACK = [
+    "letter",
+    "manuscript",
+    "newsprint",
+    "notebook",
+    "novel",
+    "resume",
+    "slate",
+    "slides",
+    "techbook",
+    "whitepaper",
+]
+
+
+def test_theme_pack_is_registered():
+    registry = {t.slug: t for t in themes.list_themes()}
+    for slug in NEW_THEME_PACK:
+        assert slug in registry, f"theme '{slug}' from the pack is not registered"
+        theme = registry[slug]
+        assert theme.name, f"theme '{slug}' has no name"
+        assert theme.family, f"theme '{slug}' has no family"
+        assert theme.css_path.exists(), f"theme '{slug}' css is missing"
+
+
+def test_catalog_totals_twenty_one_themes():
+    # Eleven originals plus the ten-theme pack. Bump this deliberately when a new
+    # theme lands so a dropped or duplicated overlay is caught.
+    assert len(themes.list_themes()) == 21

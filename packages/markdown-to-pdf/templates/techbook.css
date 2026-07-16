@@ -1,0 +1,140 @@
+/* techbook — technical handbook: indigo accent, numbered sections, callouts and boxed code
+ *
+ * Stacks on top of default.css; only identity overrides live here. Override a
+ * single token by redefining it in a stylesheet stacked after this one.
+ *
+ * Renderer note: prints through headless Chromium, which ignores CSS `@page`
+ * margins and margin-box running headers/footers. Section numbering uses CSS
+ * counters (Chromium-safe); a repeating footer page number is not expressible
+ * yet (#243). */
+
+:root {
+  --techbook-body: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --techbook-head: "Inter", "Segoe UI", Arial, sans-serif;
+  --techbook-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  --techbook-ink: #1b1b2b;
+  --techbook-accent: #3d3a8c;
+  --techbook-accent-light: #ecebf7;
+  --techbook-rule: #d5d3ee;
+}
+
+html { font-size: 10.5pt; }
+
+body {
+  font-family: var(--techbook-body);
+  color: var(--techbook-ink);
+  line-height: 1.6;
+  text-align: left;
+  hyphens: none;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 { font-family: var(--techbook-head); color: var(--techbook-ink); font-weight: 700; }
+h1 {
+  color: var(--techbook-accent);
+  border-bottom: 3px solid var(--techbook-accent);
+  font-size: 22pt;
+  padding-bottom: .25em;
+}
+h2 {
+  color: var(--techbook-accent);
+  border-bottom: 1px solid var(--techbook-rule);
+  font-size: 15pt;
+  padding-bottom: .12em;
+}
+h3 { color: #2f2c66; font-size: 12pt; }
+h4 { font-size: 11pt; color: var(--techbook-ink); font-weight: 700; }
+h5, h6 { font-size: 10pt; color: var(--techbook-accent); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+
+/* Decimal section numbering (Chromium-safe counters). */
+body { counter-reset: techbooksec; }
+h2 { counter-reset: techbooksub; }
+h2::before { counter-increment: techbooksec; content: counter(techbooksec) "\00a0\00a0"; }
+h3::before { counter-increment: techbooksub; content: counter(techbooksec) "." counter(techbooksub) "\00a0\00a0"; }
+
+
+/* ── Text ── */
+p { margin: 0 0 .8em; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+a { color: var(--techbook-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+small { font-size: 9pt; color: #666; }
+mark { background: var(--techbook-accent-light); color: var(--techbook-accent); padding: 0 .15em; }
+del { color: #999; }
+ins { text-decoration: underline; text-decoration-color: var(--techbook-accent); }
+sup, sub { font-size: 75%; line-height: 0; }
+kbd {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 8.5pt;
+  border: 1px solid var(--techbook-rule);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0 .35em;
+  background: var(--techbook-accent-light);
+}
+
+/* ── Lists ── */
+ul, ol { margin: .5em 0 .8em 1.4em; padding: 0; }
+li { margin: .22em 0; }
+li > ul, li > ol { margin: .2em 0 .2em 1.2em; }
+ol { list-style: decimal; }
+ol > li::marker { color: var(--techbook-accent); font-weight: 700; }
+ul > li::marker { color: var(--techbook-accent); }
+
+/* Description lists (definition-style content). */
+dl { margin: .6em 0; }
+dt { font-weight: 700; color: var(--techbook-accent); margin-top: .5em; }
+dd { margin: 0 0 .3em 1.2em; }
+
+/* ── Code ── */
+code {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 9.5pt;
+  background: var(--techbook-accent-light);
+  color: var(--techbook-accent);
+  border: 1px solid var(--techbook-rule);
+  padding: .08em .3em;
+  border-radius: 3px;
+}
+pre {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  background: var(--techbook-accent-light);
+  border: 1px solid var(--techbook-rule);
+  font-size: 9pt;
+}
+pre code { background: transparent; color: inherit; border: none; padding: 0; }
+
+/* ── Tables ── */
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 10pt; page-break-inside: avoid; break-inside: avoid; }
+caption { caption-side: top; text-align: left; font-size: 9pt; color: #666; font-style: italic; margin-bottom: .3em; }
+th, td { border: 1px solid var(--techbook-rule); padding: .4em .55em; text-align: left; vertical-align: top; }
+th { background: var(--techbook-accent); color: #fff; border-color: var(--techbook-accent); font-weight: 600; }
+tr:nth-child(even) td { background: var(--techbook-accent-light); }
+
+/* ── Blockquote ── */
+blockquote {
+  border-left: 4px solid var(--techbook-accent);
+  background: var(--techbook-accent-light);
+  color: #2f2c66;
+  padding: .5em 1em;
+  font-style: normal;
+}
+blockquote p:last-child { margin-bottom: 0; }
+blockquote cite, blockquote footer { display: block; font-style: normal; font-size: 9pt; color: #777; margin-top: .3em; }
+
+/* ── Figures & media ── */
+img { max-width: 100%; }
+figure { margin: 1.2em 0; text-align: center; page-break-inside: avoid; break-inside: avoid; }
+figcaption { font-size: 9pt; color: #666; font-style: italic; margin-top: .3em; }
+
+/* ── Footnotes (GFM / Pandoc) ── */
+.footnotes { font-size: 9pt; color: #555; border-top: 1px solid var(--techbook-rule); margin-top: 2em; padding-top: .6em; }
+a.footnote-ref, a.footnote-back { color: var(--techbook-accent); }
+
+/* ── Rules ── */
+hr { border: none; border-top: 1px solid var(--techbook-rule); margin: 1.8em 0; }
+
+/* ── Page-break hygiene ── */
+figure, table, pre, blockquote { page-break-inside: avoid; break-inside: avoid; }
+h1, h2, h3 { page-break-after: avoid; break-after: avoid; }

@@ -1,0 +1,154 @@
+/* newsprint — newspaper feature style: condensed serif, dense leading, double-rule masthead, drop cap
+ *
+ * Stacks on top of default.css; only identity overrides live here. Override a
+ * single token by redefining it in a stylesheet stacked after this one.
+ *
+ * Renderer note: prints through headless Chromium, which ignores CSS `@page`
+ * margins and margin-box running headers/footers. Section numbering uses CSS
+ * counters (Chromium-safe); a repeating footer page number is not expressible
+ * yet (#243). */
+
+:root {
+  --newsprint-body: Georgia, "Times New Roman", "Liberation Serif", serif;
+  --newsprint-head: Georgia, "Times New Roman", serif;
+  --newsprint-mono: "Consolas", "Courier New", monospace;
+  --newsprint-ink: #1a1a1a;
+  --newsprint-accent: #7a1f1f;
+  --newsprint-accent-light: #f3e9e9;
+  --newsprint-rule: #222222;
+}
+
+html { font-size: 10.5pt; }
+
+body {
+  font-family: var(--newsprint-body);
+  color: var(--newsprint-ink);
+  line-height: 1.42;
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 { font-family: var(--newsprint-head); color: var(--newsprint-ink); font-weight: 700; }
+h1 {
+  font-size: 28pt;
+  line-height: 1.05;
+  text-align: left;
+  border-bottom: 3px double var(--newsprint-rule);
+  padding-bottom: .2em;
+  letter-spacing: -0.01em;
+}
+h2 {
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: 13pt;
+  color: var(--newsprint-accent);
+  border-bottom: 1px solid var(--newsprint-rule);
+  padding-bottom: .1em;
+}
+h3 { color: #333; font-size: 12pt; font-style: italic; }
+h4 { font-size: 11pt; color: var(--newsprint-ink); font-weight: 700; }
+h5, h6 { font-size: 10pt; color: var(--newsprint-accent); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+
+/* Emphasised standfirst paragraph after the title. */
+h1 + p { font-size: 1.12em; color: var(--newsprint-ink); line-height: 1.5; }
+/* Lead drop cap on the opening paragraph. */
+h1 + p::first-letter {
+  float: left;
+  font-family: var(--newsprint-head);
+  font-size: 3.1em;
+  line-height: .82;
+  padding: .02em .08em 0 0;
+  color: var(--newsprint-accent);
+  font-weight: 700;
+}
+
+/* ── Text ── */
+p { margin: 0 0 .8em; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+a { color: var(--newsprint-accent); text-decoration: underline; }
+a:hover { text-decoration: underline; }
+small { font-size: 9pt; color: #666; }
+mark { background: var(--newsprint-accent-light); color: var(--newsprint-accent); padding: 0 .15em; }
+del { color: #999; }
+ins { text-decoration: underline; text-decoration-color: var(--newsprint-accent); }
+sup, sub { font-size: 75%; line-height: 0; }
+kbd {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 8.5pt;
+  border: 1px solid var(--newsprint-rule);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0 .35em;
+  background: var(--newsprint-accent-light);
+}
+
+/* ── Lists ── */
+ul, ol { margin: .5em 0 .8em 1.4em; padding: 0; }
+li { margin: .22em 0; }
+li > ul, li > ol { margin: .2em 0 .2em 1.2em; }
+ol { list-style: decimal; }
+ol > li::marker { color: var(--newsprint-accent); font-weight: 700; }
+ul > li::marker { color: var(--newsprint-accent); }
+
+/* Description lists (definition-style content). */
+dl { margin: .6em 0; }
+dt { font-weight: 700; color: var(--newsprint-accent); margin-top: .5em; }
+dd { margin: 0 0 .3em 1.2em; }
+
+/* ── Code ── */
+code {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 9.5pt;
+  background: var(--newsprint-accent-light);
+  color: var(--newsprint-accent);
+  border: 1px solid var(--newsprint-rule);
+  padding: .08em .3em;
+  border-radius: 3px;
+}
+pre {
+  font-family: "Consolas", "Courier New", monospace;
+  background: var(--newsprint-accent-light);
+  border: 1px solid var(--newsprint-rule);
+  font-size: 9pt;
+}
+pre code { background: transparent; color: inherit; border: none; padding: 0; }
+
+/* ── Tables ── */
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 10pt; page-break-inside: avoid; break-inside: avoid; }
+caption { caption-side: top; text-align: left; font-size: 9pt; color: #666; font-style: italic; margin-bottom: .3em; }
+th, td { border: 1px solid var(--newsprint-rule); padding: .4em .55em; text-align: left; vertical-align: top; }
+th { background: var(--newsprint-accent-light); color: var(--newsprint-accent); border-color: var(--newsprint-rule); font-variant: small-caps; letter-spacing: .03em; }
+
+/* ── Blockquote ── */
+blockquote {
+  border-left: none;
+  border-top: 2px solid var(--newsprint-rule);
+  border-bottom: 2px solid var(--newsprint-rule);
+  background: transparent;
+  font-style: italic;
+  font-size: 1.15em;
+  text-align: center;
+  color: var(--newsprint-ink);
+  padding: .7em 1.4em;
+  margin: 1.4em 1.6em;
+}
+blockquote p:last-child { margin-bottom: 0; }
+blockquote cite, blockquote footer { display: block; font-style: normal; font-size: 9pt; color: #777; margin-top: .3em; }
+
+/* ── Figures & media ── */
+img { max-width: 100%; }
+figure { margin: 1.2em 0; text-align: center; page-break-inside: avoid; break-inside: avoid; }
+figcaption { font-size: 9pt; color: #666; font-style: italic; margin-top: .3em; }
+
+/* ── Footnotes (GFM / Pandoc) ── */
+.footnotes { font-size: 9pt; color: #555; border-top: 1px solid var(--newsprint-rule); margin-top: 2em; padding-top: .6em; }
+a.footnote-ref, a.footnote-back { color: var(--newsprint-accent); }
+
+/* ── Rules ── */
+hr { border: none; border-top: 1px solid var(--newsprint-rule); margin: 1.8em 0; }
+
+/* ── Page-break hygiene ── */
+figure, table, pre, blockquote { page-break-inside: avoid; break-inside: avoid; }
+h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
