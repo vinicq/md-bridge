@@ -62,7 +62,14 @@ def render_md_bytes(
             }
 
         try:
-            mod.convert(md_path, pdf_path, css_paths, lang=opts.lang, page_setup=page_setup)
+            mod.convert(
+                md_path,
+                pdf_path,
+                css_paths,
+                lang=opts.lang,
+                page_setup=page_setup,
+                render_mermaid=opts.render_mermaid,
+            )
         except Exception as exc:
             raise ApiError(
                 500,

@@ -108,7 +108,8 @@ def escape_html(s: str) -> str:
 
 
 def build_html(
-    body_html: str, fm: dict, lang: str, css_blocks: list[str], base_uri: str = ""
+    body_html: str, fm: dict, lang: str, css_blocks: list[str], base_uri: str = "",
+    extra_head: str = "", body_tail: str = "",
 ) -> str:
     # safe_load can return non-string scalars (a date, a number) or even a list
     # for `title:`; coerce so escape_html always receives a string.
@@ -120,6 +121,10 @@ def build_html(
     # the render tempdir, which is what the egress guard confines file: loads to
     # (#363). No base_uri (e.g. the unit tests) leaves the historic output.
     base_tag = f'  <base href="{escape_html(base_uri)}">\n' if base_uri else ""
+    # Injected blocks (mermaid): empty by default, so the historic output is
+    # byte-for-byte unchanged for documents without diagrams.
+    head_extra = ("\n" + extra_head) if extra_head else ""
+    body_extra = ("\n" + body_tail) if body_tail else ""
     return (
         '<!DOCTYPE html>\n'
         f'<html lang="{lang}">\n'
@@ -127,10 +132,10 @@ def build_html(
         '  <meta charset="utf-8">\n'
         f'{base_tag}'
         f'  <title>{escape_html(title)}</title>\n'
-        f'{style}\n'
+        f'{style}{head_extra}\n'
         '</head>\n'
         '<body>\n'
-        f'{body_html}\n'
+        f'{body_html}{body_extra}\n'
         '</body>\n'
         '</html>\n'
     )
@@ -312,7 +317,13 @@ def _install_egress_guard(context, base_dir: Path) -> None:
     context.route_web_socket("**/*", _ws_guard)
 
 
-def render_to_pdf(html: str, pdf_path: Path, base_url: Path, pdf_kwargs: dict | None = None) -> None:
+def render_to_pdf(
+    html: str,
+    pdf_path: Path,
+    base_url: Path,
+    pdf_kwargs: dict | None = None,
+    ready_flag: str | None = None,
+) -> None:
     kwargs = pdf_kwargs if pdf_kwargs is not None else resolve_pdf_kwargs(None, {})
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -326,9 +337,34 @@ def render_to_pdf(html: str, pdf_path: Path, base_url: Path, pdf_kwargs: dict | 
             # networkidle timer, and a runaway inline script trips the timeout
             # instead of hanging the worker forever.
             page.set_content(html, wait_until="load", timeout=30000)
+            if ready_flag:
+                # Mermaid renders asynchronously; wait for the init script to
+                # flag completion so no diagram is captured half-drawn. The init
+                # always raises the flag (even on failure or a missing bundle),
+                # so this cannot hang past the timeout.
+                page.wait_for_function(f"window['{ready_flag}'] === true", timeout=20000)
             page.pdf(path=str(pdf_path), **kwargs)
         finally:
             browser.close()
+
+
+def _load_mermaid_render():
+    """Import the sibling mermaid_render module by path.
+
+    A plain `import mermaid_render` only works when scripts/ is on sys.path (the
+    CLI case). The API loads this file via importlib without adding scripts/ to
+    the path, so resolve the sibling module from __file__ instead. Loaded lazily
+    so a document without diagrams never pays for it.
+    """
+    import importlib.util
+
+    mm_path = Path(__file__).resolve().parent / "mermaid_render.py"
+    spec = importlib.util.spec_from_file_location("md_bridge_mermaid_render", mm_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load mermaid_render from {mm_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def convert(
@@ -337,6 +373,7 @@ def convert(
     css_paths: list[Path],
     lang: str = "pt-BR",
     page_setup: dict | None = None,
+    render_mermaid: bool = False,
 ) -> None:
     md_text = md_path.read_text(encoding="utf-8")
     fm, body_md = split_front_matter(md_text)
@@ -349,14 +386,36 @@ def convert(
         else:
             print(f"[warn] CSS not found: {css}", file=sys.stderr)
 
+    # Mermaid (opt-in, #394): rewrite mermaid fences and inject the vendored
+    # bundle so Chromium renders diagrams before printing. Off by default, and a
+    # no-op for documents without a mermaid block, so existing output is
+    # unchanged either way.
+    extra_head = body_tail = ""
+    ready_flag = None
+    if render_mermaid:
+        mermaid_render = _load_mermaid_render()
+        body_html, mmd_count = mermaid_render.transform_blocks(body_html)
+        if mmd_count:
+            extra_head, body_tail = mermaid_render.assets()
+            ready_flag = mermaid_render.READY_FLAG
+            if not mermaid_render.MERMAID_JS.exists():
+                print(
+                    "[warn] mermaid blocks found but vendor/mermaid.min.js is missing; "
+                    "diagram source will render as plain text",
+                    file=sys.stderr,
+                )
+
     base_dir = md_path.parent
     base_uri = base_dir.resolve().as_uri() + "/"
-    html = build_html(body_html, fm, lang, css_blocks, base_uri=base_uri)
+    html = build_html(
+        body_html, fm, lang, css_blocks, base_uri=base_uri,
+        extra_head=extra_head, body_tail=body_tail,
+    )
     # Token substitution for header/footer reads the same front matter, so the
     # print clock is never consulted (#243). page_setup=None keeps the historic
     # page geometry exactly.
     pdf_kwargs = resolve_pdf_kwargs(page_setup, fm)
-    render_to_pdf(html, pdf_path, base_url=base_dir, pdf_kwargs=pdf_kwargs)
+    render_to_pdf(html, pdf_path, base_url=base_dir, pdf_kwargs=pdf_kwargs, ready_flag=ready_flag)
     print(f"Wrote {pdf_path}")
 
 
@@ -374,6 +433,11 @@ def main() -> int:
         help="CSS stylesheet (repeat to stack multiple). Defaults to templates/default.css.",
     )
     parser.add_argument("--lang", default="pt-BR", help="HTML lang attribute (default: pt-BR).")
+    parser.add_argument(
+        "--mermaid",
+        action="store_true",
+        help="Render mermaid code fences to diagrams using the vendored bundle (opt-in).",
+    )
     args = parser.parse_args()
 
     if not args.md_path.exists():
@@ -382,7 +446,7 @@ def main() -> int:
 
     css_paths = args.css if args.css else [default_css]
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    convert(args.md_path, args.output, css_paths, lang=args.lang)
+    convert(args.md_path, args.output, css_paths, lang=args.lang, render_mermaid=args.mermaid)
     return 0
 
 
