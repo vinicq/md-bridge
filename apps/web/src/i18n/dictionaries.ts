@@ -102,6 +102,25 @@ interface Dictionary {
     contract: string
     blog: string
   }
+  themeLib: {
+    title: string
+    subtitle: string
+    filter: string
+    all: string
+    serif: string
+    sans: string
+    mono: string
+    preview: string
+    custom: string
+    source: string
+    clear: string
+    use: string
+    downloadCss: string
+    readonly: string
+    customHint: string
+    diagram: string
+    newBadge: string
+  }
   about: {
     title: string
     intro: string
@@ -301,6 +320,27 @@ const en: Dictionary = {
     email: 'Email',
     contract: 'Contract',
     blog: 'Blog post',
+  },
+  themeLib: {
+    title: 'Theme library',
+    subtitle:
+      'Curated stylesheets for the PDF render. Pick one, preview it live on a rich sample, and layer your own CSS on top.',
+    filter: 'Filter',
+    all: 'All',
+    serif: 'Serif',
+    sans: 'Sans',
+    mono: 'Mono',
+    preview: 'Live preview',
+    custom: 'Custom CSS',
+    source: 'Theme CSS',
+    clear: 'Clear',
+    use: 'Use theme',
+    downloadCss: 'Download .css',
+    readonly: 'read-only',
+    customHint:
+      'Paste CSS to override the theme; it applies to the preview live, exactly like the converter stacks it after the theme.',
+    diagram: 'Diagram',
+    newBadge: 'NEW',
   },
   about: {
     title: 'About md-bridge',
@@ -520,6 +560,27 @@ const pt: Dictionary = {
     contract: 'Contrato',
     blog: 'Post de blog',
   },
+  themeLib: {
+    title: 'Biblioteca de temas',
+    subtitle:
+      'Folhas de estilo curadas para o PDF. Escolha uma, veja o preview ao vivo num exemplo rico e adicione seu próprio CSS por cima.',
+    filter: 'Filtro',
+    all: 'Todos',
+    serif: 'Serifada',
+    sans: 'Sem serifa',
+    mono: 'Monoespaçada',
+    preview: 'Preview ao vivo',
+    custom: 'CSS custom',
+    source: 'CSS do tema',
+    clear: 'Limpar',
+    use: 'Usar tema',
+    downloadCss: 'Baixar .css',
+    readonly: 'somente leitura',
+    customHint:
+      'Cole CSS para sobrepor o tema; aplica no preview ao vivo, do mesmo jeito que o conversor empilha depois do tema.',
+    diagram: 'Diagrama',
+    newBadge: 'NOVO',
+  },
   about: {
     title: 'Sobre o md-bridge',
     intro:
@@ -737,6 +798,27 @@ const es: Dictionary = {
     email: 'Correo',
     contract: 'Contrato',
     blog: 'Entrada de blog',
+  },
+  themeLib: {
+    title: 'Biblioteca de temas',
+    subtitle:
+      'Hojas de estilo curadas para el PDF. Elige una, previsualízala en vivo sobre un ejemplo rico y añade tu propio CSS encima.',
+    filter: 'Filtro',
+    all: 'Todos',
+    serif: 'Serif',
+    sans: 'Sans',
+    mono: 'Mono',
+    preview: 'Vista previa en vivo',
+    custom: 'CSS propio',
+    source: 'CSS del tema',
+    clear: 'Limpiar',
+    use: 'Usar tema',
+    downloadCss: 'Descargar .css',
+    readonly: 'solo lectura',
+    customHint:
+      'Pega CSS para sobrescribir el tema; se aplica a la vista previa en vivo, igual que el conversor lo apila tras el tema.',
+    diagram: 'Diagrama',
+    newBadge: 'NUEVO',
   },
   about: {
     title: 'Acerca de md-bridge',

@@ -159,6 +159,15 @@ export async function fetchFormats(signal?: AbortSignal): Promise<Format[]> {
   return (await resp.json()) as Format[]
 }
 
+// The theme's own overlay stylesheet as text/css. The theme library stacks it
+// after default.css to preview the render, and shows it read-only. Not part of
+// the JSON schema (it is a text/css response), so it stays hand-written.
+export async function fetchThemeCss(slug: string, signal?: AbortSignal): Promise<string> {
+  const resp = await fetch(`/api/themes/${encodeURIComponent(slug)}/css`, { signal })
+  if (!resp.ok) await readError(resp)
+  return resp.text()
+}
+
 export async function inspectPdf(file: File, signal?: AbortSignal): Promise<InspectPdfResponse> {
   const fd = new FormData()
   fd.append('file', file)

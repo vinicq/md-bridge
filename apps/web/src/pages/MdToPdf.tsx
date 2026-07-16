@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { BatchPanel } from '../components/BatchPanel'
 import { Button } from '../components/Button'
 import { ConvertButton } from '../components/ConvertButton'
@@ -32,7 +33,10 @@ export function MdToPdf() {
   // stable so the countdown is not reset (#355).
   const toastSeq = useRef(0)
   const { themes, status: themesStatus, error: themesError } = useThemes()
-  const [theme, setTheme] = useState<string>(initialTheme)
+  // A `?theme=` query param (from the theme library's "Use theme", #392) wins at
+  // mount over the persisted slug; the picker still owns it from there on.
+  const [searchParams] = useSearchParams()
+  const [theme, setTheme] = useState<string>(() => searchParams.get('theme') || initialTheme())
 
   // Reconcile the persisted slug against the server catalog (#356). A slug that
   // no longer exists (a renamed/removed theme or a stale localStorage value)

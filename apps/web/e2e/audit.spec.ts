@@ -616,3 +616,40 @@ test.describe('blockquote preview a11y (#218)', () => {
     })
   }
 })
+
+// The theme library (#392) is a new route the static sweep does not cover. Its
+// preview iframe renders theme PRINT stylesheets, whose on-screen contrast is a
+// theme-design concern, not this page's chrome, so the audit excludes the frame
+// and checks the grid/filter/tabs in both themes.
+test.describe('theme library a11y (#392)', () => {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`theme library has no critical/serious axe violations [${theme}]`, async ({ page }) => {
+      await page.addInitScript((t) => {
+        window.localStorage.setItem('md-bridge:locale', 'en')
+        window.localStorage.setItem('md-bridge:theme', t)
+      }, theme)
+      await page.goto('/themes', { waitUntil: 'networkidle' })
+      const appliedTheme = await page.evaluate(() =>
+        document.documentElement.getAttribute('data-theme'),
+      )
+      expect(appliedTheme, `expected data-theme=${theme}`).toBe(theme)
+
+      // The grid renders once themes load.
+      await expect(page.getByRole('button', { name: /academic/i })).toBeVisible({ timeout: 30_000 })
+
+      const results = await new AxeBuilder({ page })
+        .exclude('.theme-lib__frame')
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze()
+      const criticalSerious = results.violations.filter(
+        (v) => v.impact === 'critical' || v.impact === 'serious',
+      )
+      expect(
+        criticalSerious,
+        `critical/serious on the theme library [${theme}]: ${criticalSerious
+          .map((v) => v.id)
+          .join(', ')}`,
+      ).toHaveLength(0)
+    })
+  }
+})

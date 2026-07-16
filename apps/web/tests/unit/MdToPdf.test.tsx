@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import { I18nProvider, type Locale } from '../../src/i18n'
 import { convertMdToPdf, fetchThemes } from '../../src/lib/api'
 import { _resetThemesCacheForTests } from '../../src/hooks/useThemes'
@@ -18,7 +19,11 @@ const originalCreateObjectURL = Object.getOwnPropertyDescriptor(URL, 'createObje
 const originalRevokeObjectURL = Object.getOwnPropertyDescriptor(URL, 'revokeObjectURL')
 
 function wrap(node: React.ReactNode, locale: Locale) {
-  return <I18nProvider initialLocale={locale}>{node}</I18nProvider>
+  return (
+    <I18nProvider initialLocale={locale}>
+      <MemoryRouter>{node}</MemoryRouter>
+    </I18nProvider>
+  )
 }
 
 describe('MdToPdf', () => {
