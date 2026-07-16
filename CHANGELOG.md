@@ -15,6 +15,8 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-07-16
+
 ### Added
 
 - **Generated OpenAPI TypeScript client.** The web app's request and
@@ -603,7 +605,8 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/vinicq/md-bridge/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/vinicq/md-bridge/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/vinicq/md-bridge/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/vinicq/md-bridge/compare/v0.3.0...v0.4.0
