@@ -102,6 +102,10 @@ class MdToPdfOptions(BaseModel):
     # Page geometry + running header/footer (#243). `None` preserves the historic
     # output exactly: A4, 2.5/2/2.5/2 cm margins, no header/footer.
     page_setup: PageSetupOptions | None = None
+    # Mermaid diagrams (#394). Opt-in: off preserves the historic output, where a
+    # mermaid fence renders as a plain code block. On renders it to SVG at print
+    # time through the vendored bundle (offline, deterministic).
+    render_mermaid: bool = False
 
 
 class MdToDocxOptions(BaseModel):

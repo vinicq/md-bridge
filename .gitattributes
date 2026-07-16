@@ -1,3 +1,7 @@
 # Treat PDF fixtures as binary so Git never applies end-of-line normalization,
 # which would corrupt byte offsets (xref tables) and break PyMuPDF parsing.
 *.pdf binary
+
+# The vendored Mermaid bundle (#394) is a large minified asset; keep Git from
+# normalizing its line endings so it stays byte-stable across Windows and Linux.
+packages/markdown-to-pdf/vendor/mermaid.min.js binary

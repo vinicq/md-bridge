@@ -94,6 +94,48 @@ def test_md_to_pdf_renders_each_theme(theme, md_to_pdf_mod, chromium_ready):
     assert len(data) > 1024, f"theme {theme}: PDF too small ({len(data)} bytes)"
 
 
+MERMAID_MD = """---
+title: "Diagram"
+---
+
+# Flow
+
+```mermaid
+flowchart LR
+  A[PDF] --> B[Markdown]
+  B --> C[PDF]
+```
+"""
+
+
+def test_mermaid_opt_in_renders_a_diagram(md_to_pdf_mod, chromium_ready):
+    # #394: with render_mermaid on, the fence renders to an SVG diagram (extra
+    # vector paths); off, it stays a plain code block. Structural like the rest
+    # of the suite (PDFs are not byte-stable), comparing the two renders of the
+    # same document so the diagram's paths are the observable difference.
+    import fitz
+    from app.config import MD_TO_PDF_TEMPLATES
+
+    css_paths = [MD_TO_PDF_TEMPLATES / "default.css"]
+    with tempfile.TemporaryDirectory(prefix="regress-mermaid-") as raw:
+        md_path = Path(raw) / "doc.md"
+        md_path.write_text(MERMAID_MD, encoding="utf-8")
+        on_pdf = Path(raw) / "on.pdf"
+        off_pdf = Path(raw) / "off.pdf"
+
+        md_to_pdf_mod.convert(md_path, on_pdf, css_paths, lang="pt-BR", render_mermaid=True)
+        md_to_pdf_mod.convert(md_path, off_pdf, css_paths, lang="pt-BR", render_mermaid=False)
+
+        on_bytes = on_pdf.read_bytes()
+        assert on_bytes.startswith(b"%PDF-")
+        with fitz.open(on_pdf) as on_doc, fitz.open(off_pdf) as off_doc:
+            on_paths = len(on_doc[0].get_drawings())
+            off_paths = len(off_doc[0].get_drawings())
+
+    # The rendered flowchart draws vector paths the plain code block never does.
+    assert on_paths > off_paths, f"diagram did not render (on={on_paths}, off={off_paths})"
+
+
 COMPLEX_FM_MD = """---
 title: "Front Matter Sample"
 keywords: [zzqkeyword1, zzqkeyword2, zzqkeyword3]
