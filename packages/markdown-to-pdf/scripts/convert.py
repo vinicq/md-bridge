@@ -374,6 +374,7 @@ def convert(
     lang: str = "pt-BR",
     page_setup: dict | None = None,
     render_mermaid: bool = False,
+    custom_css: str = "",
 ) -> None:
     md_text = md_path.read_text(encoding="utf-8")
     fm, body_md = split_front_matter(md_text)
@@ -385,6 +386,13 @@ def convert(
             css_blocks.append(css.read_text(encoding="utf-8"))
         else:
             print(f"[warn] CSS not found: {css}", file=sys.stderr)
+
+    # User custom CSS (#395) stacks last so it overrides the theme, mirroring how
+    # the live preview layers it. Empty by default, so output stays byte-for-byte
+    # unchanged. It is inlined as a <style> block (never fetched), and the egress
+    # guard still blocks any url()/@import to a network scheme (#363).
+    if custom_css.strip():
+        css_blocks.append(custom_css)
 
     # Mermaid (opt-in, #394): rewrite mermaid fences and inject the vendored
     # bundle so Chromium renders diagrams before printing. Off by default, and a

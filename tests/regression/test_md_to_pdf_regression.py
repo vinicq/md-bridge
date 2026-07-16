@@ -136,6 +136,37 @@ def test_mermaid_opt_in_renders_a_diagram(md_to_pdf_mod, chromium_ready):
     assert on_paths > off_paths, f"diagram did not render (on={on_paths}, off={off_paths})"
 
 
+def test_custom_css_changes_the_render(md_to_pdf_mod, chromium_ready):
+    # #395: user CSS stacks after the theme, so it changes the render. Compare the
+    # same document with and without a body-background rule; with print_background
+    # on, the styled page rasterizes differently. Empty custom CSS is a no-op by
+    # construction (the block is only appended when non-blank), so output stays
+    # byte-for-byte unchanged then.
+    import fitz
+    from app.config import MD_TO_PDF_TEMPLATES
+
+    css_paths = [MD_TO_PDF_TEMPLATES / "default.css"]
+    with tempfile.TemporaryDirectory(prefix="regress-custom-css-") as raw:
+        md_path = Path(raw) / "doc.md"
+        md_path.write_text(SAMPLE_MD, encoding="utf-8")
+        plain = Path(raw) / "plain.pdf"
+        styled = Path(raw) / "styled.pdf"
+
+        md_to_pdf_mod.convert(md_path, plain, css_paths, lang="pt-BR")
+        md_to_pdf_mod.convert(
+            md_path, styled, css_paths, lang="pt-BR", custom_css="body { background: #123456; }"
+        )
+
+        assert styled.read_bytes().startswith(b"%PDF-")
+        with fitz.open(plain) as p_doc, fitz.open(styled) as s_doc:
+            p_px = p_doc[0].get_pixmap(dpi=60)
+            s_px = s_doc[0].get_pixmap(dpi=60)
+            same_size = (p_px.width, p_px.height) == (s_px.width, s_px.height)
+            differ = p_px.samples != s_px.samples
+
+    assert same_size and differ, "custom CSS did not change the rendered page"
+
+
 COMPLEX_FM_MD = """---
 title: "Front Matter Sample"
 keywords: [zzqkeyword1, zzqkeyword2, zzqkeyword3]

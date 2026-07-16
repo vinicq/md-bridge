@@ -183,4 +183,18 @@ describe('MdToPdf', () => {
     // The themed live preview iframe appears, no backend round-trip needed.
     expect(await screen.findByTitle('Live theme preview')).toBeInTheDocument()
   })
+
+  it('sends the user custom CSS with the conversion (#395)', async () => {
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+    fireEvent.change(screen.getByLabelText('Pasted markdown'), { target: { value: '# Hi' } })
+    fireEvent.change(screen.getByLabelText('Custom CSS'), {
+      target: { value: 'body { color: red }' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Convert' }))
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalled(), { timeout: 5000 })
+    expect(vi.mocked(convertMdToPdf).mock.calls[0][1]).toMatchObject({
+      custom_css: 'body { color: red }',
+    })
+  })
 })

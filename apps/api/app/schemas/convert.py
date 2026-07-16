@@ -106,6 +106,11 @@ class MdToPdfOptions(BaseModel):
     # mermaid fence renders as a plain code block. On renders it to SVG at print
     # time through the vendored bundle (offline, deterministic).
     render_mermaid: bool = False
+    # User CSS layered after the theme (#395). Empty by default, so the output is
+    # byte-identical when unused. Inlined as a <style> block, never fetched; the
+    # renderer's egress guard (#363) still blocks any url()/@import to the
+    # network. Capped so an oversized payload cannot bloat the render.
+    custom_css: str = Field("", max_length=20000)
 
 
 class MdToDocxOptions(BaseModel):

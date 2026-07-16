@@ -69,6 +69,7 @@ def render_md_bytes(
                 lang=opts.lang,
                 page_setup=page_setup,
                 render_mermaid=opts.render_mermaid,
+                custom_css=opts.custom_css,
             )
         except Exception as exc:
             raise ApiError(
