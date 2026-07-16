@@ -5,6 +5,7 @@ import { Button } from '../components/Button'
 import { ConvertButton } from '../components/ConvertButton'
 import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
+import { ThemedPreview } from '../components/ThemedPreview'
 import { DEFAULT_PAGE_SETUP } from '../components/pageSetup'
 import { ThemePicker } from '../components/ThemePicker'
 import { Toast } from '../components/Toast'
@@ -226,6 +227,16 @@ export function MdToPdf() {
         <div>
           {previewUrl ? (
             <iframe title={t.mdToPdf.previewIframeTitle} src={previewUrl} className="pdf-preview" />
+          ) : previewMarkdown ? (
+            // Before a conversion, show the pasted Markdown styled by the selected
+            // theme (default.css + overlay) so the theme's effect is visible live,
+            // without a backend round-trip (#397).
+            <ThemedPreview
+              themeSlug={activeTheme}
+              markdown={previewMarkdown}
+              title={t.mdToPdf.livePreviewTitle}
+              className="pdf-preview"
+            />
           ) : (
             <MarkdownPreview markdown={previewMarkdown} empty={t.mdToPdf.previewEmpty} />
           )}
