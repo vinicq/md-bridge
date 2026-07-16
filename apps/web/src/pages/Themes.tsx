@@ -215,7 +215,13 @@ export function Themes() {
                 type="button"
                 className="theme-lib__tile"
                 aria-pressed={active === theme.slug}
-                onClick={() => setPicked(theme.slug)}
+                onClick={() => {
+                  // Drop the previous theme's CSS immediately so the preview,
+                  // the source tab, and the download never show stale content
+                  // under the newly selected theme while its CSS loads.
+                  setSourceCss('')
+                  setPicked(theme.slug)
+                }}
               >
                 <span className="theme-lib__tile-name">{theme.name}</span>
                 <span className="theme-lib__tile-family">{normalizeFamily(theme.family)}</span>

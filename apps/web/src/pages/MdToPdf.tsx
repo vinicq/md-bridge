@@ -35,8 +35,24 @@ export function MdToPdf() {
   const { themes, status: themesStatus, error: themesError } = useThemes()
   // A `?theme=` query param (from the theme library's "Use theme", #392) wins at
   // mount over the persisted slug; the picker still owns it from there on.
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [theme, setTheme] = useState<string>(() => searchParams.get('theme') || initialTheme())
+
+  // Picking a theme in the UI takes over from the arrival `?theme=` param: drop
+  // it so a later refresh honors the persisted pick, not the stale query.
+  function pickTheme(slug: string): void {
+    setTheme(slug)
+    if (searchParams.has('theme')) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.delete('theme')
+          return next
+        },
+        { replace: true },
+      )
+    }
+  }
 
   // Reconcile the persisted slug against the server catalog (#356). A slug that
   // no longer exists (a renamed/removed theme or a stale localStorage value)
@@ -147,7 +163,7 @@ export function MdToPdf() {
       <ThemePicker
         themes={themes}
         value={activeTheme}
-        onChange={setTheme}
+        onChange={pickTheme}
         label={t.themePicker.label}
         loadingLabel={t.themePicker.loading}
         disabled={batch.running}
