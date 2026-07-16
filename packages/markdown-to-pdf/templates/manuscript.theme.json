@@ -1,0 +1,6 @@
+{
+  "name": "Manuscript",
+  "description": "Standard manuscript / screenplay format: Courier, double-spaced, centered title.",
+  "family": "monospace",
+  "version": "1.1.0"
+}

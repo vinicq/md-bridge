@@ -48,7 +48,28 @@ def chromium_ready():
         pytest.skip(f"Playwright chromium unavailable: {exc}")
 
 
-@pytest.mark.parametrize("theme", ["default", "academic", "business", "minimal"])
+@pytest.mark.parametrize(
+    "theme",
+    [
+        "default",
+        "academic",
+        "business",
+        "minimal",
+        # Redesign theme pack (#393): smoke-render every new overlay so a
+        # malformed stylesheet that breaks Chromium is caught, not just its
+        # metadata.
+        "letter",
+        "manuscript",
+        "newsprint",
+        "notebook",
+        "novel",
+        "resume",
+        "slate",
+        "slides",
+        "techbook",
+        "whitepaper",
+    ],
+)
 def test_md_to_pdf_renders_each_theme(theme, md_to_pdf_mod, chromium_ready):
     # Every registered theme renders the standard sample to a valid PDF (#23).
     # The PDF binary is not stable byte-for-byte, so the regression stays

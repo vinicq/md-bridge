@@ -1,0 +1,132 @@
+/* letter — business letter / memo: Times, block layout, quiet chrome, left-aligned heads
+ *
+ * Stacks on top of default.css; only identity overrides live here. Override a
+ * single token by redefining it in a stylesheet stacked after this one.
+ *
+ * Renderer note: prints through headless Chromium, which ignores CSS `@page`
+ * margins and margin-box running headers/footers. Section numbering uses CSS
+ * counters (Chromium-safe); a repeating footer page number is not expressible
+ * yet (#243). */
+
+:root {
+  --letter-body: "Times New Roman", "Liberation Serif", Georgia, serif;
+  --letter-head: "Times New Roman", Georgia, serif;
+  --letter-mono: "Courier New", monospace;
+  --letter-ink: #111111;
+  --letter-accent: #333333;
+  --letter-accent-light: #f0f0f0;
+  --letter-rule: #999999;
+}
+
+html { font-size: 12pt; }
+
+body {
+  font-family: var(--letter-body);
+  color: var(--letter-ink);
+  line-height: 1.5;
+  text-align: left;
+  hyphens: none;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 { font-family: var(--letter-head); color: var(--letter-ink); font-weight: 700; }
+h1 {
+  font-size: 15pt;
+  font-weight: 700;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin: 0 0 .2em;
+}
+h2 {
+  border-bottom: none;
+  font-size: 14pt;
+}
+h3 { color: var(--letter-ink); font-size: 12pt; }
+h4 { font-size: 11pt; color: var(--letter-ink); font-weight: 700; }
+h5, h6 { font-size: 10pt; color: var(--letter-accent); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+
+
+/* ── Text ── */
+p { margin: 0 0 1em; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+a { color: var(--letter-accent); text-decoration: underline; }
+a:hover { text-decoration: underline; }
+small { font-size: 9pt; color: #666; }
+mark { background: var(--letter-accent-light); color: var(--letter-accent); padding: 0 .15em; }
+del { color: #999; }
+ins { text-decoration: underline; text-decoration-color: var(--letter-accent); }
+sup, sub { font-size: 75%; line-height: 0; }
+kbd {
+  font-family: "Courier New", monospace;
+  font-size: 8.5pt;
+  border: 1px solid var(--letter-rule);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0 .35em;
+  background: var(--letter-accent-light);
+}
+
+/* ── Lists ── */
+ul, ol { margin: .5em 0 .8em 1.4em; padding: 0; }
+li { margin: .22em 0; }
+li > ul, li > ol { margin: .2em 0 .2em 1.2em; }
+ol { list-style: decimal; }
+ol > li::marker { color: var(--letter-accent); font-weight: 700; }
+ul > li::marker { color: var(--letter-accent); }
+
+/* Description lists (definition-style content). */
+dl { margin: .6em 0; }
+dt { font-weight: 700; color: var(--letter-accent); margin-top: .5em; }
+dd { margin: 0 0 .3em 1.2em; }
+
+/* ── Code ── */
+code {
+  font-family: "Courier New", monospace;
+  font-size: 9.5pt;
+  background: var(--letter-accent-light);
+  color: var(--letter-accent);
+  border: 1px solid var(--letter-rule);
+  padding: .08em .3em;
+  border-radius: 3px;
+}
+pre {
+  font-family: "Courier New", monospace;
+  background: var(--letter-accent-light);
+  border: 1px solid var(--letter-rule);
+  font-size: 9pt;
+}
+pre code { background: transparent; color: inherit; border: none; padding: 0; }
+
+/* ── Tables ── */
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 10pt; page-break-inside: avoid; break-inside: avoid; }
+caption { caption-side: top; text-align: left; font-size: 9pt; color: #666; font-style: italic; margin-bottom: .3em; }
+th, td { border: 1px solid var(--letter-rule); padding: .4em .55em; text-align: left; vertical-align: top; }
+th { background: transparent; font-weight: 700; }
+
+/* ── Blockquote ── */
+blockquote {
+  border-left: 3px solid var(--letter-rule);
+  background: transparent;
+  font-style: italic;
+  color: var(--letter-ink);
+  padding: .3em 1em;
+}
+blockquote p:last-child { margin-bottom: 0; }
+blockquote cite, blockquote footer { display: block; font-style: normal; font-size: 9pt; color: #777; margin-top: .3em; }
+
+/* ── Figures & media ── */
+img { max-width: 100%; }
+figure { margin: 1.2em 0; text-align: center; page-break-inside: avoid; break-inside: avoid; }
+figcaption { font-size: 9pt; color: #666; font-style: italic; margin-top: .3em; }
+
+/* ── Footnotes (GFM / Pandoc) ── */
+.footnotes { font-size: 9pt; color: #555; border-top: 1px solid var(--letter-rule); margin-top: 2em; padding-top: .6em; }
+a.footnote-ref, a.footnote-back { color: var(--letter-accent); }
+
+/* ── Rules ── */
+hr { border: none; border-top: 1px solid var(--letter-rule); margin: 1.8em 0; }
+
+/* ── Page-break hygiene ── */
+figure, table, pre, blockquote { page-break-inside: avoid; break-inside: avoid; }
+h1, h2, h3 { page-break-after: avoid; break-after: avoid; }

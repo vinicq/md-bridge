@@ -1,7 +1,9 @@
 # Theme reference renders
 
-One PDF per registered Markdown → PDF theme, rendered from a single shared
-sample so the visual identity of each theme can be compared side by side:
+A representative subset of the registered Markdown → PDF themes, each rendered
+from a single shared sample so the visual identities can be compared side by
+side. Not every theme has a render committed; the set covers the families
+(serif / sans-serif / monospace) rather than duplicating one PDF per theme.
 
 | File | Theme | Identity |
 | --- | --- | --- |
@@ -9,6 +11,9 @@ sample so the visual identity of each theme can be compared side by side:
 | `academic.pdf` | `academic` | Serif, justified body, centered h1, decimal section numbering. |
 | `business.pdf` | `business` | Sans-serif, red accent masthead, accent table header. |
 | `minimal.pdf` | `minimal` | Low-chrome draft layout, left-aligned, rule-only tables. |
+| `novel.pdf` | `novel` | Serif book layout: Garamond, centered chapter titles, indented justified prose, drop cap. |
+| `whitepaper.pdf` | `whitepaper` | Sans-serif whitepaper: teal accent, masthead title band, generous leading, striped tables. |
+| `notebook.pdf` | `notebook` | Monospace lab-notebook: mono body, blue accents, left-bar sections, tinted tables. |
 
 The themes are CSS overlays stacked on `default.css`
 (`packages/markdown-to-pdf/templates/`). The source sample is the markdown in

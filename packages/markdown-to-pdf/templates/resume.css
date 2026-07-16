@@ -1,0 +1,137 @@
+/* resume — CV layout: accent name header, uppercase section rules, compact skill lists
+ *
+ * Stacks on top of default.css; only identity overrides live here. Override a
+ * single token by redefining it in a stylesheet stacked after this one.
+ *
+ * Renderer note: prints through headless Chromium, which ignores CSS `@page`
+ * margins and margin-box running headers/footers. Section numbering uses CSS
+ * counters (Chromium-safe); a repeating footer page number is not expressible
+ * yet (#243). */
+
+:root {
+  --resume-body: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --resume-head: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --resume-mono: "Consolas", monospace;
+  --resume-ink: #1a1a1a;
+  --resume-accent: #2b5b8c;
+  --resume-accent-light: #eaf0f6;
+  --resume-rule: #c9d3dd;
+}
+
+html { font-size: 10.5pt; }
+
+body {
+  font-family: var(--resume-body);
+  color: var(--resume-ink);
+  line-height: 1.4;
+  text-align: left;
+  hyphens: none;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 { font-family: var(--resume-head); color: var(--resume-ink); font-weight: 700; }
+h1 {
+  color: var(--resume-accent);
+  font-size: 26pt;
+  border-bottom: 2px solid var(--resume-rule);
+  letter-spacing: .02em;
+  padding-bottom: .2em;
+  margin-bottom: .2em;
+}
+h2 {
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: 13pt;
+  color: var(--resume-accent);
+  border-bottom: 1px solid var(--resume-rule);
+  padding-bottom: .1em;
+}
+h3 { color: #333; font-size: 11pt; }
+h4 { font-size: 11pt; color: var(--resume-ink); font-weight: 700; }
+h5, h6 { font-size: 10pt; color: var(--resume-accent); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+
+
+/* ── Text ── */
+p { margin: 0 0 .5em; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+a { color: var(--resume-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+small { font-size: 9pt; color: #666; }
+mark { background: var(--resume-accent-light); color: var(--resume-accent); padding: 0 .15em; }
+del { color: #999; }
+ins { text-decoration: underline; text-decoration-color: var(--resume-accent); }
+sup, sub { font-size: 75%; line-height: 0; }
+kbd {
+  font-family: "Consolas", monospace;
+  font-size: 8.5pt;
+  border: 1px solid var(--resume-rule);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0 .35em;
+  background: var(--resume-accent-light);
+}
+
+/* ── Lists ── */
+ul, ol { margin: .5em 0 .8em 1.4em; padding: 0; }
+li { margin: .22em 0; }
+li > ul, li > ol { margin: .2em 0 .2em 1.2em; }
+ol { list-style: decimal; }
+ol > li::marker { color: var(--resume-accent); font-weight: 700; }
+ul > li::marker { color: var(--resume-accent); }
+
+/* Description lists (definition-style content). */
+dl { margin: .6em 0; }
+dt { font-weight: 700; color: var(--resume-accent); margin-top: .5em; }
+dd { margin: 0 0 .3em 1.2em; }
+
+/* ── Code ── */
+code {
+  font-family: "Consolas", monospace;
+  font-size: 9.5pt;
+  background: var(--resume-accent-light);
+  color: var(--resume-accent);
+  border: 1px solid var(--resume-rule);
+  padding: .08em .3em;
+  border-radius: 3px;
+}
+pre {
+  font-family: "Consolas", monospace;
+  background: var(--resume-accent-light);
+  border: 1px solid var(--resume-rule);
+  font-size: 9pt;
+}
+pre code { background: transparent; color: inherit; border: none; padding: 0; }
+
+/* ── Tables ── */
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 10pt; page-break-inside: avoid; break-inside: avoid; }
+caption { caption-side: top; text-align: left; font-size: 9pt; color: #666; font-style: italic; margin-bottom: .3em; }
+th, td { border: 1px solid var(--resume-rule); padding: .4em .55em; text-align: left; vertical-align: top; }
+th { background: var(--resume-accent-light); color: var(--resume-accent); border-color: var(--resume-rule); font-variant: small-caps; letter-spacing: .03em; }
+
+/* ── Blockquote ── */
+blockquote {
+  border-left: 3px solid var(--resume-rule);
+  background: transparent;
+  font-style: italic;
+  color: var(--resume-ink);
+  padding: .3em 1em;
+}
+blockquote p:last-child { margin-bottom: 0; }
+blockquote cite, blockquote footer { display: block; font-style: normal; font-size: 9pt; color: #777; margin-top: .3em; }
+
+/* ── Figures & media ── */
+img { max-width: 100%; }
+figure { margin: 1.2em 0; text-align: center; page-break-inside: avoid; break-inside: avoid; }
+figcaption { font-size: 9pt; color: #666; font-style: italic; margin-top: .3em; }
+
+/* ── Footnotes (GFM / Pandoc) ── */
+.footnotes { font-size: 9pt; color: #555; border-top: 1px solid var(--resume-rule); margin-top: 2em; padding-top: .6em; }
+a.footnote-ref, a.footnote-back { color: var(--resume-accent); }
+
+/* ── Rules ── */
+hr { border: none; border-top: 1px solid var(--resume-rule); margin: 1.8em 0; }
+
+/* ── Page-break hygiene ── */
+figure, table, pre, blockquote { page-break-inside: avoid; break-inside: avoid; }
+h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
