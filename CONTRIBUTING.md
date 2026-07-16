@@ -381,6 +381,28 @@ The root npm scripts auto-detect the backend interpreter at
 `apps/api/.venv` (Windows or POSIX layout) and fall back to `python` on
 your PATH, so they work the same on macOS, Linux, and Windows.
 
+### Regenerating the API client
+
+The web app types every request and response against the backend's OpenAPI
+schema. Two files under `apps/web/src/lib/` are generated and committed:
+
+- `openapi.json` - a snapshot of the FastAPI schema.
+- `api-types.ts` - TypeScript types produced from that snapshot by
+  [`openapi-typescript`](https://github.com/openapi-ts/openapi-typescript).
+
+After you change a backend route, schema, or response model, regenerate both:
+
+```bash
+# 1. Snapshot the schema from the backend (no server needed).
+cd apps/api && python -m app.export_openapi > ../web/src/lib/openapi.json
+# 2. Regenerate the TypeScript types from the snapshot.
+cd ../web && npm run gen:api
+```
+
+Commit the updated files. CI regenerates both and fails on any diff, so a
+schema change that skips this step cannot land. `apps/web/src/lib/api.ts`
+imports its types from `api-types.ts`; do not hand-edit the generated files.
+
 ### Install the pre-commit hooks (strongly recommended)
 
 Before your first commit, install the local hooks. They run `ruff` and a

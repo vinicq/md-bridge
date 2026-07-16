@@ -78,6 +78,26 @@ jobs:
       - name: Run root-level integration tests
         run: python -m pytest tests
 
+      # #32: the committed OpenAPI snapshot and the generated TS types must match
+      # the live FastAPI schema. Regenerate both here and fail on any diff so a
+      # backend schema change that skips `npm run gen:api` cannot land silently.
+      - name: Set up Node 22 for the OpenAPI client drift check
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies (for gen:api)
+        working-directory: apps/web
+        run: npm ci || npm install
+
+      - name: Check the OpenAPI client is in sync
+        run: |
+          python -m app.export_openapi > apps/web/src/lib/openapi.json
+          npm --prefix apps/web run gen:api
+          git diff --exit-code apps/web/src/lib/openapi.json apps/web/src/lib/api-types.ts
+
   web:
     name: Web (vitest + build)
     runs-on: ubuntu-latest

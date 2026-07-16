@@ -13,7 +13,8 @@
     "test:integration": "vitest run tests/integration",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:a11y": "playwright test --grep audit"
+    "test:a11y": "playwright test --grep audit",
+    "gen:api": "openapi-typescript src/lib/openapi.json -o src/lib/api-types.ts"
   },
   "dependencies": {
     "react": "^19.2.6",
@@ -26,6 +27,7 @@
     "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
+    "openapi-typescript": "^7.13.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -44,5 +46,10 @@
     "typescript-eslint": "^8.64.0",
     "vite": "^8.1.4",
     "vitest": "^4.1.7"
+  },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
   }
 }
