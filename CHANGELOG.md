@@ -15,6 +15,30 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Added
+
+- **Theme library page.** `/themes` is now a full catalogue: a grid of every
+  theme from the API, a family filter (serif / sans / mono), a live preview that
+  stacks the theme (and optional custom CSS) over the base in an isolated frame,
+  a read-only view of the theme CSS, and buttons to use a theme or download its
+  `.css`. The preview renders realistic samples (article, resume, email,
+  contract, blog) so a theme can be judged against real content. (#392, #398)
+- **Ten new PDF themes.** letter, manuscript, newsprint, notebook, novel,
+  resume, slate, slides, techbook, and whitepaper, bringing the catalogue to 21.
+  Each is a CSS overlay on the base stylesheet. (#393)
+- **Mermaid diagrams in md-to-pdf.** A `mermaid` code fence renders to a diagram
+  at print time through a vendored bundle, so it works offline and
+  deterministically with no CDN. Opt-in via `render_mermaid` (off by default; a
+  document without the option renders exactly as before). (#394)
+- **Live theme preview in md-to-pdf.** Before converting, the pasted Markdown is
+  shown styled by the selected theme, so the theme's effect is visible without a
+  round-trip. (#397)
+- **Custom CSS in md-to-pdf.** An optional CSS block layers after the theme,
+  shown live in the preview and applied to the PDF. Empty by default, so output
+  is unchanged when unused. (#395)
+- **Format-matrix status filter.** The conversion matrix on Home filters by
+  status (All / Shipped / Roadmap / Wanted), each with a count. (#396)
+
 ## [0.7.0] — 2026-07-16
 
 ### Added
