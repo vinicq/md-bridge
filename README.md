@@ -269,6 +269,19 @@ choice. The command assumes the virtual environment is already activated:
 python -m uvicorn app.main:app --port 8000 --app-dir apps/api
 ```
 
+The web app's API types are generated from the backend's OpenAPI schema. After
+changing a backend route or model, regenerate the committed snapshot and types:
+
+```bash
+# 1. Snapshot the schema (no server needed)
+cd apps/api && python -m app.export_openapi > ../web/src/lib/openapi.json
+# 2. Regenerate the TypeScript types
+cd ../web && npm run gen:api
+```
+
+CI regenerates both and fails on any diff, so the committed copies never drift.
+CONTRIBUTING has the full note.
+
 ## Testing
 
 The test suite follows a classic pyramid with 124 tests in total, every one

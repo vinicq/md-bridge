@@ -15,6 +15,20 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Added
+
+- **Generated OpenAPI TypeScript client.** The web app's request and
+  response types come from the FastAPI schema now instead of being
+  hand-typed. `python -m app.export_openapi` snapshots the schema to
+  `apps/web/src/lib/openapi.json`, and `npm run gen:api` turns it into
+  `apps/web/src/lib/api-types.ts`. A CI step regenerates both and fails on
+  any diff, so a backend schema change that skips the regen cannot land.
+  (#32)
+- **Styled blockquotes in the Markdown preview.** Quotes emitted by
+  `detect_blockquotes` render with an accent left side-rule, a soft accent
+  tint, and muted italic text instead of the browser default. Quoted text
+  and quoted links both meet WCAG AA in light and dark. (#218)
+
 ## [0.6.0] — 2026-07-15
 
 ### Added
