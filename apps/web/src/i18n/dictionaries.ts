@@ -94,6 +94,14 @@ interface Dictionary {
     subtitle: string
     back: string
   }
+  previewSamples: {
+    document: string
+    article: string
+    resume: string
+    email: string
+    contract: string
+    blog: string
+  }
   about: {
     title: string
     intro: string
@@ -285,6 +293,14 @@ const en: Dictionary = {
     title: 'Theme library',
     subtitle: 'The full theme catalogue is on the way. For now, pick a theme from the converter.',
     back: '← Back to Markdown to PDF',
+  },
+  previewSamples: {
+    document: 'Document',
+    article: 'Article',
+    resume: 'Resume',
+    email: 'Email',
+    contract: 'Contract',
+    blog: 'Blog post',
   },
   about: {
     title: 'About md-bridge',
@@ -496,6 +512,14 @@ const pt: Dictionary = {
     subtitle: 'O catálogo completo de temas está a caminho. Por enquanto, escolha um tema no conversor.',
     back: '← Voltar para Markdown para PDF',
   },
+  previewSamples: {
+    document: 'Documento',
+    article: 'Artigo',
+    resume: 'Currículo',
+    email: 'E-mail',
+    contract: 'Contrato',
+    blog: 'Post de blog',
+  },
   about: {
     title: 'Sobre o md-bridge',
     intro:
@@ -705,6 +729,14 @@ const es: Dictionary = {
     title: 'Biblioteca de temas',
     subtitle: 'El catálogo completo de temas está en camino. Por ahora, elige un tema en el conversor.',
     back: '← Volver a Markdown a PDF',
+  },
+  previewSamples: {
+    document: 'Documento',
+    article: 'Artículo',
+    resume: 'Currículum',
+    email: 'Correo',
+    contract: 'Contrato',
+    blog: 'Entrada de blog',
   },
   about: {
     title: 'Acerca de md-bridge',
