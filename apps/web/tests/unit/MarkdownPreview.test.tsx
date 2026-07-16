@@ -26,6 +26,13 @@ describe('MarkdownPreview', () => {
     expect(wrapper).not.toBeNull()
   })
 
+  it('renders blockquotes as a <blockquote> (#218)', () => {
+    const { container } = render(<MarkdownPreview markdown={'> A quoted line.'} />)
+    const quote = container.querySelector('.md-preview blockquote')
+    expect(quote).not.toBeNull()
+    expect(quote).toHaveTextContent('A quoted line.')
+  })
+
   it('renders GFM tables as a <table> with column headers', () => {
     const md = '| Col A | Col B |\n|---|---|\n| 1 | 2 |'
     render(<MarkdownPreview markdown={md} />)

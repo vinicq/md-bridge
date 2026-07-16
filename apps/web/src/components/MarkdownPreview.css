@@ -72,3 +72,28 @@
 .md-preview ol {
   padding-left: var(--s-6);
 }
+
+/* Blockquotes emitted when detect_blockquotes is on (#218). A left side-rule
+   plus a soft accent tint reads as a quote in both themes; contrast of the
+   muted text over the tint meets WCAG AA (light 5.5:1, dark 6.6:1). */
+.md-preview blockquote {
+  margin: var(--s-4) 0;
+  padding: var(--s-3) var(--s-4);
+  border-left: 3px solid var(--c-accent);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: var(--c-accent-soft);
+  color: var(--c-ink-soft);
+  font-style: italic;
+  text-align: left;
+}
+
+.md-preview blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* A link inside a quote sits on the accent tint, where the global anchor color
+   (--c-accent) drops to ~3.86:1. Use the stronger accent variant the theme
+   ships for text on this tint (#178) so quoted links keep WCAG AA. */
+.md-preview blockquote a {
+  color: var(--c-accent-strong);
+}

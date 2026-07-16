@@ -565,3 +565,54 @@ test.describe('pdf-to-md post-conversion a11y', () => {
     })
   }
 })
+
+// #218: the styled blockquote paints muted text (--c-ink-soft) over an accent
+// tint (--c-accent-soft), a color pair the plain post-conversion sweep above
+// never renders. Mock a conversion whose Markdown contains a blockquote and run
+// color-contrast over the rendered quote in both themes (WCAG 1.4.3).
+test.describe('blockquote preview a11y (#218)', () => {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`styled blockquote passes color-contrast [${theme}]`, async ({ page }) => {
+      await page.addInitScript((t) => {
+        window.localStorage.setItem('md-bridge:locale', 'en')
+        window.localStorage.setItem('md-bridge:theme', t)
+      }, theme)
+      await page.route('**/api/pdf-to-md', (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            md: '# Report\n\n> A quoted passage long enough to measure contrast, with a [quoted link](https://example.com) on the tint.\n\nA body paragraph after the quote.',
+            front_matter: {},
+            warnings: [],
+            stats: { headings: 1, tables: 0, bullets: 0 },
+          }),
+        }),
+      )
+      await page.goto('/convert/pdf-to-md', { waitUntil: 'networkidle' })
+      const appliedTheme = await page.evaluate(() =>
+        document.documentElement.getAttribute('data-theme'),
+      )
+      expect(appliedTheme, `expected data-theme=${theme}`).toBe(theme)
+
+      await page.locator('input[type="file"]').setInputFiles(ISTQB)
+      await page.getByRole('button', { name: /convert all/i }).click()
+
+      const quote = page.locator('.md-preview blockquote')
+      await expect(quote).toBeVisible({ timeout: 30_000 })
+
+      // Scope to the preview: this test owns the blockquote tint, not unrelated
+      // page chrome (the batch row's done-state color is a separate concern).
+      const results = await new AxeBuilder({ page })
+        .include('.md-preview')
+        .withRules(['color-contrast'])
+        .analyze()
+      expect(
+        results.violations,
+        `color-contrast violations on blockquote [${theme}]: ${results.violations
+          .map((v) => v.id)
+          .join(', ')}`,
+      ).toHaveLength(0)
+    })
+  }
+})
