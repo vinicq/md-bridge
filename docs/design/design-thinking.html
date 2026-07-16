@@ -956,7 +956,7 @@
   .btn-m{border-radius:8px;} .status-pill{border-radius:6px;}
   .doc-bar__brand{display:inline-flex;align-items:center;}
   .doc-bar__logo{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:var(--c-ink);margin-right:9px;flex:0 0 auto;}
-  .doc-bar__logo svg{display:block;}
+  .doc-bar__logo svg{display:block;color:var(--c-bg);}
   .theme-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;flex:0 0 auto;border:1px solid var(--c-rule);border-radius:8px;background:var(--c-bg-elev);color:var(--c-ink);cursor:pointer;transition:border-color var(--t-fast) var(--easing),color var(--t-fast) var(--easing);}
   .theme-btn:hover{border-color:var(--c-accent);color:var(--c-accent);}
   .hero-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:var(--s-6);}
@@ -965,13 +965,19 @@
   html[data-theme="dark"]{--c-bg:#121212;--c-bg-elev:#1b1b1a;--c-ink:#f0ebe1;--c-ink-soft:#b7ae9c;--c-rule:#302f2b;--c-accent:#ff8a80;--c-accent-soft:#3a1a1a;--c-ok:#7fd6a0;--c-warn:#e0b64d;--shadow-1:0 1px 2px rgba(0,0,0,.35);--shadow-2:0 12px 34px rgba(0,0,0,.5);color-scheme:dark;}
   html[data-theme="dark"] .doc-bar{background:rgba(18,18,18,.86);}
   html[data-theme="dark"] .browser{--c-bg:#f7f3ec;--c-bg-elev:#fdfaf3;--c-ink:#1a1a1a;--c-ink-soft:#555;--c-rule:#d8d2c5;--c-accent:#c8362f;--c-accent-soft:#f1d8d5;--c-ok:#2e7d4a;--c-warn:#b8860b;color:#1a1a1a;}
+  html[data-theme="dark"] .tag--ok,html[data-theme="dark"] .issue .label--good{background:#14301f;border-color:#2c5740;}
+  html[data-theme="dark"] .tag--warn{background:#33280f;border-color:#5a4a1f;}
+  /* inside the browser mockup the tokens reset to light, so restore the light chip fills */
+  html[data-theme="dark"] .browser .tag--ok{background:#e9f3eb;border-color:#c8e2ce;}
+  html[data-theme="dark"] .browser .tag--warn{background:#f7ecd0;border-color:#ecdcb0;}
 </style>
+<script>try{if(localStorage.getItem('md-bridge:design-doc:theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}</script>
 </head>
 <body>
 
 <header class="doc-bar">
   <div class="doc-bar__inner">
-  <div class="doc-bar__brand"><span class="doc-bar__logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fdfaf3" stroke-width="2.2" stroke-linecap="round"><path d="M4 8v8M20 8v8M4 12h16"/><path d="M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg></span>md-bridge <small>design&nbsp;thinking · v0.2</small></div>
+  <div class="doc-bar__brand"><span class="doc-bar__logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 8v8M20 8v8M4 12h16"/><path d="M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg></span>md-bridge <small>design&nbsp;thinking · v0.2</small></div>
     <nav class="doc-bar__nav">
       <a href="#foundations">Foundations</a>
       <a href="#roadmap">Roadmap</a>
