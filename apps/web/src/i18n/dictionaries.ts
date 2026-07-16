@@ -28,6 +28,8 @@ interface Dictionary {
       openConverter: string
       requestPair: string
       newTab: string
+      filter: string
+      all: string
       status: { shipped: string; inPr: string; roadmap: string; wanted: string }
     }
   }
@@ -255,6 +257,8 @@ const en: Dictionary = {
       openConverter: 'Open converter',
       requestPair: 'Request this pair',
       newTab: '(opens in a new tab)',
+      filter: 'Filter',
+      all: 'All',
       status: { shipped: 'Shipped', inPr: 'In PR', roadmap: 'Roadmap', wanted: 'Wanted' },
     },
   },
@@ -495,6 +499,8 @@ const pt: Dictionary = {
       openConverter: 'Abrir conversor',
       requestPair: 'Pedir este par',
       newTab: '(abre em uma nova aba)',
+      filter: 'Filtro',
+      all: 'Todos',
       status: { shipped: 'Disponível', inPr: 'Em PR', roadmap: 'No mapa', wanted: 'Procurado' },
     },
   },
@@ -735,6 +741,8 @@ const es: Dictionary = {
       openConverter: 'Abrir conversor',
       requestPair: 'Solicitar este par',
       newTab: '(se abre en una pestaña nueva)',
+      filter: 'Filtro',
+      all: 'Todos',
       status: { shipped: 'Disponible', inPr: 'En PR', roadmap: 'En la hoja de ruta', wanted: 'Buscado' },
     },
   },

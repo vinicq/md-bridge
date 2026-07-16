@@ -1,10 +1,14 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useFormats } from '../hooks/useFormats'
 import { useTranslation } from '../i18n'
 import type { Format, FormatStatus } from '../lib/api'
 import { hasConverterPage } from '../lib/converterRoutes'
 import './FormatMatrix.css'
+
+// The matrix filter (#396) mirrors the designer: All plus the three destination
+// statuses. `in-pr` has no chip, so an in-PR pair shows only under All.
+type FilterValue = 'all' | 'shipped' | 'roadmap' | 'wanted'
 
 // The format hub on Home (#237). Renders the conversion matrix straight from the
 // GET /api/formats registry (#60), so a pair added on the server appears with no
@@ -27,6 +31,7 @@ export function FormatMatrix() {
   const { t } = useTranslation()
   const { formats } = useFormats()
   const headingId = useId()
+  const [filter, setFilter] = useState<FilterValue>('all')
   const m = t.home.matrix
 
   // The API status enum (hyphenated) maps to an i18n label. Explicit lookup so
@@ -42,11 +47,34 @@ export function FormatMatrix() {
   // curated cards above stay regardless.
   if (formats.length === 0) return null
 
+  const filters: { value: FilterValue; label: string }[] = [
+    { value: 'all', label: m.all },
+    { value: 'shipped', label: m.status.shipped },
+    { value: 'roadmap', label: m.status.roadmap },
+    { value: 'wanted', label: m.status.wanted },
+  ]
+  const countFor = (value: FilterValue) =>
+    formats.filter((fmt) => value === 'all' || fmt.status === value).length
+  const shown = formats.filter((fmt) => filter === 'all' || fmt.status === filter)
+
   return (
     <section className="home__matrix" aria-labelledby={headingId}>
       <h2 id={headingId}>{m.heading}</h2>
+      <div className="format-matrix__filter" role="group" aria-label={m.filter}>
+        {filters.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            className="format-matrix__chip"
+            aria-pressed={filter === f.value}
+            onClick={() => setFilter(f.value)}
+          >
+            {f.label} <span className="format-matrix__count">{countFor(f.value)}</span>
+          </button>
+        ))}
+      </div>
       <ul className="format-matrix">
-        {formats.map((fmt) => (
+        {shown.map((fmt) => (
           <li key={fmt.slug} className="format-cell">
             {fmt.endpoint && hasConverterPage(fmt.slug) ? (
               // A converter page exists for this pair: link to it. Route from the

@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FormatMatrix } from '../../src/components/FormatMatrix'
@@ -48,6 +48,24 @@ describe('FormatMatrix', () => {
     expect(screen.getByText('Markdown → DOCX')).toBeInTheDocument()
   })
 
+  it('filters by status; an in-pr pair shows only under All (#396)', async () => {
+    renderMatrix()
+    await screen.findByRole('heading', { name: /all conversions/i })
+    expect(screen.getAllByRole('listitem')).toHaveLength(FORMATS.length)
+
+    // Filter to Wanted: only the single wanted pair remains.
+    fireEvent.click(screen.getByRole('button', { name: /wanted/i }))
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+    expect(screen.getByText('DOCX → Markdown')).toBeInTheDocument()
+    // in-pr has no chip, so it is hidden under a specific filter.
+    expect(screen.queryByText('RTF → Markdown')).toBeNull()
+
+    // Back to All: every pair, including the in-pr one, is visible again.
+    fireEvent.click(screen.getByRole('button', { name: /^all/i }))
+    expect(screen.getAllByRole('listitem')).toHaveLength(FORMATS.length)
+    expect(screen.getByText('RTF → Markdown')).toBeInTheDocument()
+  })
+
   it('links shipped cells that have a UI page to their converter route, from the slug', async () => {
     renderMatrix()
     const link = await screen.findByRole('link', { name: /open converter.*PDF → Markdown/i })
@@ -75,8 +93,9 @@ describe('FormatMatrix', () => {
     renderMatrix()
     await screen.findByRole('heading', { name: /all conversions/i })
     // The pair still shows, with its Shipped pill, but it is not a navigable link.
+    // Scope to the pill: the status filter chips carry the same label text.
     expect(screen.getByText('Markdown → RTF')).toBeInTheDocument()
-    expect(screen.getByText('Shipped')).toBeInTheDocument()
+    expect(screen.getByText('Shipped', { selector: '.status-pill' })).toBeInTheDocument()
     expect(screen.queryByRole('link')).toBeNull()
     // And nothing anywhere points at the dead route.
     expect(
@@ -118,10 +137,11 @@ describe('FormatMatrix', () => {
   it('shows the right status pill text per cell, status as text not color alone', async () => {
     renderMatrix()
     await screen.findByRole('heading', { name: /all conversions/i })
-    expect(screen.getAllByText('Shipped')).toHaveLength(2)
-    expect(screen.getByText('In PR')).toBeInTheDocument()
-    expect(screen.getByText('Roadmap')).toBeInTheDocument()
-    expect(screen.getByText('Wanted')).toBeInTheDocument()
+    // Scope to the pills: the filter chips reuse the same status label text.
+    expect(screen.getAllByText('Shipped', { selector: '.status-pill' })).toHaveLength(2)
+    expect(screen.getByText('In PR', { selector: '.status-pill' })).toBeInTheDocument()
+    expect(screen.getByText('Roadmap', { selector: '.status-pill' })).toBeInTheDocument()
+    expect(screen.getByText('Wanted', { selector: '.status-pill' })).toBeInTheDocument()
   })
 
   it('every cell link carries a unique, self-describing accessible name', async () => {
