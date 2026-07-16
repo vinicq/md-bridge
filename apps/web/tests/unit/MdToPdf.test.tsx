@@ -9,6 +9,7 @@ import { MdToPdf } from '../../src/pages/MdToPdf'
 
 vi.mock('../../src/lib/api', () => ({
   convertMdToPdf: vi.fn(),
+  fetchThemeCss: vi.fn().mockResolvedValue('body{}'),
   fetchThemes: vi.fn().mockResolvedValue([
     { slug: 'default', name: 'Default', description: '', family: 'general' },
     { slug: 'academic', name: 'Academic', description: 'Serif.', family: 'serif' },
@@ -173,4 +174,13 @@ describe('MdToPdf', () => {
     await screen.findByText('Error')
     expect(screen.queryByText('PDF ready.')).toBeNull()
   }, 10000)
+
+  it('previews pasted markdown with the selected theme before conversion (#397)', async () => {
+    render(wrap(<MdToPdf />, 'en'))
+    fireEvent.change(screen.getByLabelText('Pasted markdown'), {
+      target: { value: '# Hello\n\nBody.' },
+    })
+    // The themed live preview iframe appears, no backend round-trip needed.
+    expect(await screen.findByTitle('Live theme preview')).toBeInTheDocument()
+  })
 })

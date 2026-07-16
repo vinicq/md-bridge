@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { useThemes } from '../hooks/useThemes'
 import { fetchThemeCss } from '../lib/api'
 import { Button } from '../components/Button'
+import { ThemedPreview } from '../components/ThemedPreview'
 import { useTranslation } from '../i18n'
 import { PREVIEW_SAMPLES, type PreviewSampleId } from '../lib/previewSamples'
 import './Themes.css'
@@ -73,13 +71,6 @@ const SAMPLE_ORDER: SampleMode[] = [
   'diagram',
 ]
 
-// A blank document with a mount point. The preview renders the theme <style>
-// and the sample into #root with a React portal, so the theme CSS is fully
-// isolated from the app and nothing is fetched over the network.
-const FRAME_DOC =
-  '<!doctype html><html><head><meta charset="utf-8"></head>' +
-  '<body><div id="root"></div></body></html>'
-
 function download(name: string, text: string, type: string): void {
   const url = URL.createObjectURL(new Blob([text], { type }))
   const a = document.createElement('a')
@@ -89,41 +80,6 @@ function download(name: string, text: string, type: string): void {
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
-}
-
-interface PreviewFrameProps {
-  css: string
-  markdown: string
-  title: string
-}
-
-// Renders the sample into an isolated iframe via a portal (no react-dom/server,
-// so no bundle cost). The theme CSS is a declarative <style> in the portal, so
-// React keeps it in sync when the theme or custom CSS changes.
-function PreviewFrame({ css, markdown, title }: PreviewFrameProps) {
-  const [root, setRoot] = useState<HTMLElement | null>(null)
-
-  return (
-    <>
-      <iframe
-        className="theme-lib__frame"
-        title={title}
-        srcDoc={FRAME_DOC}
-        onLoad={(e) => {
-          const node = e.currentTarget.contentDocument?.getElementById('root')
-          if (node) setRoot(node)
-        }}
-      />
-      {root &&
-        createPortal(
-          <>
-            <style>{css}</style>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
-          </>,
-          root,
-        )}
-    </>
-  )
 }
 
 export function Themes() {
@@ -138,7 +94,6 @@ export function Themes() {
   const [customCss, setCustomCss] = useState('')
   const [sampleMode, setSampleMode] = useState<SampleMode>('document')
 
-  const [baseCss, setBaseCss] = useState('')
   const [sourceCss, setSourceCss] = useState('')
 
   // Derive the active theme rather than store it in an effect: the user's pick
@@ -146,17 +101,8 @@ export function Themes() {
   const active =
     picked || themes.find((x) => x.slug === 'academic')?.slug || themes[0]?.slug || ''
 
-  // default.css is the base every theme stacks on; fetch it once.
-  useEffect(() => {
-    const ac = new AbortController()
-    fetchThemeCss('default', ac.signal)
-      .then(setBaseCss)
-      .catch(() => setBaseCss(''))
-    return () => ac.abort()
-  }, [])
-
-  // The active theme's own overlay drives the Source tab, the download, and
-  // (for non-default) the preview stack.
+  // The active theme's own overlay drives the Source tab and the download. The
+  // live preview fetches its own CSS through ThemedPreview.
   useEffect(() => {
     if (!active) return
     const ac = new AbortController()
@@ -170,9 +116,6 @@ export function Themes() {
     () => themes.filter((theme) => filter === 'all' || normalizeFamily(theme.family) === filter),
     [themes, filter],
   )
-
-  const stackedCss =
-    (active === 'default' ? baseCss : `${baseCss}\n${sourceCss}`) + `\n${customCss}`
 
   const activeTheme = themes.find((x) => x.slug === active)
   const familyLabel: Record<FilterValue, string> = {
@@ -246,7 +189,13 @@ export function Themes() {
             ))}
           </div>
 
-          <PreviewFrame css={stackedCss} markdown={SAMPLE_MARKDOWN[sampleMode]} title={lib.preview} />
+          <ThemedPreview
+            themeSlug={active}
+            markdown={SAMPLE_MARKDOWN[sampleMode]}
+            extraCss={customCss}
+            title={lib.preview}
+            className="theme-lib__frame"
+          />
 
           <div className="theme-lib__actions">
             <Button
