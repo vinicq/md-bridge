@@ -152,3 +152,30 @@ for (const theme of THEMES) {
     })
   })
 }
+
+// #392: the theme library page. Its live-preview iframe renders theme CSS whose
+// pixels are not stable to diff, so mask it; the baseline covers the page chrome
+// (grid, filter, tabs, tiles) in both themes.
+for (const theme of THEMES) {
+  test(`theme library — ${theme}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.addInitScript(
+      (t) => {
+        window.localStorage.setItem('md-bridge:theme', t)
+        window.localStorage.setItem('md-bridge:locale', 'en')
+      },
+      theme,
+    )
+    await page.goto('/themes')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+    await page.addStyleTag({ content: FREEZE_CSS })
+    await expect(page.getByRole('button', { name: /academic/i })).toBeVisible({ timeout: 30_000 })
+    await page.waitForLoadState('networkidle')
+
+    await expect(page).toHaveScreenshot(`theme-library-${theme}.png`, {
+      fullPage: true,
+      animations: 'disabled',
+      mask: [page.locator('.theme-lib__frame')],
+    })
+  })
+}
