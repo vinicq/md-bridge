@@ -78,6 +78,10 @@ others are natural fits behind the same heuristic-pipeline pattern.
   PyMuPDF's `find_tables`, and YAML front matter for metadata.
 - **Markdown to PDF** rendered through headless Chromium (Playwright) using
   a bundled A4 stylesheet at `packages/markdown-to-pdf/templates/default.css`.
+  Pick from 21 CSS themes, layer your own custom CSS on top, and opt into
+  Mermaid diagrams (rendered offline from a vendored bundle).
+- **Theme library** at `/themes`: browse every theme, filter by family, preview
+  it live on realistic samples, and download its `.css`.
 - **Batch mode**: drop one file or a whole folder. The UI lists every file,
   converts them in sequence, and lets you download each result as it lands.
 - **`/api/inspect-pdf`** returns diagnostics (fonts, sizes, tagged-PDF flag,
