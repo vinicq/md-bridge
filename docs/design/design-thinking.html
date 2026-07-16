@@ -945,12 +945,33 @@
     }
   }
 </style>
+<style>
+  :root{--r-lg:12px;--r-xl:14px;--shadow-2:0 12px 34px rgba(60,40,20,.10);}
+  .sys-card{border-radius:var(--r-xl);transition:box-shadow var(--t-base) var(--easing),transform var(--t-base) var(--easing);}
+  a.sys-card:hover{box-shadow:var(--shadow-2);transform:translateY(-2px);}
+  .browser{border-radius:var(--r-xl);box-shadow:var(--shadow-2);}
+  .browser__chrome{border-top-left-radius:var(--r-xl);border-top-right-radius:var(--r-xl);}
+  .issue{border-radius:var(--r-xl);}
+  .panel,.tile,.theme-tile,.md-preview,.dropzone-m{border-radius:var(--r-lg);}
+  .btn-m{border-radius:8px;} .status-pill{border-radius:6px;}
+  .doc-bar__brand{display:inline-flex;align-items:center;}
+  .doc-bar__logo{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:var(--c-ink);margin-right:9px;flex:0 0 auto;}
+  .doc-bar__logo svg{display:block;}
+  .theme-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;flex:0 0 auto;border:1px solid var(--c-rule);border-radius:8px;background:var(--c-bg-elev);color:var(--c-ink);cursor:pointer;transition:border-color var(--t-fast) var(--easing),color var(--t-fast) var(--easing);}
+  .theme-btn:hover{border-color:var(--c-accent);color:var(--c-accent);}
+  .hero-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:var(--s-6);}
+  .hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--c-ink-soft);border:1px solid var(--c-rule);background:var(--c-bg-elev);padding:6px 11px;border-radius:999px;white-space:nowrap;}
+  .hero-badge svg{color:var(--c-ok);flex:0 0 auto;}
+  html[data-theme="dark"]{--c-bg:#121212;--c-bg-elev:#1b1b1a;--c-ink:#f0ebe1;--c-ink-soft:#b7ae9c;--c-rule:#302f2b;--c-accent:#ff8a80;--c-accent-soft:#3a1a1a;--c-ok:#7fd6a0;--c-warn:#e0b64d;--shadow-1:0 1px 2px rgba(0,0,0,.35);--shadow-2:0 12px 34px rgba(0,0,0,.5);color-scheme:dark;}
+  html[data-theme="dark"] .doc-bar{background:rgba(18,18,18,.86);}
+  html[data-theme="dark"] .browser{--c-bg:#f7f3ec;--c-bg-elev:#fdfaf3;--c-ink:#1a1a1a;--c-ink-soft:#555;--c-rule:#d8d2c5;--c-accent:#c8362f;--c-accent-soft:#f1d8d5;--c-ok:#2e7d4a;--c-warn:#b8860b;color:#1a1a1a;}
+</style>
 </head>
 <body>
 
 <header class="doc-bar">
   <div class="doc-bar__inner">
-  <div class="doc-bar__brand">md-bridge <small>design&nbsp;thinking · v0.1</small></div>
+  <div class="doc-bar__brand"><span class="doc-bar__logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fdfaf3" stroke-width="2.2" stroke-linecap="round"><path d="M4 8v8M20 8v8M4 12h16"/><path d="M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg></span>md-bridge <small>design&nbsp;thinking · v0.2</small></div>
     <nav class="doc-bar__nav">
       <a href="#foundations">Foundations</a>
       <a href="#roadmap">Roadmap</a>
@@ -964,6 +985,7 @@
       <a href="#f8">Settings</a>
     </nav>
     <span class="doc-bar__tag">design doc</span>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle light / dark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
   </div>
 </header>
 
@@ -974,6 +996,7 @@
     <div>
       <h1>Same logic.<br><em>More bridges.</em></h1>
       <p>A design-thinking base for the next round of <strong>md-bridge</strong> features &mdash; built on the editorial system that already ships, ready to be sliced into community-friendly GitHub issues.</p>
+      <div class="hero-badges"><span class="hero-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>100% local</span><span class="hero-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Deterministic</span><span class="hero-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No telemetry</span><span class="hero-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>MIT licensed</span><span class="hero-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>EN · PT · ES</span></div>
     </div>
     <aside class="hero-meta">
       <div class="kv"><span>Project</span><strong>vinicq/md-bridge</strong></div>
@@ -2751,5 +2774,17 @@ One page at `/preferences` grouped in three sections: **Defaults**, **UI**, **Pr
   }
 </style>
 
+<script>
+  (function () {
+    var btn = document.getElementById('themeBtn');
+    if (!btn) return;
+    var sun = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>';
+    var moon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    function set(t){document.documentElement.dataset.theme=t;btn.innerHTML=t==='dark'?sun:moon;try{localStorage.setItem('md-bridge:design-doc:theme',t);}catch(e){}}
+    var saved=null; try{saved=localStorage.getItem('md-bridge:design-doc:theme');}catch(e){}
+    set(saved==='dark'?'dark':'light');
+    btn.addEventListener('click',function(){set(document.documentElement.dataset.theme==='dark'?'light':'dark');});
+  })();
+</script>
 </body>
 </html>
