@@ -41,6 +41,7 @@ export interface MdToPdfOptions {
   lang?: string
   theme?: string
   page_setup?: PageSetup | null
+  custom_css?: string
 }
 
 export interface MdToDocxOptions {

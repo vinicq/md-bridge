@@ -25,6 +25,7 @@ function initialTheme(): string {
 export function MdToPdf() {
   const { t } = useTranslation()
   const [pasted, setPasted] = useState('')
+  const [customCss, setCustomCss] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string; id: number } | null>(
     null,
@@ -69,7 +70,11 @@ export function MdToPdf() {
     // (reconciled) selection (#24); switching theme re-runs the queue via the
     // effect below.
     convert: (file, signal) =>
-      convertMdToPdf(file, { theme: activeTheme, page_setup: DEFAULT_PAGE_SETUP }, signal),
+      convertMdToPdf(
+        file,
+        { theme: activeTheme, page_setup: DEFAULT_PAGE_SETUP, custom_css: customCss },
+        signal,
+      ),
     toBlobUrl: (blob) => URL.createObjectURL(blob),
     // 10-minute ceiling so a backgrounded tab cannot leave an item stuck in
     // flight forever (issue #138). Removing this line restores the old
@@ -188,6 +193,17 @@ export function MdToPdf() {
             onChange={(e) => setPasted(e.target.value)}
             aria-label={t.mdToPdf.pasteLabel}
           />
+          <details className="md-custom-css">
+            <summary>{t.themeLib.custom}</summary>
+            <p className="md-custom-css__hint">{t.themeLib.customHint}</p>
+            <textarea
+              className="md-input md-input--css"
+              value={customCss}
+              spellCheck={false}
+              onChange={(e) => setCustomCss(e.target.value)}
+              aria-label={t.themeLib.custom}
+            />
+          </details>
           <div className="stack__actions">
             <ConvertButton
               status={batch.running ? 'loading' : 'idle'}
@@ -234,6 +250,7 @@ export function MdToPdf() {
             <ThemedPreview
               themeSlug={activeTheme}
               markdown={previewMarkdown}
+              extraCss={customCss}
               title={t.mdToPdf.livePreviewTitle}
               className="pdf-preview"
             />
