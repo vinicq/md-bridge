@@ -1,4 +1,17 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
+
+const here = path.dirname(fileURLToPath(import.meta.url))
+const ISTQB = path.resolve(
+  here,
+  '..',
+  '..',
+  'api',
+  'tests',
+  'fixtures',
+  'istqb-ctal-ta-syllabus-en.pdf',
+)
 
 /**
  * Visual regression baselines for the public surface (#16).
@@ -69,4 +82,73 @@ for (const route of ROUTES) {
       })
     }
   }
+}
+
+// #218: the blockquote style only appears after a conversion, so the static
+// route screenshots above never exercise it. Mock a conversion whose Markdown
+// covers the quote variants (simple, nested, with a list and a code fence, and
+// an attribution) and snapshot the rendered preview in both themes, so a pixel
+// change in the quote treatment is caught here.
+const BLOCKQUOTE_MD = [
+  '# Blockquote styles',
+  '',
+  '> A simple single-line quote.',
+  '',
+  '> A quote that carries a [link](https://example.com) on the tint.',
+  '',
+  '> Outer quote.',
+  '>',
+  '> > A nested quote inside it.',
+  '',
+  '> A quote that carries a list:',
+  '>',
+  '> - first item',
+  '> - second item',
+  '>',
+  '> ```js',
+  '> const x = 1',
+  '> ```',
+  '',
+  '> The quote ends with an attribution.',
+  '>',
+  '> Attribution: a cited source.',
+].join('\n')
+
+for (const theme of THEMES) {
+  test(`blockquote preview — ${theme}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.addInitScript(
+      (t) => {
+        window.localStorage.setItem('md-bridge:theme', t)
+        window.localStorage.setItem('md-bridge:locale', 'en')
+      },
+      theme,
+    )
+    await page.route('**/api/pdf-to-md', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          md: BLOCKQUOTE_MD,
+          front_matter: {},
+          warnings: [],
+          stats: { headings: 1, tables: 0, bullets: 2 },
+        }),
+      }),
+    )
+    await page.goto('/convert/pdf-to-md')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+    await page.addStyleTag({ content: FREEZE_CSS })
+
+    await page.locator('input[type="file"]').setInputFiles(ISTQB)
+    await page.getByRole('button', { name: /convert all/i }).click()
+
+    const preview = page.locator('.md-preview')
+    await expect(preview.locator('blockquote').first()).toBeVisible({ timeout: 30_000 })
+    await page.waitForLoadState('networkidle')
+
+    await expect(preview).toHaveScreenshot(`blockquote-preview-${theme}.png`, {
+      animations: 'disabled',
+    })
+  })
 }
