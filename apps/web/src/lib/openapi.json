@@ -1,0 +1,878 @@
+{
+  "components": {
+    "schemas": {
+      "Body_inspect_pdf_api_inspect_pdf_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "The PDF to inspect.",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_inspect_pdf_api_inspect_pdf_post",
+        "type": "object"
+      },
+      "Body_md_to_docx_api_md_to_docx_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "The Markdown file to convert.",
+            "title": "File",
+            "type": "string"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional JSON string. Example: `{\"lang\": \"en\"}`.",
+            "title": "Options"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_md_to_docx_api_md_to_docx_post",
+        "type": "object"
+      },
+      "Body_md_to_pdf_api_md_to_pdf_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "The Markdown file to render.",
+            "title": "File",
+            "type": "string"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional JSON string. Example: `{\"lang\": \"en\"}`.",
+            "title": "Options"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_md_to_pdf_api_md_to_pdf_post",
+        "type": "object"
+      },
+      "Body_pdf_to_md_api_pdf_to_md_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "The PDF to convert.",
+            "title": "File",
+            "type": "string"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional JSON string. Example: `{\"page_break\": false, \"with_images\": false, \"front_matter\": true, \"lang\": \"en\"}`.",
+            "title": "Options"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_pdf_to_md_api_pdf_to_md_post",
+        "type": "object"
+      },
+      "ConvertStats": {
+        "properties": {
+          "bullets": {
+            "default": 0,
+            "title": "Bullets",
+            "type": "integer"
+          },
+          "headings": {
+            "default": 0,
+            "title": "Headings",
+            "type": "integer"
+          },
+          "tables": {
+            "default": 0,
+            "title": "Tables",
+            "type": "integer"
+          }
+        },
+        "title": "ConvertStats",
+        "type": "object"
+      },
+      "FontUsage": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sample": {
+            "title": "Sample",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "size",
+          "count",
+          "sample"
+        ],
+        "title": "FontUsage",
+        "type": "object"
+      },
+      "FormatInfo": {
+        "properties": {
+          "endpoint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint"
+          },
+          "input_mime": {
+            "title": "Input Mime",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "output_mime": {
+            "title": "Output Mime",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "label",
+          "source",
+          "target",
+          "input_mime",
+          "output_mime",
+          "status"
+        ],
+        "title": "FormatInfo",
+        "type": "object"
+      },
+      "FrontMatter": {
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pages"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "FrontMatter",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "InspectPdfResponse": {
+        "properties": {
+          "body_size_pt": {
+            "title": "Body Size Pt",
+            "type": "number"
+          },
+          "fonts": {
+            "items": {
+              "$ref": "#/components/schemas/FontUsage"
+            },
+            "title": "Fonts",
+            "type": "array"
+          },
+          "heading_sizes_pt": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Heading Sizes Pt",
+            "type": "array"
+          },
+          "needs_ocr": {
+            "title": "Needs Ocr",
+            "type": "boolean"
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "integer"
+          },
+          "tagged": {
+            "title": "Tagged",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pages",
+          "body_size_pt",
+          "heading_sizes_pt",
+          "fonts",
+          "tagged",
+          "needs_ocr"
+        ],
+        "title": "InspectPdfResponse",
+        "type": "object"
+      },
+      "PdfToMdResponse": {
+        "properties": {
+          "front_matter": {
+            "$ref": "#/components/schemas/FrontMatter"
+          },
+          "md": {
+            "title": "Md",
+            "type": "string"
+          },
+          "ocr_applied": {
+            "default": false,
+            "title": "Ocr Applied",
+            "type": "boolean"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/ConvertStats"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "md"
+        ],
+        "title": "PdfToMdResponse",
+        "type": "object"
+      },
+      "ThemeInfo": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "description",
+          "family"
+        ],
+        "title": "ThemeInfo",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "name": "md-bridge",
+      "url": "https://github.com/vinicq/md-bridge"
+    },
+    "description": "\n**md-bridge** is a small, opinionated HTTP service that converts between PDF\nand Markdown using hand-written heuristics. No external calls, deterministic\noutput: same input, same output, every run.\n\n## What it does\n\n- **`POST /api/pdf-to-md`**: extract structured Markdown from a PDF.\n- **`POST /api/md-to-pdf`**: render a Markdown file to PDF through Chromium.\n- **`POST /api/inspect-pdf`**: return diagnostics about a PDF (fonts, sizes, tagged-PDF check).\n- **`GET  /api/health`**: liveness probe.\n\n## Try it out\n\nThe interactive docs you are reading right now (powered by Swagger UI) let\nyou call any endpoint with a real file. Click **Try it out**, attach a file,\npress **Execute**.\n\nA walkthrough with `curl` examples lives in\n[docs/API.md](https://github.com/vinicq/md-bridge/blob/main/docs/API.md).\n\n## Limits\n\n- Upload cap: **500 MB** per request.\n- No persistence: every file is processed in a temporary directory and removed\n  before the response is returned.\n- No OCR (v1): scanned PDFs need Tesseract before being submitted.\n",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "summary": "Deterministic, heuristic conversions between PDF and Markdown.",
+    "title": "md-bridge API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/formats": {
+      "get": {
+        "description": "Returns every format pair md-bridge knows about, shipped or planned, as `{slug, label, source, target, input_mime, output_mime, status, endpoint}`. Shipped pairs carry an `endpoint`; planned pairs have `endpoint: null` and a `status` of `roadmap` or `wanted`.",
+        "operationId": "get_formats_api_formats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FormatInfo"
+                  },
+                  "title": "Response Get Formats Api Formats Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List the conversion format pairs",
+        "tags": [
+          "convert"
+        ]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "description": "Returns `{status: 'ok', version: <semver>}` when the API is up.\n\nUse this for container/orchestrator health checks. Always responds in single-digit milliseconds.",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "ok",
+                  "version": "0.1.0"
+                },
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Api Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Service is alive and reports its semantic version."
+          }
+        },
+        "summary": "Service liveness",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/inspect-pdf": {
+      "post": {
+        "description": "Run cheap diagnostics on a PDF without converting it.\n\nUseful as a pre-flight check before `/api/pdf-to-md` so the UI can warn the\nuser about scanned PDFs (which need OCR first), show the inferred body font\nsize, detect PDF/UA tagging, and list the fonts in use.\n\n### Quick curl example\n\n```bash\ncurl -X POST http://localhost:8000/api/inspect-pdf \\\n  -F \"file=@whitepaper.pdf\"\n```\n\n### Response\n\n```json\n{\n  \"pages\": 4,\n  \"body_size_pt\": 11.0,\n  \"heading_sizes_pt\": [18.0, 14.0, 12.5],\n  \"fonts\": [{\"name\": \"InterRegular\", \"size\": 11.0, \"count\": 12048, \"sample\": \"Lorem ipsum...\"}],\n  \"tagged\": true,\n  \"needs_ocr\": false\n}\n```\n\n`needs_ocr=true` means PyMuPDF extracted very little text per page. The PDF\nis almost certainly scanned, so run Tesseract before submitting.",
+        "operationId": "inspect_pdf_api_inspect_pdf_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_inspect_pdf_api_inspect_pdf_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "body_size_pt": 11.0,
+                  "fonts": [
+                    {
+                      "count": 12048,
+                      "name": "InterRegular",
+                      "sample": "Lorem ipsum...",
+                      "size": 11.0
+                    },
+                    {
+                      "count": 320,
+                      "name": "InterBold",
+                      "sample": "Introduction",
+                      "size": 18.0
+                    }
+                  ],
+                  "heading_sizes_pt": [
+                    18.0,
+                    14.0,
+                    12.5
+                  ],
+                  "needs_ocr": false,
+                  "pages": 4,
+                  "tagged": true
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/InspectPdfResponse"
+                }
+              }
+            },
+            "description": "Diagnostics about the uploaded PDF."
+          },
+          "400": {
+            "description": "Upload is not a PDF."
+          },
+          "413": {
+            "description": "Upload exceeds the 500 MB cap."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Inspect a PDF (fonts, sizes, tagged, OCR hint)",
+        "tags": [
+          "inspect"
+        ]
+      }
+    },
+    "/api/md-to-docx": {
+      "post": {
+        "description": "Converts Markdown to a deterministic .docx: headings, bold/italic/inline code, lists, block quotes, fenced code, and tables map onto Word elements. Same input, same bytes, every run.",
+        "operationId": "md_to_docx_api_md_to_docx_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_md_to_docx_api_md_to_docx_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Rendered DOCX."
+          },
+          "400": {
+            "description": "Wrong file type or non-UTF-8 markdown."
+          },
+          "413": {
+            "description": "Upload exceeds the 500 MB cap."
+          },
+          "422": {
+            "description": "Malformed `options` payload."
+          },
+          "500": {
+            "description": "Conversion failed."
+          }
+        },
+        "summary": "Render a Markdown file into a Word document (.docx)",
+        "tags": [
+          "convert"
+        ]
+      }
+    },
+    "/api/md-to-pdf": {
+      "post": {
+        "description": "Render a Markdown file (UTF-8) into a PDF through headless Chromium.\n\nThe rendering uses a bundled A4 CSS theme\n(`packages/markdown-to-pdf/templates/default.css`).\n\n### Request\n\n`multipart/form-data`:\n\n| field | required | description |\n|---|---|---|\n| `file` | yes | A `.md` file (max 500 MB), UTF-8. |\n| `options` | no | JSON: `{ \"lang\": \"en\" }`. |\n\n### Response\n\nBinary `application/pdf`. The `Content-Disposition` header carries a\n`attachment; filename=\"<name>.pdf\"` hint.\n\n### Quick curl example\n\n```bash\ncurl -X POST http://localhost:8000/api/md-to-pdf \\\n  -F \"file=@notes.md\" \\\n  --output notes.pdf\n```",
+        "operationId": "md_to_pdf_api_md_to_pdf_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_md_to_pdf_api_md_to_pdf_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Rendered PDF."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "wrong_file_type",
+                    "message": "Expected a Markdown file (.md) but got: notes.txt"
+                  }
+                }
+              }
+            },
+            "description": "Wrong file type."
+          },
+          "413": {
+            "description": "Upload exceeds the 500 MB cap."
+          },
+          "422": {
+            "description": "Malformed `options` payload."
+          },
+          "500": {
+            "description": "Renderer failed (Chromium crashed, missing template, etc)."
+          }
+        },
+        "summary": "Render a Markdown file into a PDF",
+        "tags": [
+          "convert"
+        ]
+      }
+    },
+    "/api/pdf-to-md": {
+      "post": {
+        "description": "Extract a structured Markdown document from a PDF.\n\nThe conversion is deterministic and heuristic. Headings are detected from\nfont size and the PDF outline, lists from bullet glyphs, tables from\nPyMuPDF's table finder.\n\n### Request\n\n`multipart/form-data` with two fields:\n\n| field | required | description |\n|---|---|---|\n| `file` | yes | A `.pdf` file (max 500 MB). |\n| `options` | no | JSON string with the keys below. |\n\n```json\n{\n  \"page_break\": false,\n  \"with_images\": false,\n  \"front_matter\": true,\n  \"lang\": \"en\"\n}\n```\n\n### Quick curl example\n\n```bash\ncurl -X POST http://localhost:8000/api/pdf-to-md \\\n  -F \"file=@whitepaper.pdf\" \\\n  -F 'options={\"front_matter\": true}'\n```\n\n### Error envelope\n\nEvery failure returns:\n\n```json\n{ \"error\": { \"code\": \"<machine_readable>\", \"message\": \"<human>\", \"detail\": <optional> } }\n```",
+        "operationId": "pdf_to_md_api_pdf_to_md_post",
+        "parameters": [
+          {
+            "description": "Convert even when the PDF has no extractable text layer. Without this, a scanned PDF returns 422 `ocr_required` instead of empty markdown. Use it to bypass a false positive (e.g. an image-only cover).",
+            "in": "query",
+            "name": "force",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Convert even when the PDF has no extractable text layer. Without this, a scanned PDF returns 422 `ocr_required` instead of empty markdown. Use it to bypass a false positive (e.g. an image-only cover).",
+              "title": "Force",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_pdf_to_md_api_pdf_to_md_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "front_matter": {
+                    "author": "Author Name",
+                    "date": "2026-04-12",
+                    "pages": 4,
+                    "source": "whitepaper.pdf",
+                    "title": "Whitepaper"
+                  },
+                  "md": "---\\ntitle: \"Whitepaper\"\\npages: 4\\n---\\n\\n# Introduction\\n\\nFirst paragraph...",
+                  "stats": {
+                    "bullets": 14,
+                    "headings": 6,
+                    "tables": 1
+                  },
+                  "warnings": []
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/PdfToMdResponse"
+                }
+              }
+            },
+            "description": "Successful conversion."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "wrong_file_type",
+                    "message": "Expected a PDF file (.pdf) but got: notes.txt"
+                  }
+                }
+              }
+            },
+            "description": "Upload is not a PDF."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "payload_too_large",
+                    "message": "Upload exceeds 500 MB limit."
+                  }
+                }
+              }
+            },
+            "description": "Upload exceeds the 500 MB cap."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "invalid_options",
+                    "detail": [
+                      {
+                        "loc": [
+                          "page_break"
+                        ],
+                        "msg": "Input should be a valid boolean"
+                      }
+                    ],
+                    "message": "options payload failed validation"
+                  }
+                }
+              }
+            },
+            "description": "Malformed `options` payload."
+          }
+        },
+        "summary": "Convert a PDF to structured Markdown",
+        "tags": [
+          "convert"
+        ]
+      }
+    },
+    "/api/themes": {
+      "get": {
+        "description": "Returns every registered theme as `{slug, name, description, family}`. Pass a slug as `options.theme` on `POST /api/md-to-pdf` to select it.",
+        "operationId": "get_themes_api_themes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ThemeInfo"
+                  },
+                  "title": "Response Get Themes Api Themes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List the Markdown \u2192 PDF themes",
+        "tags": [
+          "convert"
+        ]
+      }
+    },
+    "/api/themes/{slug}/css": {
+      "get": {
+        "description": "Returns the theme's own stylesheet as `text/css` for inline display.",
+        "operationId": "get_theme_css_api_themes__slug__css_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/css": {}
+            },
+            "description": "The theme stylesheet."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "unknown_theme",
+                    "message": "Theme 'whatever' is not registered."
+                  }
+                }
+              }
+            },
+            "description": "Unknown theme slug."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get a theme's raw CSS",
+        "tags": [
+          "convert"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Service liveness.",
+      "name": "health"
+    },
+    {
+      "description": "Conversion endpoints between PDF and Markdown.",
+      "name": "convert"
+    },
+    {
+      "description": "Read-only diagnostics about an uploaded PDF.",
+      "name": "inspect"
+    }
+  ]
+}

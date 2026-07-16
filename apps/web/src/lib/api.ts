@@ -1,3 +1,15 @@
+import type { components } from './api-types'
+
+// Response and domain types are generated from the FastAPI OpenAPI schema
+// (`src/lib/openapi.json` -> `src/lib/api-types.ts`). Regenerate with
+// `npm run gen:api` after the backend schema changes; CI fails on drift. A few
+// fields are refined below where the backend's runtime contract is tighter than
+// the schema advertises.
+type Schemas = components['schemas']
+
+// Request option payloads are NOT part of the OpenAPI schema: the endpoints take
+// them as an opaque JSON string form field (`options`), so there is nothing to
+// generate. They stay hand-typed here.
 interface PdfToMdOptions {
   page_break?: boolean
   with_images?: boolean
@@ -35,62 +47,27 @@ export interface MdToDocxOptions {
   lang?: string
 }
 
-export interface Theme {
-  slug: string
-  name: string
-  description: string
-  family: string
-}
+export type Theme = Schemas['ThemeInfo']
 
 export type FormatStatus = 'shipped' | 'in-pr' | 'roadmap' | 'wanted'
 
-export interface Format {
-  slug: string
-  label: string
-  source: string
-  target: string
-  input_mime: string
-  output_mime: string
-  status: FormatStatus
-  endpoint: string | null
-}
+// FastAPI types `status` as an open string; the registry only ever emits the
+// four values above, and the matrix maps each to an i18n label.
+export type Format = Omit<Schemas['FormatInfo'], 'status'> & { status: FormatStatus }
 
-export interface FrontMatter {
-  title?: string
-  author?: string
-  date?: string
-  source?: string
-  pages?: number
-}
+export type FrontMatter = Schemas['FrontMatter']
 
-export interface ConvertStats {
-  headings: number
-  tables: number
-  bullets: number
-}
+export type ConvertStats = Schemas['ConvertStats']
 
-export interface PdfToMdResponse {
-  md: string
-  front_matter: FrontMatter
-  warnings: string[]
-  stats: ConvertStats
-}
+// The backend always serializes `front_matter`, `stats`, and `warnings` (they
+// are Pydantic model defaults), though the schema marks them optional because a
+// default makes a field non-required. Keep them required for consumers.
+export type PdfToMdResponse = Schemas['PdfToMdResponse'] &
+  Required<Pick<Schemas['PdfToMdResponse'], 'front_matter' | 'stats' | 'warnings'>>
 
-export interface FontUsage {
-  name: string
-  size: number
-  count: number
-  sample: string
-}
+export type FontUsage = Schemas['FontUsage']
 
-export interface InspectPdfResponse {
-  pages: number
-  body_size_pt: number
-  heading_sizes_pt: number[]
-  fonts: FontUsage[]
-  tagged: boolean
-  needs_ocr: boolean
-}
+export type InspectPdfResponse = Schemas['InspectPdfResponse']
 
 export interface ApiErrorBody {
   error: {
