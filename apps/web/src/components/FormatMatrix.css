@@ -109,3 +109,33 @@
   background: var(--c-warn);
   color: #1a1a1a;
 }
+
+/* Status filter chips (#396). */
+.format-matrix__filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-4);
+}
+
+.format-matrix__chip {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  padding: var(--s-1) var(--s-3);
+  border: 1px solid var(--c-rule);
+  border-radius: var(--r-sm);
+  background: var(--c-bg-elev);
+  color: var(--c-ink-soft);
+  cursor: pointer;
+}
+
+.format-matrix__chip[aria-pressed='true'] {
+  background: var(--c-accent-soft);
+  color: var(--c-accent-strong);
+  border-color: var(--c-accent);
+}
+
+.format-matrix__count {
+  font-family: var(--font-mono);
+  opacity: 0.6;
+}
