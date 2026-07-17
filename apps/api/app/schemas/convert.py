@@ -53,6 +53,10 @@ class PdfToMdOptions(BaseModel):
     # Emit ==text== (pymdownx-mark highlight) from PDF text-highlight annotations
     # (#162). Off by default so output stays byte-identical when unused.
     extract_highlights: bool = False
+    # Emit {#fig-N .figure} on numbered figures so cross-references can anchor to
+    # them (#165). Off by default; only relevant with with_images (needs the
+    # extracted image and its caption).
+    emit_figure_anchors: bool = False
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")
