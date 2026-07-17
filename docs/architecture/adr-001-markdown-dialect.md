@@ -114,6 +114,17 @@ preprocessor that rewrites a closed container into GFM alert syntax; a stray `::
 with no closer, or one inside a code fence, is left untouched. No
 `pymdown-extensions` dependency, no new CSS. Renderer (input) adoption only.
 
+### 2026-07-17 - Strikethrough + task-list rendering, issue #143
+
+Closes two of the renderer deltas noted above. `markdown-to-pdf` now renders GFM
+**strikethrough** (`~~text~~` -> `<del>`) and **task lists** (`- [ ]` / `- [x]` ->
+a disabled GitHub-style checkbox). Both were already in the dialect - strikethrough
+is adopted-and-emitted (#142), task lists a forward target now emitted by
+`pdf-to-markdown` (#172) - only the renderer lagged. Strikethrough uses the same
+one-line inline rule as `==mark==`; task lists use a treeprocessor that rewrites a
+`[ ]`/`[x]` list item into a disabled `<input type="checkbox">`. No
+`pymdown-extensions` dependency. A document without the syntax renders unchanged.
+
 ## References
 
 - CommonMark 0.31.2 specification: https://spec.commonmark.org/0.31.2/

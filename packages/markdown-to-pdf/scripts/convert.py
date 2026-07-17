@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
-from xml.etree.ElementTree import SubElement
+from xml.etree.ElementTree import Element, SubElement
 
 import markdown
 import yaml
@@ -49,9 +49,70 @@ class _MarkExtension(Extension):
     """
 
     def extendMarkdown(self, md: markdown.Markdown) -> None:
+        # Priority below the link/autolink processors (link=160, autolink=120) so
+        # a `==` pair inside a link destination is consumed as part of the URL
+        # first and not mangled into a <mark> placeholder (#418 review).
         md.inlinePatterns.register(
-            SimpleTagInlineProcessor(r"(==)(.+?)==", "mark"), "md_bridge_mark", 175
+            SimpleTagInlineProcessor(r"(==)(.+?)==", "mark"), "md_bridge_mark", 116
         )
+
+
+class _DelExtension(Extension):
+    """`~~text~~` -> ``<del>text</del>`` (GFM strikethrough, #143).
+
+    Closes the ADR-001 renderer delta: `pdf-to-markdown` already emits `~~` (#142)
+    but python-markdown core does not parse it. Registered directly rather than
+    via `pymdown-extensions` (lean install). A triple `~~~` fence is handled by
+    the fenced-code preprocessor before inline parsing.
+    """
+
+    def extendMarkdown(self, md: markdown.Markdown) -> None:
+        # The content may not start or end with whitespace, per GFM: `~~ x~~` is
+        # literal, not a strike. Priority is below the link/autolink processors
+        # (link=160, autolink=120) so a `~~` pair inside a URL (e.g.
+        # `a~~old~~.zip`) is consumed with the destination instead of being
+        # turned into a <del> placeholder that corrupts the href (#418 review).
+        md.inlinePatterns.register(
+            SimpleTagInlineProcessor(r"(~~)(\S.*?\S|\S)~~", "del"), "md_bridge_del", 115
+        )
+
+
+# GFM task lists (#143): `- [ ]` / `- [x]` render as a disabled checkbox in the
+# GitHub style. `pdf-to-markdown` emits this syntax (#172); python-markdown core
+# leaves the `[ ]` literal, so this treeprocessor rewrites each matching list
+# item into a checkbox + text. Renderer-only; no converter default changes.
+_TASK_ITEM_RE = re.compile(r"^\[([ xX])\]\s+")
+
+
+class _TaskListTreeprocessor(Treeprocessor):
+    """Turn `<li>[ ] text</li>` into a disabled-checkbox task-list item (#143)."""
+
+    def run(self, root):
+        for li in root.iter("li"):
+            # A tight list keeps the marker in `li.text`; a loose list (items
+            # separated by a blank line) wraps it in a leading `<p>` child. Both
+            # must render, so match whichever holds the marker (#418 review).
+            target = li
+            if _TASK_ITEM_RE.match(li.text or "") is None:
+                if len(li) and li[0].tag == "p" and _TASK_ITEM_RE.match(li[0].text or ""):
+                    target = li[0]
+                else:
+                    continue
+            m = _TASK_ITEM_RE.match(target.text or "")
+            checked = m.group(1).lower() == "x"
+            box = Element("input", {"type": "checkbox", "disabled": "disabled"})
+            if checked:
+                box.set("checked", "checked")
+            box.tail = (target.text or "")[m.end():]  # the item text follows the checkbox
+            target.text = None
+            target.insert(0, box)
+            existing = li.get("class", "")
+            li.set("class", (existing + " task-list-item").strip())
+
+
+class _TaskListExtension(Extension):
+    def extendMarkdown(self, md: markdown.Markdown) -> None:
+        md.treeprocessors.register(_TaskListTreeprocessor(md), "md_bridge_tasklist", 14)
 
 
 # GFM alert callouts (#159). `> [!NOTE]` and the four siblings render as the
@@ -226,6 +287,8 @@ MD_EXTENSIONS = [
     "toc",
     "md_in_html",
     _MarkExtension(),  # ==highlight== -> <mark> (#162)
+    _DelExtension(),  # ~~text~~ -> <del> (#143)
+    _TaskListExtension(),  # - [ ] / - [x] -> disabled checkbox (#143)
 ]
 
 # Front matter is metadata: a few hundred bytes in practice. Cap the block before
