@@ -27,9 +27,29 @@ from urllib.request import url2pathname
 
 import markdown
 import yaml
+from markdown.extensions import Extension
+from markdown.inlinepatterns import SimpleTagInlineProcessor
 from playwright.sync_api import sync_playwright
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+
+class _MarkExtension(Extension):
+    """`==text==` -> ``<mark>text</mark>`` (pymdownx-mark syntax, #162).
+
+    python-markdown core ships no highlight/mark rule and the vendored install
+    stays lean (no pymdown-extensions dependency), so this registers the single
+    inline pattern directly. `pdf-to-markdown` emits this syntax from PDF
+    highlight annotations; rendering it here closes the round trip. Emphasis
+    inside the marked span still parses (`==**x**==` nests correctly). This
+    widens the tag surface only; it never touches the egress policy (#363).
+    """
+
+    def extendMarkdown(self, md: markdown.Markdown) -> None:
+        md.inlinePatterns.register(
+            SimpleTagInlineProcessor(r"(==)(.+?)==", "mark"), "md_bridge_mark", 175
+        )
+
 
 MD_EXTENSIONS = [
     "extra",         # tables, fenced code, attribute lists, abbreviations, def lists, footnotes
@@ -37,6 +57,7 @@ MD_EXTENSIONS = [
     "smarty",
     "toc",
     "md_in_html",
+    _MarkExtension(),  # ==highlight== -> <mark> (#162)
 ]
 
 # Front matter is metadata: a few hundred bytes in practice. Cap the block before

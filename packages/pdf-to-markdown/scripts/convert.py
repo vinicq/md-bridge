@@ -608,6 +608,8 @@ class Span:
     link: str | None = None
     # Set from char_flags (see page_text_dict); not derivable from `flags`.
     is_strikethrough: bool = False
+    # Set from a PDF text-highlight annotation covering this span (#162).
+    is_highlight: bool = False
 
     @property
     def is_bold(self) -> bool:
@@ -674,6 +676,7 @@ class DocProfile:
     footnote_pairing: bool = False  # opt-in: pair footer footnote blocks with body refs (#148)
     footnote_numbers: frozenset = frozenset()  # collected footnote numbers to rewrite as [^N] (#148)
     autolink_urls: bool = False  # opt-in: wrap bare http(s) URLs in body text as autolinks (#157)
+    extract_highlights: bool = False  # opt-in: emit ==text== from PDF text-highlight annotations (#162)
     autolink_emails: bool = False  # opt-in: wrap bare email addresses in body text as autolinks (#157)
     extract_abbreviations: bool = False  # opt-in: emit *[ABBR]: defs from a glossary section (#163)
     caption_alt_text: bool = False  # opt-in: use a caption line below an image as its alt text (#149)
@@ -896,6 +899,99 @@ def annotate_spans_with_links(blocks: list[Block], page_links: list[dict]) -> No
                         break
 
 
+# PyMuPDF's numeric type for a text-highlight annotation. getattr-gated so an
+# older build without the constant degrades to "no highlights" deterministically.
+_PDF_ANNOT_HIGHLIGHT = getattr(fitz, "PDF_ANNOT_HIGHLIGHT", 8)
+# A span counts as highlighted only when a highlight quad covers at least this
+# fraction of the span's WIDTH (the two share the line's vertical band, so width
+# coverage, not area, is the meaningful signal: a span's glyph box is taller than
+# the tight highlight quad, which would dilute an area ratio). A highlight over
+# most of a span marks it; one grazing a few characters does not (#162).
+# ponytail: coarse span granularity - a highlight over PART of a single extracted
+# span marks the whole span (PyMuPDF does not split a span at an annotation
+# boundary). Char-level splitting via rawdict is the upgrade path if sub-span
+# fidelity is ever needed; whole-span marking preserves the user's highlight.
+_HIGHLIGHT_MIN_OVERLAP = 0.5
+
+
+def _highlight_rects(annot: fitz.Annot) -> list[tuple[float, float, float, float]]:
+    """Rectangles a highlight annotation covers.
+
+    A multi-line highlight stores one quad per line in `annot.vertices` (4 points
+    each, PDF quadpoints); using those instead of the union `annot.rect` keeps a
+    highlight that skips the short tail of a line from marking the blank gap. Fall
+    back to `annot.rect` when quad geometry is unavailable.
+    """
+    rects: list[tuple[float, float, float, float]] = []
+    try:
+        verts = annot.vertices
+    except Exception:
+        verts = None
+    if verts:
+        for i in range(0, len(verts) - 3, 4):
+            quad = verts[i:i + 4]
+            xs = [float(p[0]) for p in quad]
+            ys = [float(p[1]) for p in quad]
+            rects.append((min(xs), min(ys), max(xs), max(ys)))
+    if not rects:
+        try:
+            r = annot.rect
+            rects.append((r.x0, r.y0, r.x1, r.y1))
+        except Exception:
+            pass
+    return rects
+
+
+def _highlight_width_coverage(
+    span_bbox: tuple[float, float, float, float],
+    rect: tuple[float, float, float, float],
+) -> float:
+    """Fraction of the span's width a highlight rect covers, or 0 if they do not
+    share the line's vertical band. Width, not area: the two overlap on one line,
+    so horizontal coverage is what says whether the text was highlighted."""
+    sx0, sy0, sx1, sy1 = span_bbox
+    rx0, ry0, rx1, ry1 = rect
+    if min(sy1, ry1) - max(sy0, ry0) <= 0:
+        return 0.0  # different lines
+    span_w = sx1 - sx0
+    if span_w <= 0:
+        return 0.0
+    xcov = min(sx1, rx1) - max(sx0, rx0)
+    return xcov / span_w if xcov > 0 else 0.0
+
+
+def annotate_spans_with_highlights(blocks: list[Block], page: fitz.Page) -> None:
+    """Flag spans covered by a PDF text-highlight annotation (#162).
+
+    A highlight carries geometry and a colour, never the text itself: the marked
+    words are whatever glyphs sit under its quads. We collect every highlight
+    quad on the page, then mark a span when at least half its area falls inside
+    one, so `render_span` wraps it in `==...==`. Robust to older PyMuPDF builds
+    and malformed annotations: any failure degrades to leaving spans unmarked.
+    """
+    try:
+        annots = page.annots()
+    except Exception:
+        return
+    if annots is None:
+        return
+    rects: list[tuple[float, float, float, float]] = []
+    for annot in annots:
+        try:
+            is_highlight = annot.type[0] == _PDF_ANNOT_HIGHLIGHT
+        except Exception:
+            continue
+        if is_highlight:
+            rects.extend(_highlight_rects(annot))
+    if not rects:
+        return
+    for block in blocks:
+        for line in block.lines:
+            for span in line.spans:
+                if any(_highlight_width_coverage(span.bbox, r) >= _HIGHLIGHT_MIN_OVERLAP for r in rects):
+                    span.is_highlight = True
+
+
 def horizontal_strokes(page: fitz.Page) -> list[tuple[float, float, float]]:
     """Return (y, x0, x1) for each near-horizontal rule drawn on the page.
 
@@ -1017,6 +1113,11 @@ def render_span(
         # order `~~**text**~~` so output is stable across runs (#142).
         if span.is_strikethrough:
             core = f"~~{core}~~"
+        # Highlight wraps the strikethrough/emphasis stack, so the nested order is
+        # stable as `==~~**text**~~==` and the pymdownx-mark syntax stays outermost
+        # of the inline markers, just inside a link (#162).
+        if span.is_highlight:
+            core = f"=={core}=="
         if span.link:
             core = f"[{core}]({span.link})"
     return out[:leading] + core + (out[len(out) - trailing:] if trailing else "")
@@ -1037,6 +1138,9 @@ def render_line(
             and merged[-1].is_bold == s.is_bold
             and merged[-1].is_italic == s.is_italic
             and merged[-1].is_strikethrough == s.is_strikethrough
+            # Keep a highlighted span separate from an unhighlighted neighbour, or
+            # one `==...==` would swallow the unmarked text (mirrors strike, #162).
+            and merged[-1].is_highlight == s.is_highlight
             # Under footnote pairing, keep a superscript span separate so a
             # footnote digit is rewritten on its own rather than fused into
             # adjacent body text (#148). With the flag off (empty set) the
@@ -1050,6 +1154,7 @@ def render_line(
                 font=merged[-1].font,
                 flags=merged[-1].flags,
                 is_strikethrough=merged[-1].is_strikethrough,
+                is_highlight=merged[-1].is_highlight,
             )
         else:
             merged.append(s)
@@ -1747,6 +1852,8 @@ def convert_page(
         parsed_blocks.append(block)
 
     annotate_spans_with_links(parsed_blocks, page_links)
+    if profile.extract_highlights:
+        annotate_spans_with_highlights(parsed_blocks, page)
     drop_rule_strikethroughs(parsed_blocks, page)
 
     # Pair each image with a small-font caption line just below it and use that
@@ -2189,6 +2296,7 @@ def convert_document(
     emit_heading_anchors: bool = False,
     pair_quote_attribution: bool = False,
     extract_abbreviations: bool = False,
+    extract_highlights: bool = False,
     smart_typography_quotes: str = "preserve",
     smart_typography_ellipsis: str = "preserve",
     smart_typography_dashes: str = "preserve",
@@ -2206,6 +2314,7 @@ def convert_document(
     profile.footnote_pairing = footnote_pairing
     profile.autolink_urls = autolink_urls
     profile.autolink_emails = autolink_emails
+    profile.extract_highlights = extract_highlights
     footnote_defs: dict[int, str] = {}
     if footnote_pairing:
         footnote_defs = collect_footnote_definitions(doc, profile)
@@ -2697,6 +2806,11 @@ def main() -> int:
         action="store_true",
         help="Also recognize the todo-md [-] in-progress marker (requires --detect-task-lists, #172)",
     )
+    parser.add_argument(
+        "--extract-highlights",
+        action="store_true",
+        help="Emit ==text== from PDF text-highlight annotations (opt-in, #162)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -2730,6 +2844,7 @@ def main() -> int:
         caption_alt_text=args.caption_alt_text,
         detect_task_lists=args.detect_task_lists,
         task_list_extended=args.task_list_extended,
+        extract_highlights=args.extract_highlights,
     )
     return 0
 
