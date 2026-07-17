@@ -72,6 +72,48 @@ def test_render_span_without_strikethrough_has_no_tildes():
     assert "~~" not in mod.render_span(span("plain text"))
 
 
+def test_render_span_highlight_wraps_in_double_equals():
+    # #162: a highlighted span renders as pymdownx-mark ==...==.
+    s = Span(text="key point", size=10.0, font="Arial", flags=0, is_highlight=True)
+    assert mod.render_span(s) == "==key point=="
+
+
+def test_render_span_highlight_nests_outside_emphasis():
+    # Highlight wraps the emphasis: ==*text*== (italic here from the font name).
+    s = Span(text="foo", size=10.0, font="Italic", flags=0, is_highlight=True)
+    assert mod.render_span(s) == "==*foo*=="
+
+
+def test_render_span_highlight_wraps_strikethrough():
+    # Canonical nested order is ==~~text~~== (highlight outermost of the markers).
+    s = Span(text="foo", size=10.0, font="Arial", flags=0, is_strikethrough=True, is_highlight=True)
+    assert mod.render_span(s) == "==~~foo~~=="
+
+
+def test_render_span_without_highlight_has_no_double_equals():
+    assert "==" not in mod.render_span(span("plain text"))
+
+
+def test_render_span_highlight_skips_wrapping_when_core_has_double_equals():
+    # A highlighted span whose text already holds `==` (e.g. `x == y`) cannot be
+    # safely wrapped: the delimiter would break at the inner pair. Emit it
+    # unmarked rather than corrupt markdown (Codex #411).
+    s = Span(text="x == y", size=10.0, font="Arial", flags=0, is_highlight=True)
+    out = mod.render_span(s)
+    assert out == "x == y"
+    assert not out.startswith("==")
+
+
+def test_render_line_does_not_merge_highlighted_with_plain():
+    # Adjacent spans of differing highlight state must stay separate, or a single
+    # ==...== would swallow the unmarked text.
+    Line = mod.Line
+    marked = Span(text="marked ", size=10.0, font="Arial", flags=0, is_highlight=True)
+    plain = Span(text="plain", size=10.0, font="Arial", flags=0, is_highlight=False)
+    out = mod.render_line(Line(spans=[marked, plain], bbox=(0, 0, 10, 10)))
+    assert out == "==marked== plain"
+
+
 def test_render_line_does_not_merge_struck_with_unstruck():
     # Adjacent spans of differing strikethrough state must stay separate, or a
     # single ~~...~~ would swallow the unstruck text.

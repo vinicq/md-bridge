@@ -217,6 +217,7 @@ def convert_pdf_bytes(
                 caption_alt_text=opts.caption_alt_text,
                 detect_task_lists=opts.detect_task_lists,
                 task_list_extended=opts.task_list_extended,
+                extract_highlights=opts.extract_highlights,
             )
 
         md_text = md_path.read_text(encoding="utf-8")

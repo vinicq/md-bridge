@@ -107,3 +107,12 @@ hr {
 }
 
 sup, sub { font-size: 75%; line-height: 0; }
+
+/* ==highlight== -> <mark> (#162). Flat highlighter yellow keeps its colour in a
+   Chromium print (print_background is on) and holds dark body ink for contrast. */
+mark {
+  background-color: #fef08a;
+  color: inherit;
+  padding: 0 0.15em;
+  border-radius: 2px;
+}

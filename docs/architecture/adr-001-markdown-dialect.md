@@ -73,6 +73,23 @@ This ADR declares the target. The current implementation is close but not identi
 
 Documentation only. This is a single new file plus cross-link insertions. Removing it changes no runtime behavior.
 
+## Amendments
+
+Extensions adopted after the original decision. Each entry names the syntax, the
+converter side that changed, and the issue.
+
+### 2026-07-17 - Highlight (mark), issue #162
+
+Added to the adopted-and-emitted set: **highlight** (`==text==`, the pymdownx-mark
+syntax), rendered to `<mark>`. `pdf-to-markdown` emits it from PDF text-highlight
+annotations under the opt-in `extract_highlights` option (default off, so the
+default output stays byte-identical). `markdown-to-pdf` renders `==text==` to
+`<mark>` through a single-rule inline extension, not the `pymdown-extensions`
+package, so the lean-install contract holds. Highlight is an inline span marker
+like strikethrough: the `<mark>` tag is produced by the renderer's own parser,
+never passed through the `emit_html` allow-list, so the raw-HTML emission gate and
+the render egress policy (#363) are untouched.
+
 ## References
 
 - CommonMark 0.31.2 specification: https://spec.commonmark.org/0.31.2/

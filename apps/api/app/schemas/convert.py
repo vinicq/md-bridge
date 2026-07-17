@@ -50,6 +50,9 @@ class PdfToMdOptions(BaseModel):
     # additionally recognizes the todo-md `[-]` in-progress marker.
     detect_task_lists: bool = False
     task_list_extended: bool = False
+    # Emit ==text== (pymdownx-mark highlight) from PDF text-highlight annotations
+    # (#162). Off by default so output stays byte-identical when unused.
+    extract_highlights: bool = False
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")
