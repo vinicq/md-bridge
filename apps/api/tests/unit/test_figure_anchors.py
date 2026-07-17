@@ -32,6 +32,16 @@ def test_figure_anchor_id_dedupes_repeats():
     assert mod._figure_anchor_id("Figure 1 third", used) == "fig-1-3"
 
 
+def test_heading_anchor_does_not_collide_with_a_figure_id():
+    # With both emit_figure_anchors and emit_heading_anchors on, a heading that
+    # slugifies to an existing figure id must be suffixed, not duplicated (#415).
+    md = "# Fig 1\n\n![Arch](a.png){#fig-1 .figure}\n"
+    out = mod._emit_heading_anchors(md)
+    assert "# Fig 1 {#fig-1-2}" in out
+    # The image line keeps its original figure id untouched.
+    assert "{#fig-1 .figure}" in out
+
+
 def test_renderer_attaches_the_id_to_the_image():
     # The emitted `![alt](p){#fig-3 .figure}` must render to <img id="fig-3">.
     out = md_mod.markdown.markdown(

@@ -391,7 +391,10 @@ def _emit_heading_anchors(md: str) -> str:
     `#` line inside a fenced code block is not treated as a heading.
     """
     seen: dict[str, int] = {}
-    used: set[str] = set()
+    # Seed the registry with ids already emitted as attr-lists elsewhere - figure
+    # anchors `{#fig-N}` (#165) live on image lines - so a heading whose slug
+    # collides with one gets suffixed instead of emitting a duplicate id (#415).
+    used: set[str] = set(re.findall(r"\{#([^}\s]+)", md))
     out: list[str] = []
     in_fence = False
     fence_marker = ""
@@ -1873,7 +1876,8 @@ def convert_page(
     # text as the image's alt (#149). Off by default: alt stays empty and the
     # caption line is emitted as ordinary prose, so --with-images output is
     # unchanged. A caption is claimed by at most one image.
-    caption_blocks: set[int] = set()
+    caption_blocks: set[int] = set()   # consumed as alt: not re-emitted as prose
+    anchor_claimed: set[int] = set()    # used for a figure anchor: still emitted as prose
     for top_y, bottom_y, left_x, right_x, rel in image_items:
         alt = ""
         attr = ""
@@ -1883,7 +1887,14 @@ def convert_page(
             best: Block | None = None
             best_gap = CAPTION_MAX_GAP
             for block in parsed_blocks:
-                if id(block) in caption_blocks or block.dominant_size > profile.small_size:
+                # A caption already taken by another image (as alt or as an
+                # anchor) is not available again, so one compound-figure caption
+                # cannot anchor two images (#415 Codex).
+                if (
+                    id(block) in caption_blocks
+                    or id(block) in anchor_claimed
+                    or block.dominant_size > profile.small_size
+                ):
                     continue
                 # Require horizontal overlap so a side-by-side figure or column
                 # cannot steal its neighbor's caption (#323 Codex review).
@@ -1900,6 +1911,7 @@ def convert_page(
                     fid = _figure_anchor_id(best.text, profile.figure_ids_used)
                     if fid:
                         attr = f"{{#{fid} .figure}}"
+                        anchor_claimed.add(id(best))
                 # Alt text from the caption (#149) consumes the caption line so it
                 # is not also emitted as prose below the image.
                 if profile.caption_alt_text:
