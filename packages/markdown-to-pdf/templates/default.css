@@ -159,3 +159,15 @@ mark {
 .callout--warning .callout__head { color: #7a5606; }
 .callout--caution { border-color: #c8362f; background: #f7dbd8; }
 .callout--caution .callout__head { color: #b0271f; }
+
+/* GFM strikethrough (#143). */
+del { text-decoration: line-through; color: #777; }
+
+/* GFM task lists (#143): drop the bullet and set the disabled checkbox on the
+   text baseline, GitHub-style. The checkbox keeps its native rendering (a box,
+   a check when marked), which prints because print_background is on. */
+.task-list-item { list-style: none; }
+.task-list-item > input[type="checkbox"] {
+  margin: 0 0.4em 0 0;
+  vertical-align: middle;
+}

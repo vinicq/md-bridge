@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
-from xml.etree.ElementTree import SubElement
+from xml.etree.ElementTree import Element, SubElement
 
 import markdown
 import yaml
@@ -52,6 +52,53 @@ class _MarkExtension(Extension):
         md.inlinePatterns.register(
             SimpleTagInlineProcessor(r"(==)(.+?)==", "mark"), "md_bridge_mark", 175
         )
+
+
+class _DelExtension(Extension):
+    """`~~text~~` -> ``<del>text</del>`` (GFM strikethrough, #143).
+
+    Closes the ADR-001 renderer delta: `pdf-to-markdown` already emits `~~` (#142)
+    but python-markdown core does not parse it. Registered directly rather than
+    via `pymdown-extensions` (lean install). The canonical recipe; a triple `~~~`
+    fence is handled by the fenced-code preprocessor before inline parsing.
+    """
+
+    def extendMarkdown(self, md: markdown.Markdown) -> None:
+        md.inlinePatterns.register(
+            SimpleTagInlineProcessor(r"(~~)(.+?)~~", "del"), "md_bridge_del", 170
+        )
+
+
+# GFM task lists (#143): `- [ ]` / `- [x]` render as a disabled checkbox in the
+# GitHub style. `pdf-to-markdown` emits this syntax (#172); python-markdown core
+# leaves the `[ ]` literal, so this treeprocessor rewrites each matching list
+# item into a checkbox + text. Renderer-only; no converter default changes.
+_TASK_ITEM_RE = re.compile(r"^\[([ xX])\]\s+")
+
+
+class _TaskListTreeprocessor(Treeprocessor):
+    """Turn `<li>[ ] text</li>` into a disabled-checkbox task-list item (#143)."""
+
+    def run(self, root):
+        for li in root.iter("li"):
+            m = _TASK_ITEM_RE.match(li.text or "")
+            if m is None:
+                continue
+            checked = m.group(1).lower() == "x"
+            rest = (li.text or "")[m.end():]
+            box = Element("input", {"type": "checkbox", "disabled": "disabled"})
+            if checked:
+                box.set("checked", "checked")
+            box.tail = rest  # the item text follows the checkbox
+            li.text = None
+            li.insert(0, box)
+            existing = li.get("class", "")
+            li.set("class", (existing + " task-list-item").strip())
+
+
+class _TaskListExtension(Extension):
+    def extendMarkdown(self, md: markdown.Markdown) -> None:
+        md.treeprocessors.register(_TaskListTreeprocessor(md), "md_bridge_tasklist", 14)
 
 
 # GFM alert callouts (#159). `> [!NOTE]` and the four siblings render as the
@@ -226,6 +273,8 @@ MD_EXTENSIONS = [
     "toc",
     "md_in_html",
     _MarkExtension(),  # ==highlight== -> <mark> (#162)
+    _DelExtension(),  # ~~text~~ -> <del> (#143)
+    _TaskListExtension(),  # - [ ] / - [x] -> disabled checkbox (#143)
 ]
 
 # Front matter is metadata: a few hundred bytes in practice. Cap the block before
