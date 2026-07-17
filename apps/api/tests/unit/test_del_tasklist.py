@@ -62,3 +62,32 @@ def test_task_item_keeps_inline_markup():
 def test_mixed_list_marks_only_task_items():
     out = _render("- [ ] task\n- plain")
     assert out.count("task-list-item") == 1
+
+
+def test_loose_task_list_items_render():
+    # A loose list (blank-separated) wraps the marker in a <p>; both items must
+    # still become checkboxes (#418 review).
+    out = _render("- [ ] one\n\n- [x] two")
+    assert out.count("task-list-item") == 2
+    assert out.count('type="checkbox"') == 2
+    assert "checked" in out  # the second item
+    assert "[ ]" not in out and "[x]" not in out
+
+
+def test_strikethrough_rejects_leading_whitespace():
+    # GFM: an opening ~~ may not be followed by whitespace.
+    out = _render("a ~~ not deleted~~ b")
+    assert "<del>" not in out
+
+
+def test_strikethrough_rejects_trailing_whitespace():
+    out = _render("a ~~not deleted ~~ b")
+    assert "<del>" not in out
+
+
+def test_tildes_in_link_destination_are_preserved():
+    # A ~~ pair inside a URL must not be parsed as strikethrough and corrupt the
+    # href (#418 review).
+    out = _render("[backup](https://files.test/a~~old~~.zip)")
+    assert 'href="https://files.test/a~~old~~.zip"' in out
+    assert "<del>" not in out

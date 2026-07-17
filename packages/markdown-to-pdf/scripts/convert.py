@@ -49,8 +49,11 @@ class _MarkExtension(Extension):
     """
 
     def extendMarkdown(self, md: markdown.Markdown) -> None:
+        # Priority below the link/autolink processors (link=160, autolink=120) so
+        # a `==` pair inside a link destination is consumed as part of the URL
+        # first and not mangled into a <mark> placeholder (#418 review).
         md.inlinePatterns.register(
-            SimpleTagInlineProcessor(r"(==)(.+?)==", "mark"), "md_bridge_mark", 175
+            SimpleTagInlineProcessor(r"(==)(.+?)==", "mark"), "md_bridge_mark", 116
         )
 
 
@@ -59,13 +62,18 @@ class _DelExtension(Extension):
 
     Closes the ADR-001 renderer delta: `pdf-to-markdown` already emits `~~` (#142)
     but python-markdown core does not parse it. Registered directly rather than
-    via `pymdown-extensions` (lean install). The canonical recipe; a triple `~~~`
-    fence is handled by the fenced-code preprocessor before inline parsing.
+    via `pymdown-extensions` (lean install). A triple `~~~` fence is handled by
+    the fenced-code preprocessor before inline parsing.
     """
 
     def extendMarkdown(self, md: markdown.Markdown) -> None:
+        # The content may not start or end with whitespace, per GFM: `~~ x~~` is
+        # literal, not a strike. Priority is below the link/autolink processors
+        # (link=160, autolink=120) so a `~~` pair inside a URL (e.g.
+        # `a~~old~~.zip`) is consumed with the destination instead of being
+        # turned into a <del> placeholder that corrupts the href (#418 review).
         md.inlinePatterns.register(
-            SimpleTagInlineProcessor(r"(~~)(.+?)~~", "del"), "md_bridge_del", 170
+            SimpleTagInlineProcessor(r"(~~)(\S.*?\S|\S)~~", "del"), "md_bridge_del", 115
         )
 
 
@@ -81,17 +89,23 @@ class _TaskListTreeprocessor(Treeprocessor):
 
     def run(self, root):
         for li in root.iter("li"):
-            m = _TASK_ITEM_RE.match(li.text or "")
-            if m is None:
-                continue
+            # A tight list keeps the marker in `li.text`; a loose list (items
+            # separated by a blank line) wraps it in a leading `<p>` child. Both
+            # must render, so match whichever holds the marker (#418 review).
+            target = li
+            if _TASK_ITEM_RE.match(li.text or "") is None:
+                if len(li) and li[0].tag == "p" and _TASK_ITEM_RE.match(li[0].text or ""):
+                    target = li[0]
+                else:
+                    continue
+            m = _TASK_ITEM_RE.match(target.text or "")
             checked = m.group(1).lower() == "x"
-            rest = (li.text or "")[m.end():]
             box = Element("input", {"type": "checkbox", "disabled": "disabled"})
             if checked:
                 box.set("checked", "checked")
-            box.tail = rest  # the item text follows the checkbox
-            li.text = None
-            li.insert(0, box)
+            box.tail = (target.text or "")[m.end():]  # the item text follows the checkbox
+            target.text = None
+            target.insert(0, box)
             existing = li.get("class", "")
             li.set("class", (existing + " task-list-item").strip())
 
