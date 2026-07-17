@@ -68,6 +68,25 @@ def test_stray_opener_without_closer_stays_literal():
     assert "::: warning" in out
 
 
+def test_indented_container_in_a_list_stays_literal():
+    # An indented container (nested in a list item) is left literal rather than
+    # rewritten, so it cannot terminate the list and reshape the layout (#417).
+    out = _render("- item\n  ::: warning\n  Body.\n  :::\n")
+    assert "callout" not in out
+    assert "<li>" in out
+
+
+def test_longer_fence_is_not_closed_by_a_shorter_one():
+    # A :::: opener holds a ::: line; only a :::: closer ends it (#417).
+    out = _render(":::: warning\nOuter body.\n::: note\ninner text\n:::\n::::")
+    assert "callout callout--warning" in out
+    # The outer body was not truncated at the inner ::: line.
+    assert "Outer body." in out
+    assert "inner text" in out
+    # Exactly one callout box (the inner ::: is literal inside the outer body).
+    assert out.count("callout callout--") == 1
+
+
 def test_localized_label_via_shared_machinery():
     assert ">Aviso</div>" in _render("::: warning\nx\n:::", lang="pt-BR")
     assert ">Precaución</div>" in _render("::: danger\nx\n:::", lang="es")

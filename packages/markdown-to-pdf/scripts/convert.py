@@ -159,16 +159,19 @@ _CONTAINER_ALIASES = {
     "warning": "warning", "warn": "warning", "attention": "warning",
     "caution": "caution", "danger": "caution", "error": "caution",
 }
-_CONTAINER_OPEN = re.compile(r"^ {0,3}:{3,}[ \t]*([A-Za-z][\w-]*)[ \t]*$")
-_CONTAINER_CLOSE = re.compile(r"^ {0,3}:{3,}[ \t]*$")
+# Openers are recognized only at column 0. An indented container (e.g. nested in
+# a list item) is left literal rather than rewritten: an unindented blockquote
+# would terminate the list and change the layout, and re-indenting a synthesized
+# blockquote through CommonMark list-continuation is not worth the risk (#417).
+_CONTAINER_OPEN = re.compile(r"^(:{3,})[ \t]*([A-Za-z][\w-]*)[ \t]*$")
 
 
 class _ContainerPreprocessor(Preprocessor):
     """Rewrite `::: name` ... `:::` blocks into GFM alert syntax (#164).
 
     A recognized name maps to one of the five base types; an unrecognized name in
-    an otherwise well-formed block falls back to a note. Only a block that has a
-    matching closing fence is rewritten, so a stray `:::` line is left alone. The
+    an otherwise well-formed block falls back to a note. Only a block with a
+    matching closing fence is rewritten, so a stray `:::` is left alone. The
     rewrite emits `> [!TYPE]` + quoted body, which the callout treeprocessor then
     renders, so containers and GFM alerts share one look. Runs after the fenced-
     code preprocessor, so `:::` inside a code fence is not touched.
@@ -180,11 +183,15 @@ class _ContainerPreprocessor(Preprocessor):
         while i < len(lines):
             m = _CONTAINER_OPEN.match(lines[i])
             if m:
+                # Close only on a fence at least as long as the opener, so a
+                # `::::` block can contain a `:::` line without closing early
+                # (the inner `:::` then stays literal inside the body) (#417).
+                close_re = re.compile(r"^:{" + str(len(m.group(1))) + r",}[ \t]*$")
                 j = i + 1
-                while j < len(lines) and not _CONTAINER_CLOSE.match(lines[j]):
+                while j < len(lines) and not close_re.match(lines[j]):
                     j += 1
                 if j < len(lines):  # matching closer found: it is a container
-                    kind = _CONTAINER_ALIASES.get(m.group(1).lower(), "note")
+                    kind = _CONTAINER_ALIASES.get(m.group(2).lower(), "note")
                     out.append(f"> [!{kind.upper()}]")
                     for body_line in lines[i + 1:j]:
                         out.append(f"> {body_line}" if body_line.strip() else ">")
