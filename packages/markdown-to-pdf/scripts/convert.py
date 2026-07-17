@@ -30,6 +30,7 @@ import markdown
 import yaml
 from markdown.extensions import Extension
 from markdown.inlinepatterns import SimpleTagInlineProcessor
+from markdown.preprocessors import Preprocessor
 from markdown.treeprocessors import Treeprocessor
 from playwright.sync_api import sync_playwright
 
@@ -123,30 +124,89 @@ class _CalloutTreeprocessor(Treeprocessor):
             self._rebuild(bq, kind, body_children)
 
     def _rebuild(self, el, kind: str, body_children: list) -> None:
-        el.tag = "div"
-        el.attrib.clear()
-        el.set("class", f"callout callout--{kind}")
-        el.text = None
-        for child in list(el):
-            el.remove(child)
-        head = SubElement(el, "div", {"class": "callout__head"})
-        svg = SubElement(head, "svg", dict(_SVG_ATTRS))
-        for tag, attrs in _CALLOUT_ICONS[kind]:
-            SubElement(svg, tag, attrs)
-        svg.tail = _CALLOUT_LABELS[self.lang][kind]
-        body = SubElement(el, "div", {"class": "callout__body"})
-        for child in body_children:
-            body.append(child)
+        _build_callout(el, kind, self.lang, body_children)
+
+
+def _build_callout(el, kind: str, lang: str, body_children: list) -> None:
+    """Turn `el` into a `.callout` box of `kind`: clear it, set the class, add an
+    icon+label head and a body carrying `body_children`. Shared by the GFM-alert
+    treeprocessor (#159) and the `:::` container block processor (#164)."""
+    el.tag = "div"
+    el.attrib.clear()
+    el.set("class", f"callout callout--{kind}")
+    el.text = None
+    for child in list(el):
+        el.remove(child)
+    head = SubElement(el, "div", {"class": "callout__head"})
+    svg = SubElement(head, "svg", dict(_SVG_ATTRS))
+    for tag, attrs in _CALLOUT_ICONS[kind]:
+        SubElement(svg, tag, attrs)
+    svg.tail = _CALLOUT_LABELS[lang][kind]
+    body = SubElement(el, "div", {"class": "callout__body"})
+    for child in body_children:
+        body.append(child)
+
+
+# pymdownx-style custom containers (#164): `::: warning` ... `:::`. Docs sites
+# (MkDocs, VuePress, Hugo) use these for admonitions. We map the common names
+# onto the five base callout types and rewrite the block into GFM alert syntax,
+# so it flows through the same callout treeprocessor and CSS as #159 - one visual
+# vocabulary, no pymdown-extensions dependency, no extra CSS.
+_CONTAINER_ALIASES = {
+    "note": "note",
+    "info": "important", "important": "important",
+    "tip": "tip", "hint": "tip", "success": "tip",
+    "warning": "warning", "warn": "warning", "attention": "warning",
+    "caution": "caution", "danger": "caution", "error": "caution",
+}
+_CONTAINER_OPEN = re.compile(r"^ {0,3}:{3,}[ \t]*([A-Za-z][\w-]*)[ \t]*$")
+_CONTAINER_CLOSE = re.compile(r"^ {0,3}:{3,}[ \t]*$")
+
+
+class _ContainerPreprocessor(Preprocessor):
+    """Rewrite `::: name` ... `:::` blocks into GFM alert syntax (#164).
+
+    A recognized name maps to one of the five base types; an unrecognized name in
+    an otherwise well-formed block falls back to a note. Only a block that has a
+    matching closing fence is rewritten, so a stray `:::` line is left alone. The
+    rewrite emits `> [!TYPE]` + quoted body, which the callout treeprocessor then
+    renders, so containers and GFM alerts share one look. Runs after the fenced-
+    code preprocessor, so `:::` inside a code fence is not touched.
+    """
+
+    def run(self, lines: list[str]) -> list[str]:
+        out: list[str] = []
+        i = 0
+        while i < len(lines):
+            m = _CONTAINER_OPEN.match(lines[i])
+            if m:
+                j = i + 1
+                while j < len(lines) and not _CONTAINER_CLOSE.match(lines[j]):
+                    j += 1
+                if j < len(lines):  # matching closer found: it is a container
+                    kind = _CONTAINER_ALIASES.get(m.group(1).lower(), "note")
+                    out.append(f"> [!{kind.upper()}]")
+                    for body_line in lines[i + 1:j]:
+                        out.append(f"> {body_line}" if body_line.strip() else ">")
+                    out.append("")  # blank line terminates the synthesized blockquote
+                    i = j + 1
+                    continue
+            out.append(lines[i])
+            i += 1
+        return out
 
 
 class _CalloutExtension(Extension):
-    """Register the callout treeprocessor with the document's label language."""
+    """Register the callout preprocessor + treeprocessor with the label language."""
 
     def __init__(self, **kwargs):
         self.config = {"lang": ["pt-BR", "Document language for callout labels"]}
         super().__init__(**kwargs)
 
     def extendMarkdown(self, md: markdown.Markdown) -> None:
+        # Run just below the fenced-code preprocessor (25) so code fences are
+        # already stashed and a `:::` inside one is not rewritten.
+        md.preprocessors.register(_ContainerPreprocessor(md), "md_bridge_container", 24)
         md.treeprocessors.register(
             _CalloutTreeprocessor(md, self.getConfig("lang")), "md_bridge_callout", 15
         )

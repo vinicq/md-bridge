@@ -102,6 +102,18 @@ is untouched, so existing output is unchanged. Built from real elements, not the
 untouched. `pdf-to-markdown` does not yet emit this syntax; this is a renderer
 (input) adoption. No `pymdown-extensions` dependency.
 
+### 2026-07-17 - Custom containers (`::: name`), issue #164
+
+Added to the adopted set: **pymdownx-style custom containers** (`::: warning` ...
+`:::`), the admonition syntax docs sites use (MkDocs, VuePress, Hugo).
+`markdown-to-pdf` maps the common names (`note`, `info`/`important`, `tip`/`hint`/
+`success`, `warning`/`warn`/`attention`, `caution`/`danger`/`error`) onto the five
+base callout types and renders them with the same `.callout` box as the GFM
+alerts (#159), so containers and alerts share one visual vocabulary. Done with a
+preprocessor that rewrites a closed container into GFM alert syntax; a stray `:::`
+with no closer, or one inside a code fence, is left untouched. No
+`pymdown-extensions` dependency, no new CSS. Renderer (input) adoption only.
+
 ## References
 
 - CommonMark 0.31.2 specification: https://spec.commonmark.org/0.31.2/
