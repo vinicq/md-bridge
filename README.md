@@ -80,6 +80,10 @@ others are natural fits behind the same heuristic-pipeline pattern.
   a bundled A4 stylesheet at `packages/markdown-to-pdf/templates/default.css`.
   Pick from 21 CSS themes, layer your own custom CSS on top, and opt into
   Mermaid diagrams (rendered offline from a vendored bundle).
+- **Rich Markdown rendering**: GFM alert callouts (`> [!NOTE]`), `:::` custom
+  containers, highlighted text (`==mark==`), strikethrough, and task-list
+  checkboxes all render in the PDF, with figure anchors and highlight extraction
+  available on the PDF-to-Markdown side.
 - **Theme library** at `/themes`: browse every theme, filter by family, preview
   it live on realistic samples, and download its `.css`.
 - **Batch mode**: drop one file or a whole folder. The UI lists every file,

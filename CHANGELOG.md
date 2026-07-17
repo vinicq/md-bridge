@@ -15,6 +15,29 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+### Added
+
+- **Highlighted text round-trips.** `pdf-to-markdown` reads PDF text-highlight
+  annotations and emits the covered text as `==text==`; `markdown-to-pdf` renders
+  `==text==` to `<mark>`. Opt-in via `extract_highlights` (off by default, so a
+  document without highlights is byte-identical). A span whose text already holds
+  `==` is left unmarked so the delimiter cannot break. (#162)
+- **Figure anchors.** With `emit_figure_anchors` on (off by default), a numbered
+  figure caption (`Figure 3`, `Fig. 2.1`, `Figura 5`) gives its image a stable
+  `{#fig-N .figure}` id, so a cross-reference can link to it. Ids dedupe across
+  the document and against heading anchors. Only figures: the renderer cannot
+  attach an id to a table, tracked in #414. (#165)
+- **GFM alert callouts.** `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`,
+  `> [!WARNING]`, and `> [!CAUTION]` render as a bordered box with an icon and a
+  localized label (EN/PT/ES) instead of a plain blockquote. A blockquote without
+  a marker is untouched. (#159)
+- **Custom containers.** `::: warning` ... `:::` blocks (the MkDocs/VuePress
+  admonition syntax) render as the same callout box; the common names map onto
+  the five types. (#164)
+- **Strikethrough and task lists in the PDF.** `~~text~~` renders as `<del>` and
+  `- [ ]` / `- [x]` render as a disabled GitHub-style checkbox, closing two of
+  the renderer deltas the dialect ADR named. (#143)
+
 ## [0.8.0] — 2026-07-16
 
 ### Added
