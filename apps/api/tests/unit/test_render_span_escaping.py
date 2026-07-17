@@ -94,6 +94,16 @@ def test_render_span_without_highlight_has_no_double_equals():
     assert "==" not in mod.render_span(span("plain text"))
 
 
+def test_render_span_highlight_skips_wrapping_when_core_has_double_equals():
+    # A highlighted span whose text already holds `==` (e.g. `x == y`) cannot be
+    # safely wrapped: the delimiter would break at the inner pair. Emit it
+    # unmarked rather than corrupt markdown (Codex #411).
+    s = Span(text="x == y", size=10.0, font="Arial", flags=0, is_highlight=True)
+    out = mod.render_span(s)
+    assert out == "x == y"
+    assert not out.startswith("==")
+
+
 def test_render_line_does_not_merge_highlighted_with_plain():
     # Adjacent spans of differing highlight state must stay separate, or a single
     # ==...== would swallow the unmarked text.

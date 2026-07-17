@@ -938,6 +938,8 @@ def _highlight_rects(annot: fitz.Annot) -> list[tuple[float, float, float, float
             r = annot.rect
             rects.append((r.x0, r.y0, r.x1, r.y1))
         except Exception:
+            # A malformed annotation with no usable rect contributes no highlight
+            # geometry; skip it rather than fail the page (degrade deterministically).
             pass
     return rects
 
@@ -1115,8 +1117,13 @@ def render_span(
             core = f"~~{core}~~"
         # Highlight wraps the strikethrough/emphasis stack, so the nested order is
         # stable as `==~~**text**~~==` and the pymdownx-mark syntax stays outermost
-        # of the inline markers, just inside a link (#162).
-        if span.is_highlight:
+        # of the inline markers, just inside a link (#162). `==` is the delimiter,
+        # so a core that itself contains `==` (the equality operator in `x == y`,
+        # or a code span holding one) would break the pair - the renderer's
+        # non-greedy match closes at the inner `==`. There is no backslash escape
+        # for `=` in the shipped renderer, so leave such a span unmarked rather
+        # than emit corrupt markdown (Codex #411).
+        if span.is_highlight and "==" not in core:
             core = f"=={core}=="
         if span.link:
             core = f"[{core}]({span.link})"
