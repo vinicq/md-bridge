@@ -31,7 +31,7 @@
     --c-ok: #2e7d4a;
     --c-warn: #b8860b;
 
-    /* callouts / admonitions (5 types). NOTE + IMPORTANT are new; border+icon use the base color, the label uses the -strong shade for AA, the body stays --c-ink. Flat colors survive Chromium print. */
+    /* callouts / admonitions (5 types). Border, icon and label use the type color below (each dark enough for 3:1 non-text contrast on its own -soft fill); the body stays --c-ink. WARNING is the exception: its base --c-warn gold reads as a light document accent and only reaches 2.76:1 on --c-warn-soft, under the 3:1 non-text floor, so the warning border/icon/label all use --c-warn-strong (#7a5606, 5.6:1). Flat colors survive Chromium print. */
     --c-note: #1f4e79;        --c-note-soft: #e7eef7;
     --c-tip: #1f6b3b;         --c-tip-soft: #e6f2ea;
     --c-important: #6d3a86;   --c-important-soft: #efe6f5;

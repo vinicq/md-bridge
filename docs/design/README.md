@@ -63,3 +63,12 @@ replace the file in one commit.
 Token block lives at the top of the `<style>` element in the HTML and
 should be kept in sync with `apps/web/src/styles/tokens.css`. The
 commit that touches the tokens should touch both files.
+
+Exception: document-render tokens (the callout/admonition colors,
+`--c-note` / `--c-tip` / `--c-important` / `--c-caution` /
+`--c-warn-strong` and their `-soft` fills) live in the renderer
+stylesheet `packages/markdown-to-pdf/templates/default.css`, not in the
+app-chrome tokens. Markdown → PDF rendering is isolated from the React
+app's CSS, so it carries its own copy. The catalogue can document a
+render token before its `default.css` definition ships (the callout
+palette lands in default.css with issue #159).
