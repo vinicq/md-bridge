@@ -90,6 +90,18 @@ like strikethrough: the `<mark>` tag is produced by the renderer's own parser,
 never passed through the `emit_html` allow-list, so the raw-HTML emission gate and
 the render egress policy (#363) are untouched.
 
+### 2026-07-17 - GFM alert callouts, issue #159
+
+Added to the adopted set: **GFM alerts** (`> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`,
+`> [!WARNING]`, `> [!CAUTION]`). `markdown-to-pdf` renders them as a semantic
+`.callout` box (icon, localized label, body) instead of a plain blockquote, via a
+single treeprocessor that rewrites a marked blockquote after parsing. The marker
+must sit alone on the blockquote's first line, matching GitHub; a plain blockquote
+is untouched, so existing output is unchanged. Built from real elements, not the
+`emit_html` gate, so the raw-HTML policy and the render egress policy (#363) are
+untouched. `pdf-to-markdown` does not yet emit this syntax; this is a renderer
+(input) adoption. No `pymdown-extensions` dependency.
+
 ## References
 
 - CommonMark 0.31.2 specification: https://spec.commonmark.org/0.31.2/

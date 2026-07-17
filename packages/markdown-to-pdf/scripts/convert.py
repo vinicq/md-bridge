@@ -24,11 +24,13 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
+from xml.etree.ElementTree import SubElement
 
 import markdown
 import yaml
 from markdown.extensions import Extension
 from markdown.inlinepatterns import SimpleTagInlineProcessor
+from markdown.treeprocessors import Treeprocessor
 from playwright.sync_api import sync_playwright
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -48,6 +50,105 @@ class _MarkExtension(Extension):
     def extendMarkdown(self, md: markdown.Markdown) -> None:
         md.inlinePatterns.register(
             SimpleTagInlineProcessor(r"(==)(.+?)==", "mark"), "md_bridge_mark", 175
+        )
+
+
+# GFM alert callouts (#159). `> [!NOTE]` and the four siblings render as the
+# designer's `.callout` box: a 1px + 4px-left border, an icon+label head, and a
+# body. Labels are localized; the marker must sit alone on the blockquote's first
+# line, matching GitHub. Colors live in default.css.
+_ALERT_RE = re.compile(r"^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*(?:\n|$)", re.IGNORECASE)
+
+_CALLOUT_LABELS = {
+    "en": {"note": "Note", "tip": "Tip", "important": "Important", "warning": "Warning", "caution": "Caution"},
+    "pt": {"note": "Nota", "tip": "Dica", "important": "Importante", "warning": "Aviso", "caution": "Atenção"},
+    "es": {"note": "Nota", "tip": "Consejo", "important": "Importante", "warning": "Advertencia", "caution": "Precaución"},
+}
+
+# One silhouette per type, mirrored from the designer prototype (info circle,
+# lightbulb, speech bubble, triangle, octagon). Each entry is (svg-child-tag, attrs).
+_CALLOUT_ICONS = {
+    "note": [("circle", {"cx": "12", "cy": "12", "r": "9"}), ("path", {"d": "M12 8h.01"}), ("path", {"d": "M11 12h1v4h1"})],
+    "tip": [("path", {"d": "M9 18h6"}), ("path", {"d": "M10 22h4"}), ("path", {"d": "M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2.3h6c0-1.1.4-1.8 1-2.3A7 7 0 0 0 12 2z"})],
+    "important": [("path", {"d": "M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"}), ("path", {"d": "M12 8v3"}), ("path", {"d": "M12 14h.01"})],
+    "warning": [("path", {"d": "M10.3 4 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 4a2 2 0 0 0-3.4 0z"}), ("path", {"d": "M12 9v4"}), ("path", {"d": "M12 17h.01"})],
+    "caution": [("path", {"d": "M8 2h8l6 6v8l-6 6H8l-6-6V8z"}), ("path", {"d": "M12 8v4"}), ("path", {"d": "M12 16h.01"})],
+}
+
+_SVG_ATTRS = {
+    "class": "callout__icon", "viewBox": "0 0 24 24", "fill": "none",
+    "stroke": "currentColor", "stroke-width": "2",
+    "stroke-linecap": "round", "stroke-linejoin": "round",
+}
+
+
+def _callout_lang(lang: str) -> str:
+    low = lang.lower()
+    if low.startswith("pt"):
+        return "pt"
+    if low.startswith("es"):
+        return "es"
+    return "en"  # en + de/fr/it fall back to the English label
+
+
+class _CalloutTreeprocessor(Treeprocessor):
+    """Rewrite a GFM alert blockquote into the designer's `.callout` div (#159).
+
+    Runs after block + inline parsing, so the blockquote body is already
+    formatted. Reads the `[!TYPE]` marker off the first line, strips it, and
+    rebuilds the element as `<div class="callout callout--TYPE">` with an
+    icon+label head and a body carrying the rest. A plain blockquote with no
+    marker is left untouched. Builds real elements (no raw HTML), so the emit
+    gate and the render egress policy (#363) are untouched.
+    """
+
+    def __init__(self, md: markdown.Markdown, lang: str):
+        super().__init__(md)
+        self.lang = _callout_lang(lang)
+
+    def run(self, root):
+        for bq in list(root.iter("blockquote")):
+            if len(bq) == 0:
+                continue
+            first = bq[0]
+            m = _ALERT_RE.match(first.text or "")
+            if m is None:
+                continue
+            kind = m.group(1).lower()
+            first.text = (first.text or "")[m.end():]
+            body_children = list(bq)
+            # Drop the first paragraph if the marker was all it held.
+            if len(first) == 0 and not (first.text and first.text.strip()):
+                body_children = body_children[1:]
+            self._rebuild(bq, kind, body_children)
+
+    def _rebuild(self, el, kind: str, body_children: list) -> None:
+        el.tag = "div"
+        el.attrib.clear()
+        el.set("class", f"callout callout--{kind}")
+        el.text = None
+        for child in list(el):
+            el.remove(child)
+        head = SubElement(el, "div", {"class": "callout__head"})
+        svg = SubElement(head, "svg", dict(_SVG_ATTRS))
+        for tag, attrs in _CALLOUT_ICONS[kind]:
+            SubElement(svg, tag, attrs)
+        svg.tail = _CALLOUT_LABELS[self.lang][kind]
+        body = SubElement(el, "div", {"class": "callout__body"})
+        for child in body_children:
+            body.append(child)
+
+
+class _CalloutExtension(Extension):
+    """Register the callout treeprocessor with the document's label language."""
+
+    def __init__(self, **kwargs):
+        self.config = {"lang": ["pt-BR", "Document language for callout labels"]}
+        super().__init__(**kwargs)
+
+    def extendMarkdown(self, md: markdown.Markdown) -> None:
+        md.treeprocessors.register(
+            _CalloutTreeprocessor(md, self.getConfig("lang")), "md_bridge_callout", 15
         )
 
 
@@ -399,7 +500,10 @@ def convert(
 ) -> None:
     md_text = md_path.read_text(encoding="utf-8")
     fm, body_md = split_front_matter(md_text)
-    body_html = markdown.markdown(body_md, extensions=MD_EXTENSIONS, output_format="html5")
+    # The callout extension carries the document language for its labels (#159),
+    # so it is built per call rather than kept in the static MD_EXTENSIONS list.
+    extensions = [*MD_EXTENSIONS, _CalloutExtension(lang=lang)]
+    body_html = markdown.markdown(body_md, extensions=extensions, output_format="html5")
 
     css_blocks: list[str] = []
     for css in css_paths:

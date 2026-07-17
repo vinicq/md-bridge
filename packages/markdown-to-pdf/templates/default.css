@@ -116,3 +116,46 @@ mark {
   padding: 0 0.15em;
   border-radius: 2px;
 }
+
+/* GFM alert callouts (#159): five print-safe boxes, one per type. Flat fills
+   survive a Chromium print; the border, icon and label share the type color
+   (warning uses its strong shade for 3:1 non-text contrast). text-align is
+   pinned left so a theme that centers/italicizes blockquotes (e.g. novel) does
+   not bleed into the box. */
+.callout {
+  border: 1px solid;
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 1em 0;
+  text-align: left;
+  font-style: normal;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+.callout__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.callout__icon { width: 18px; height: 18px; flex: 0 0 auto; }
+.callout__body { margin-top: 8px; color: inherit; line-height: 1.55; }
+.callout__body > :first-child { margin-top: 0; }
+.callout__body > :last-child { margin-bottom: 0; }
+.callout--note { border-color: #1f4e79; background: #e7eef7; }
+.callout--note .callout__head { color: #1f4e79; }
+.callout--tip { border-color: #2e7d4a; background: #e6f2ea; }
+.callout--tip .callout__head { color: #1f6b3b; }
+.callout--important { border-color: #6d3a86; background: #efe6f5; }
+.callout--important .callout__head { color: #6d3a86; }
+/* Warning border uses the strong shade, not the base gold: #b8860b on the
+   #f7ecc9 fill is only 2.76:1, under the 3:1 non-text floor (#410 finding). */
+.callout--warning { border-color: #7a5606; background: #f7ecc9; }
+.callout--warning .callout__head { color: #7a5606; }
+.callout--caution { border-color: #c8362f; background: #f7dbd8; }
+.callout--caution .callout__head { color: #b0271f; }

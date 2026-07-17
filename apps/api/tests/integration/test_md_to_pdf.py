@@ -42,6 +42,19 @@ def test_md_to_pdf_returns_pdf(client, chromium_ready):
     assert resp.content[:5] == b"%PDF-"
 
 
+def test_md_to_pdf_renders_a_gfm_alert(client, chromium_ready):
+    # The callout extension is wired into the render endpoint (#159): a document
+    # with a GFM alert renders end-to-end through Chromium without error. The
+    # transform-to-callout HTML is covered in tests/unit/test_callouts.py.
+    alert_md = b"# Doc\n\n> [!WARNING]\n> This action cannot be undone.\n"
+    resp = client.post(
+        "/api/md-to-pdf",
+        files={"file": ("doc.md", alert_md, "text/markdown")},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.content[:5] == b"%PDF-"
+
+
 def test_md_to_pdf_unknown_theme_returns_400(client):
     # An unknown theme is rejected at the service before any rendering, so this
     # needs no Chromium. Uses the documented error envelope.
