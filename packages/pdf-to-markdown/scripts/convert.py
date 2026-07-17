@@ -967,9 +967,13 @@ def annotate_spans_with_highlights(blocks: list[Block], page: fitz.Page) -> None
 
     A highlight carries geometry and a colour, never the text itself: the marked
     words are whatever glyphs sit under its quads. We collect every highlight
-    quad on the page, then mark a span when at least half its area falls inside
+    quad on the page, then mark a span when at least half its width falls inside
     one, so `render_span` wraps it in `==...==`. Robust to older PyMuPDF builds
     and malformed annotations: any failure degrades to leaving spans unmarked.
+
+    Table cells are out of scope here: `convert_page` removes table-contained
+    blocks before this runs and `render_table` renders cells straight from the
+    table extractor, so a highlight inside a table cell is not yet emitted (#413).
     """
     try:
         annots = page.annots()
