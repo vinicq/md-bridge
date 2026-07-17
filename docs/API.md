@@ -66,6 +66,8 @@ Convert a PDF into structured Markdown using deterministic heuristics.
   "page_break": false,
   "with_images": false,
   "front_matter": true,
+  "extract_highlights": false,
+  "emit_figure_anchors": false,
   "lang": "en"
 }
 ```
@@ -79,7 +81,18 @@ Convert a PDF into structured Markdown using deterministic heuristics.
   Obsidian, pandoc, and browsers render them fine).
 - `front_matter` (default `true`): adds a YAML preamble with `title`,
   `author`, `date`, `source`, `pages`.
+- `extract_highlights` (default `false`): when `true`, PDF text-highlight
+  annotations become `==highlighted text==` (rendered as `<mark>` by
+  `md-to-pdf`). Off keeps the output byte-identical.
+- `emit_figure_anchors` (default `false`): when `true` and used with
+  `with_images`, a numbered figure caption gives its image a `{#fig-N .figure}`
+  anchor id so cross-references can link to it.
 - `lang` (default `"pt-BR"`): informational tag stored in the front matter.
+
+The converter accepts more options than shown here (blockquote detection,
+autolinks, footnote pairing, smart typography, task-list detection, and others);
+each defaults to preserving byte-identical output. See
+`packages/pdf-to-markdown/scripts/convert.py --help` for the full CLI surface.
 
 ### Example: minimal
 
