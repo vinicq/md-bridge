@@ -391,7 +391,10 @@ def _emit_heading_anchors(md: str) -> str:
     `#` line inside a fenced code block is not treated as a heading.
     """
     seen: dict[str, int] = {}
-    used: set[str] = set()
+    # Seed the registry with ids already emitted as attr-lists elsewhere - figure
+    # anchors `{#fig-N}` (#165) live on image lines - so a heading whose slug
+    # collides with one gets suffixed instead of emitting a duplicate id (#415).
+    used: set[str] = set(re.findall(r"\{#([^}\s]+)", md))
     out: list[str] = []
     in_fence = False
     fence_marker = ""
@@ -677,6 +680,8 @@ class DocProfile:
     footnote_numbers: frozenset = frozenset()  # collected footnote numbers to rewrite as [^N] (#148)
     autolink_urls: bool = False  # opt-in: wrap bare http(s) URLs in body text as autolinks (#157)
     extract_highlights: bool = False  # opt-in: emit ==text== from PDF text-highlight annotations (#162)
+    emit_figure_anchors: bool = False  # opt-in: emit {#fig-N .figure} on captioned figures (#165)
+    figure_ids_used: set = field(default_factory=set)  # doc-level dedupe for fig-N ids (#165)
     autolink_emails: bool = False  # opt-in: wrap bare email addresses in body text as autolinks (#157)
     extract_abbreviations: bool = False  # opt-in: emit *[ABBR]: defs from a glossary section (#163)
     caption_alt_text: bool = False  # opt-in: use a caption line below an image as its alt text (#149)
@@ -1871,14 +1876,25 @@ def convert_page(
     # text as the image's alt (#149). Off by default: alt stays empty and the
     # caption line is emitted as ordinary prose, so --with-images output is
     # unchanged. A caption is claimed by at most one image.
-    caption_blocks: set[int] = set()
+    caption_blocks: set[int] = set()   # consumed as alt: not re-emitted as prose
+    anchor_claimed: set[int] = set()    # used for a figure anchor: still emitted as prose
     for top_y, bottom_y, left_x, right_x, rel in image_items:
         alt = ""
-        if profile.caption_alt_text:
+        attr = ""
+        # The caption line below the image feeds both the alt text (#149) and the
+        # figure anchor id (#165), so find it once when either option is on.
+        if profile.caption_alt_text or profile.emit_figure_anchors:
             best: Block | None = None
             best_gap = CAPTION_MAX_GAP
             for block in parsed_blocks:
-                if id(block) in caption_blocks or block.dominant_size > profile.small_size:
+                # A caption already taken by another image (as alt or as an
+                # anchor) is not available again, so one compound-figure caption
+                # cannot anchor two images (#415 Codex).
+                if (
+                    id(block) in caption_blocks
+                    or id(block) in anchor_claimed
+                    or block.dominant_size > profile.small_size
+                ):
                     continue
                 # Require horizontal overlap so a side-by-side figure or column
                 # cannot steal its neighbor's caption (#323 Codex review).
@@ -1888,11 +1904,22 @@ def convert_page(
                 if 0 <= gap <= best_gap:
                     best, best_gap = block, gap
             if best is not None:
-                candidate = _caption_alt(best.text)
-                if candidate:
-                    alt = candidate
-                    caption_blocks.add(id(best))
-        items.append((top_y, "image", f"![{alt}]({rel})"))
+                # Anchor id from the caption number (#165). Reads the caption but
+                # does NOT consume it, so a numbered figure keeps its visible
+                # caption line and also gains an `{#fig-N}` cross-reference target.
+                if profile.emit_figure_anchors:
+                    fid = _figure_anchor_id(best.text, profile.figure_ids_used)
+                    if fid:
+                        attr = f"{{#{fid} .figure}}"
+                        anchor_claimed.add(id(best))
+                # Alt text from the caption (#149) consumes the caption line so it
+                # is not also emitted as prose below the image.
+                if profile.caption_alt_text:
+                    candidate = _caption_alt(best.text)
+                    if candidate:
+                        alt = candidate
+                        caption_blocks.add(id(best))
+        items.append((top_y, "image", f"![{alt}]({rel}){attr}"))
 
     for block in parsed_blocks:
         if id(block) in caption_blocks:
@@ -2235,6 +2262,36 @@ def _caption_alt(text: str) -> str:
     return alt.replace("]", "\\]")
 
 
+# Figure-anchor detection (#165). A figure caption opens with a numbered label:
+# EN "Figure 3" / "Fig. 3", PT/ES "Figura 3". Tables are out of scope: attr_list
+# cannot attach an id to a rendered <table> and raw HTML would breach the
+# no-raw-HTML contract (tracked in a follow-up). The number becomes the id (dot
+# -> hyphen), so "Figure 2.1" -> `fig-2-1`.
+_FIGURE_CAPTION_RE = re.compile(
+    r"^\s*(?:Figure|Fig\.?|Figura)\s*(\d+(?:\.\d+)*)\b",
+    re.IGNORECASE,
+)
+
+
+def _figure_anchor_id(caption: str, used: set[str]) -> str | None:
+    """Deterministic `fig-N` id from a numbered figure caption, or None.
+
+    Dedupes against `used` the way heading anchors do (#152): a repeated number
+    gets a `-2`, `-3` suffix so two figures never share an id. Mutates `used`.
+    """
+    m = _FIGURE_CAPTION_RE.match(caption)
+    if not m:
+        return None
+    base = "fig-" + m.group(1).replace(".", "-")
+    slug = base
+    n = 1
+    while slug in used:
+        n += 1
+        slug = f"{base}-{n}"
+    used.add(slug)
+    return slug
+
+
 def extract_page_images(
     page: fitz.Page, images_dir: Path | None, pdf_stem: str, inline: bool = False
 ) -> list[tuple[float, float, float, float, str]]:
@@ -2314,6 +2371,7 @@ def convert_document(
     caption_alt_text: bool = False,
     detect_task_lists: bool = False,
     task_list_extended: bool = False,
+    emit_figure_anchors: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -2326,6 +2384,7 @@ def convert_document(
     profile.autolink_urls = autolink_urls
     profile.autolink_emails = autolink_emails
     profile.extract_highlights = extract_highlights
+    profile.emit_figure_anchors = emit_figure_anchors
     footnote_defs: dict[int, str] = {}
     if footnote_pairing:
         footnote_defs = collect_footnote_definitions(doc, profile)
@@ -2822,6 +2881,11 @@ def main() -> int:
         action="store_true",
         help="Emit ==text== from PDF text-highlight annotations (opt-in, #162)",
     )
+    parser.add_argument(
+        "--emit-figure-anchors",
+        action="store_true",
+        help="Emit {#fig-N .figure} on numbered figures for cross-references (opt-in, needs --with-images, #165)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -2856,6 +2920,7 @@ def main() -> int:
         detect_task_lists=args.detect_task_lists,
         task_list_extended=args.task_list_extended,
         extract_highlights=args.extract_highlights,
+        emit_figure_anchors=args.emit_figure_anchors,
     )
     return 0
 
