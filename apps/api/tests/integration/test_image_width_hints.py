@@ -61,7 +61,7 @@ def _convert(pdf_bytes: bytes, **kwargs: object) -> str:
 def test_emits_extracted_image_bbox_width_when_enabled():
     md = _convert(_build_pdf(), image_width_hints=True)
     image_line = next(line for line in md.splitlines() if line.startswith("!["))
-    assert image_line.endswith("{width=150}")
+    assert image_line.endswith("{width=200}")
 
 
 def test_default_and_explicit_off_keep_image_output_byte_identical():
@@ -76,7 +76,7 @@ def test_width_hint_combines_with_figure_anchor_in_one_attr_list():
     pdf = _build_pdf()
     md = _convert(pdf, image_width_hints=True, emit_figure_anchors=True)
     image_line = next(line for line in md.splitlines() if line.startswith("!["))
-    assert image_line.endswith("{#fig-1 .figure width=150}")
+    assert image_line.endswith("{#fig-1 .figure width=200}")
 
 
 @WIN_TEMPDIR_LOCK
@@ -88,7 +88,7 @@ def test_api_with_images_forwards_width_hint_to_inline_image():
     )
     image_line = next(line for line in response.md.splitlines() if line.startswith("!["))
     assert image_line.startswith("![](data:image/")
-    assert image_line.endswith("{width=150}")
+    assert image_line.endswith("{width=200}")
 
 
 @WIN_TEMPDIR_LOCK
@@ -129,4 +129,4 @@ def test_cli_with_images_forwards_width_hint(monkeypatch: pytest.MonkeyPatch):
         )
         assert mod.main() == 0
         image_line = next(line for line in out.read_text(encoding="utf-8").splitlines() if line.startswith("!["))
-        assert image_line.endswith("{width=150}")
+        assert image_line.endswith("{width=200}")

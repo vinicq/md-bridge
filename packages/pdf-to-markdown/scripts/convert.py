@@ -2604,11 +2604,17 @@ def _figure_anchor_id(caption: str, used: set[str]) -> str | None:
 
 
 def _image_width_attr(width: float) -> str | None:
-    """Return a compact attr-list width hint for a positive image bbox width."""
+    """Return an attr-list width hint in CSS pixels for a positive bbox width.
+
+    The bbox width is in PDF points (1/72in); attr_list renders `width=N` as an
+    HTML pixel width (CSS px, 1/96in). Convert points to CSS px (x96/72) so a
+    hinted image round-trips at its source size instead of 25% narrower (#169
+    review): a 150pt image emits width=200, which renders back at 150pt.
+    """
     if width <= 0:
         return None
-    rounded = max(1, int(width + 0.5))
-    return f"width={rounded}"
+    px = max(1, int(width * 96 / 72 + 0.5))
+    return f"width={px}"
 
 
 def extract_page_images(
