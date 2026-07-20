@@ -57,6 +57,9 @@ class PdfToMdOptions(BaseModel):
     # them (#165). Off by default; only relevant with with_images (needs the
     # extracted image and its caption).
     emit_figure_anchors: bool = False
+    # Detect cell alignment in table cells and emit GFM markers in the
+    # separator row (| :--- | ---: |) (#175). Off by default so output stays byte-identical.
+    table_column_align: bool = False
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")

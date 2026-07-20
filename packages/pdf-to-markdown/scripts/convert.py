@@ -685,6 +685,7 @@ class DocProfile:
     autolink_emails: bool = False  # opt-in: wrap bare email addresses in body text as autolinks (#157)
     extract_abbreviations: bool = False  # opt-in: emit *[ABBR]: defs from a glossary section (#163)
     caption_alt_text: bool = False  # opt-in: use a caption line below an image as its alt text (#149)
+    table_column_align: bool = False  # opt-in: detect cell alignment and emit GFM markers in separator row (#175)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
@@ -1367,7 +1368,174 @@ def classify_block(block: Block, profile: DocProfile) -> str:
     return "paragraph"
 
 
-def render_table(table) -> str:
+_TABLE_ALIGN_CELL_TOLERANCE = 1.0
+_TABLE_ALIGN_EDGE_RATIO = 0.20
+_TABLE_ALIGN_CENTER_RATIO = 0.08
+_TABLE_ALIGN_MIN_VOTES = 2
+
+
+def _table_cells_by_column(table, column_count: int) -> list[list[tuple[float, float, float, float]]]:
+    """Return non-spanning table-cell bounds grouped by extracted column.
+
+    ``Table.cells`` is a flat, geometry-only view. ``Table.rows`` retains the
+    extracted column index, which lets alignment survive PyMuPDF's occasional
+    empty-column and duplicate-column artifacts. A cell that reaches into the
+    following column is deliberately ignored: its content cannot safely tell
+    us how either logical column is aligned.
+    """
+    by_column: list[list[tuple[float, float, float, float]]] = [[] for _ in range(column_count)]
+    try:
+        rows = list(table.rows)
+    except Exception:
+        return by_column
+
+    column_lefts: list[float | None] = []
+    for column_index in range(column_count):
+        lefts: list[float] = []
+        for row in rows:
+            try:
+                cell = row.cells[column_index]
+            except (AttributeError, IndexError, TypeError):
+                continue
+            if cell is not None:
+                lefts.append(float(cell[0]))
+        column_lefts.append(sorted(lefts)[len(lefts) // 2] if lefts else None)
+
+    for row in rows:
+        for column_index in range(column_count):
+            try:
+                cell = row.cells[column_index]
+            except (AttributeError, IndexError, TypeError):
+                continue
+            if cell is None:
+                continue
+            try:
+                x0, y0, x1, y1 = (float(value) for value in cell)
+            except (TypeError, ValueError):
+                continue
+            if x1 <= x0 or y1 <= y0:
+                continue
+            next_left = next((left for left in column_lefts[column_index + 1 :] if left is not None), None)
+            if next_left is not None and x1 > next_left + _TABLE_ALIGN_CELL_TOLERANCE:
+                continue  # horizontal spanning cell: no reliable logical-column alignment
+            by_column[column_index].append((x0, y0, x1, y1))
+    return by_column
+
+
+def _span_alignment(span_bbox: tuple[float, float, float, float], cell_bbox: tuple[float, float, float, float]) -> str:
+    """Return a conservative GFM alignment vote for one span inside one cell."""
+    sx0, _, sx1, _ = span_bbox
+    x0, _, x1, _ = cell_bbox
+    cell_width = x1 - x0
+    text_width = sx1 - sx0
+    if cell_width <= 0 or text_width <= 0 or text_width > cell_width:
+        return ""
+
+    left_gap = sx0 - x0
+    right_gap = x1 - sx1
+    if left_gap < 0 or right_gap < 0:
+        return ""
+    delta = right_gap - left_gap
+    edge_threshold = max(4.0, cell_width * _TABLE_ALIGN_EDGE_RATIO)
+    center_threshold = max(3.0, cell_width * _TABLE_ALIGN_CENTER_RATIO)
+
+    # A short span with similarly sized side gaps is genuinely centered. Long
+    # prose often fills a left-aligned cell and can look centered by accident.
+    if (
+        abs(delta) <= center_threshold
+        and min(left_gap, right_gap) >= cell_width * _TABLE_ALIGN_EDGE_RATIO
+        and text_width <= cell_width * 0.70
+    ):
+        return "c"
+    if delta >= edge_threshold and left_gap <= cell_width * 0.25:
+        return "l"
+    if -delta >= edge_threshold and right_gap <= cell_width * 0.25:
+        return "r"
+    return ""
+
+
+def detect_column_alignment(table, page_text: dict, column_count: int) -> list[str]:
+    """Detect alignment votes for the extracted table columns.
+
+    Spans must sit entirely inside an individual non-spanning cell. The helper
+    returns empty entries when the page lacks enough unambiguous evidence, so
+    callers retain a plain GFM separator instead of guessing.
+    """
+    if column_count <= 0:
+        return []
+    cells_by_column = _table_cells_by_column(table, column_count)
+    votes: list[list[str]] = [[] for _ in range(column_count)]
+
+    for block in page_text.get("blocks", []):
+        if block.get("type") != 0:
+            continue
+        for line in block.get("lines", []):
+            spans_by_cell: dict[tuple[int, tuple[float, float, float, float]], list[tuple[float, float, float, float]]] = {}
+            for span in line.get("spans", []):
+                bbox = span.get("bbox")
+                if not isinstance(bbox, (list, tuple)) or len(bbox) != 4:
+                    continue
+                try:
+                    sx0, sy0, sx1, sy1 = (float(value) for value in bbox)
+                except (TypeError, ValueError):
+                    continue
+                center_x = (sx0 + sx1) / 2
+                center_y = (sy0 + sy1) / 2
+                for column_index, cells in enumerate(cells_by_column):
+                    match = next(
+                        (
+                            cell
+                            for cell in cells
+                            if (
+                                cell[0] - _TABLE_ALIGN_CELL_TOLERANCE <= center_x <= cell[2] + _TABLE_ALIGN_CELL_TOLERANCE
+                                and cell[1] - _TABLE_ALIGN_CELL_TOLERANCE <= center_y <= cell[3] + _TABLE_ALIGN_CELL_TOLERANCE
+                            )
+                        ),
+                        None,
+                    )
+                    if match is None:
+                        continue
+                    spans_by_cell.setdefault((column_index, match), []).append((sx0, sy0, sx1, sy1))
+                    break
+            for (column_index, cell), matching_spans in spans_by_cell.items():
+                extent = (
+                    min(span[0] for span in matching_spans),
+                    min(span[1] for span in matching_spans),
+                    max(span[2] for span in matching_spans),
+                    max(span[3] for span in matching_spans),
+                )
+                vote = _span_alignment(extent, cell)
+                if vote:
+                    votes[column_index].append(vote)
+
+    alignment: list[str] = []
+    for column_votes in votes:
+        if len(column_votes) < _TABLE_ALIGN_MIN_VOTES:
+            alignment.append("")
+            continue
+        counts: Counter[str] = Counter(column_votes)
+        winner, winner_count = counts.most_common(1)[0]
+        if winner_count == len(column_votes) or winner_count > len(column_votes) / 2:
+            alignment.append(winner)
+        else:
+            alignment.append("")
+    return alignment
+
+
+def _merge_column_alignment(current: str, incoming: str) -> str:
+    """Keep an alignment hint only when duplicate extracted columns agree."""
+    if current and incoming and current == incoming:
+        return current
+    return ""
+
+
+def _render_table_separators(alignment: list[str], column_count: int) -> str:
+    """Render GFM separator markers, falling back to plain separators."""
+    marker = {"l": ":---", "c": ":---:", "r": "---:"}
+    return "| " + " | ".join(marker.get(alignment[i], "---") for i in range(column_count)) + " |"
+
+
+def render_table(table, profile: DocProfile | None = None, page_text: dict | None = None) -> str:
     """Render a PyMuPDF Table to a Markdown table.
 
     Drops columns that are empty across all rows, merges duplicate adjacent
@@ -1384,6 +1552,11 @@ def render_table(table) -> str:
     rows = [[normalize_span_text((c or "").replace("\n", " ")).strip() for c in row] for row in rows]
     width = max(len(r) for r in rows)
     rows = [r + [""] * (width - len(r)) for r in rows]
+    raw_alignment = (
+        detect_column_alignment(table, page_text, width)
+        if profile is not None and profile.table_column_align and page_text is not None
+        else [""] * width
+    )
 
     # Drop columns that are entirely empty
     keep_cols = [i for i in range(width) if any(r[i] for r in rows)]
@@ -1391,10 +1564,12 @@ def render_table(table) -> str:
         return ""
     rows = [[r[i] for i in keep_cols] for r in rows]
     width = len(keep_cols)
+    alignment = [raw_alignment[i] for i in keep_cols]
 
     # Merge duplicate adjacent columns: when two adjacent columns hold the same
     # value in every row (or one is always blank when the other isn't), collapse them.
     merged_cols: list[list[str]] = [[r[0] for r in rows]]
+    merged_alignment: list[str] = [alignment[0]]
     for ci in range(1, width):
         col = [r[ci] for r in rows]
         prev = merged_cols[-1]
@@ -1405,8 +1580,10 @@ def render_table(table) -> str:
         )
         if identical_or_subset and any(a == b and a for a, b in zip(prev, col, strict=False)):
             merged_cols[-1] = [a or b for a, b in zip(prev, col, strict=False)]
+            merged_alignment[-1] = _merge_column_alignment(merged_alignment[-1], alignment[ci])
         else:
             merged_cols.append(col)
+            merged_alignment.append(alignment[ci])
     rows = [list(t) for t in zip(*merged_cols, strict=False)]
     if not rows:
         return ""
@@ -1429,7 +1606,7 @@ def render_table(table) -> str:
         return cell.replace("|", "\\|")
 
     out = ["| " + " | ".join(esc(c) for c in header) + " |"]
-    out.append("| " + " | ".join("---" for _ in header) + " |")
+    out.append(_render_table_separators(merged_alignment, len(header)))
     for row in body:
         out.append("| " + " | ".join(esc(c) for c in row) + " |")
     return "\n".join(out)
@@ -1824,10 +2001,11 @@ def convert_page(
     skip_header_footer: bool = True,
     recurring_furniture: frozenset[str] = frozenset(),
 ) -> str:
+    text_dict = page_text_dict(page)
     table_finder = page.find_tables()
     tables = list(table_finder)
     table_bboxes = [tuple(t.bbox) for t in tables]
-    rendered_tables = {tuple(t.bbox): render_table(t) for t in tables}
+    rendered_tables = {tuple(t.bbox): render_table(t, profile, text_dict) for t in tables}
 
     page_height = page.rect.height
     page_width = page.rect.width
@@ -1847,7 +2025,7 @@ def convert_page(
         items.append((t.bbox[1], "table", t))
 
     parsed_blocks: list[Block] = []
-    for raw_block in page_text_dict(page).get("blocks", []):
+    for raw_block in text_dict.get("blocks", []):
         if raw_block.get("type") != 0:
             continue
         block = parse_block(raw_block)
@@ -2372,6 +2550,7 @@ def convert_document(
     detect_task_lists: bool = False,
     task_list_extended: bool = False,
     emit_figure_anchors: bool = False,
+    table_column_align: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -2385,6 +2564,7 @@ def convert_document(
     profile.autolink_emails = autolink_emails
     profile.extract_highlights = extract_highlights
     profile.emit_figure_anchors = emit_figure_anchors
+    profile.table_column_align = table_column_align
     footnote_defs: dict[int, str] = {}
     if footnote_pairing:
         footnote_defs = collect_footnote_definitions(doc, profile)
@@ -2886,6 +3066,11 @@ def main() -> int:
         action="store_true",
         help="Emit {#fig-N .figure} on numbered figures for cross-references (opt-in, needs --with-images, #165)",
     )
+    parser.add_argument(
+        "--table-column-align",
+        action="store_true",
+        help="Detect table-cell alignment and emit GFM separator markers (opt-in, #175)",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -2921,6 +3106,7 @@ def main() -> int:
         task_list_extended=args.task_list_extended,
         extract_highlights=args.extract_highlights,
         emit_figure_anchors=args.emit_figure_anchors,
+        table_column_align=args.table_column_align,
     )
     return 0
 
