@@ -24,7 +24,7 @@ import sys
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
-from math import ceil
+from math import ceil, isfinite
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -360,6 +360,35 @@ def _normalize_task_lists(md: str, *, extended: bool) -> str:
     return "\n".join(lines)
 
 
+def _is_task_line(text: str, *, extended: bool) -> bool:
+    """True when a line opens with a task-list checkbox glyph or bracket (#172).
+
+    Mirrors the recognition in `_normalize_task_lists`: any checkbox glyph, and
+    a `[x]`/`[ ]` bracket (plus the todo-md `[-]` only under `extended`). Used so
+    the tight/loose list pass (#168) treats these paragraph-classified blocks as
+    list items for spacing, matching how the post-pass later rewrites them.
+    """
+    if _TASK_GLYPH_RE.match(text):
+        return True
+    bracket = _TASK_BRACKET_RE.match(text)
+    if bracket:
+        return extended or bracket.group("mark") != "-"
+    return False
+
+
+def _positive_finite_float(value: str) -> float:
+    """Argparse type for a strictly positive, finite float (mirrors the API `gt=0`).
+
+    Bare `type=float` accepts `-1`, `nan`, and `inf`; a negative threshold makes
+    nearly every gap loose, and `nan`/`inf` silently force every list tight (#168
+    review). Reject them at parse time so the CLI matches the schema constraint.
+    """
+    parsed = float(value)
+    if not isfinite(parsed) or parsed <= 0:
+        raise argparse.ArgumentTypeError(f"must be a positive finite number, got {value!r}")
+    return parsed
+
+
 # Deterministic heading anchors (#152). A document-level post-pass appends a
 # Pandoc/mkdocs `{#slug}` attribute to each ATX heading so the same heading
 # lands at the same anchor across renderers. Off by default so existing output
@@ -686,6 +715,10 @@ class DocProfile:
     extract_abbreviations: bool = False  # opt-in: emit *[ABBR]: defs from a glossary section (#163)
     caption_alt_text: bool = False  # opt-in: use a caption line below an image as its alt text (#149)
     table_column_align: bool = False  # opt-in: detect cell alignment and emit GFM markers in separator row (#175)
+    tight_loose_lists: bool = False  # opt-in: preserve list spacing as CommonMark tight/loose lists (#168)
+    list_loose_threshold: float = 1.5
+    detect_task_lists: bool = False  # opt-in (#172); read here so #168 spacing treats checkbox items as list items
+    task_list_extended: bool = False  # opt-in: also recognize the todo-md [-] marker (#172)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
@@ -2202,6 +2235,11 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
     """
     out_parts: list[str] = []
     numbered_run: list[str] = []
+    numbered_loose = False
+    numbered_last_bottom: float | None = None
+    bullet_run: list[str] = []
+    bullet_loose = False
+    bullet_last_bottom: float | None = None
     # x0 of the open list item's marker, or None when not inside a list.
     list_marker_x0: float | None = None
     # Leading-space indent that nests a continuation under the item. The
@@ -2214,11 +2252,24 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
     numbered_loose_pending = False
 
     def flush_numbered() -> None:
-        nonlocal numbered_loose_pending
+        nonlocal numbered_loose_pending, numbered_loose, numbered_last_bottom
         if numbered_run:
-            out_parts.append("\n".join(numbered_run))
+            out_parts.append(("\n\n" if numbered_loose else "\n").join(numbered_run))
             numbered_run.clear()
         numbered_loose_pending = False
+        numbered_loose = False
+        numbered_last_bottom = None
+
+    def flush_bullets() -> None:
+        nonlocal bullet_loose, bullet_last_bottom
+        if bullet_run:
+            out_parts.append(("\n\n" if bullet_loose else "\n").join(bullet_run))
+            bullet_run.clear()
+        bullet_loose = False
+        bullet_last_bottom = None
+
+    def is_loose_gap(previous_bottom: float | None, current_top: float) -> bool:
+        return previous_bottom is not None and current_top - previous_bottom > profile.list_loose_threshold * profile.body_size
 
     # Consecutive blockquote blocks are one quote with multiple paragraphs
     # (#174). Each PDF paragraph is its own Block, so we buffer the rendered
@@ -2247,6 +2298,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
     for kind, payload in items:
         if kind == "table":
             flush_numbered()
+            flush_bullets()
             flush_blockquote()
             flush_heading()
             list_marker_x0 = None
@@ -2255,6 +2307,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             continue
         if kind == "image":
             flush_numbered()
+            flush_bullets()
             flush_blockquote()
             flush_heading()
             list_marker_x0 = None
@@ -2287,10 +2340,16 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                     numbered_run.append("")
                     numbered_run.append(cont_block)
                     numbered_loose_pending = True
+                    if profile.tight_loose_lists:
+                        numbered_loose = True
+                elif profile.tight_loose_lists and bullet_run:
+                    bullet_run.extend(["", cont_block])
+                    bullet_loose = True
                 else:
                     out_parts.append(cont_block)
                 continue
             flush_numbered()
+            flush_bullets()
             flush_blockquote()
             flush_heading()
             list_marker_x0 = None
@@ -2346,8 +2405,63 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                 numbered_run.append("")
                 numbered_run.append(cont_line)
                 numbered_loose_pending = True
+                if profile.tight_loose_lists:
+                    numbered_loose = True
+            elif profile.tight_loose_lists and bullet_run:
+                bullet_run.extend(["", cont_line])
+                bullet_loose = True
             else:
                 out_parts.append(cont_line)
+            continue
+
+        # A nested sublist of the OTHER marker (numbered children under a bullet
+        # item, or vice versa) must stay inside the open run. Otherwise the
+        # cross-marker flush below closes the outer run, the two runs land as
+        # separate out_parts, and the final "\n\n" join splits one tight list
+        # into loose blocks even when every gap is tight (#168 review). Keep the
+        # nested item in the open run, rendered tight at its own nesting.
+        if (
+            profile.tight_loose_lists
+            and cls in ("numbered", "bullet")
+            and list_marker_x0 is not None
+            and block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
+            and ((cls == "numbered" and bullet_run) or (cls == "bullet" and numbered_run))
+        ):
+            nested = profile.nesting_level(block.bbox[0])
+            run = bullet_run or numbered_run
+            if cls == "bullet":
+                sub = text_clean.lstrip()
+                for ch in BULLET_CHARS:
+                    if sub.startswith(ch):
+                        sub = sub[len(ch):].lstrip()
+                        break
+                run.append(f"{'  ' * nested}- {sub}")
+            else:
+                sub_marker, sub_content = normalize_ordered_marker(text_clean, first=True)
+                run.append(f"{'  ' * nested}{sub_marker} {sub_content}" if sub_marker else f"{'  ' * nested}{text_clean}")
+            list_marker_x0 = block.bbox[0]
+            list_cont_indent = "  " * nested + "    "
+            continue
+
+        # Checkbox / bracket task items classify as paragraphs, so without this
+        # they reach out_parts, get joined with a blank line, and the task-list
+        # post-pass rewrites them to `- [ ]` while keeping those separators,
+        # forcing every task list loose regardless of geometry (#168 review).
+        # When task detection is on, buffer them through the same spacing path
+        # so tight source stays tight; the post-pass converts the glyph.
+        if (
+            profile.tight_loose_lists
+            and profile.detect_task_lists
+            and cls not in ("numbered", "bullet")
+            and _is_task_line(text_clean, extended=profile.task_list_extended)
+        ):
+            flush_numbered()
+            if is_loose_gap(bullet_last_bottom, block.bbox[1]):
+                bullet_loose = True
+            bullet_run.append(text_clean)
+            bullet_last_bottom = block.bbox[3]
+            list_marker_x0 = block.bbox[0]
+            list_cont_indent = "    "
             continue
 
         # Any non-numbered block ends the current ordered-list run; any
@@ -2355,6 +2469,8 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
         # must NOT self-flush (it accumulates), hence the guard.
         if cls != "numbered":
             flush_numbered()
+        if cls != "bullet":
+            flush_bullets()
         if cls != "blockquote":
             flush_blockquote()
         if not cls.startswith("heading"):
@@ -2383,7 +2499,14 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                     stripped = stripped[len(ch):].lstrip()
                     break
             nesting = profile.nesting_level(block.bbox[0])
-            out_parts.append(f"{'  ' * nesting}- {stripped}")
+            item = f"{'  ' * nesting}- {stripped}"
+            if profile.tight_loose_lists:
+                if is_loose_gap(bullet_last_bottom, block.bbox[1]):
+                    bullet_loose = True
+                bullet_run.append(item)
+                bullet_last_bottom = block.bbox[3]
+            else:
+                out_parts.append(item)
             list_marker_x0 = block.bbox[0]
             list_cont_indent = "  " * nesting + "    "
         elif cls == "numbered":
@@ -2392,6 +2515,8 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             if numbered_loose_pending:
                 numbered_run.append("")
                 numbered_loose_pending = False
+            if profile.tight_loose_lists and is_loose_gap(numbered_last_bottom, block.bbox[1]):
+                numbered_loose = True
             if marker:
                 numbered_run.append(f"{'  ' * nesting}{marker} {content}")
             else:
@@ -2399,6 +2524,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                 numbered_run.append(f"{'  ' * nesting}{text_clean}")
             list_cont_indent = "  " * nesting + "    "
             list_marker_x0 = block.bbox[0]
+            numbered_last_bottom = block.bbox[3]
         elif cls == "blockquote":
             # Accumulate into the current quote run; consecutive quote blocks
             # become one <blockquote> with multiple paragraphs (#174). The run
@@ -2420,6 +2546,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             out_parts.append(escape_line_start_specials(para_clean))
 
     flush_numbered()
+    flush_bullets()
     flush_blockquote()
     flush_heading()
     return "\n\n".join(out_parts)
@@ -2551,6 +2678,8 @@ def convert_document(
     task_list_extended: bool = False,
     emit_figure_anchors: bool = False,
     table_column_align: bool = False,
+    tight_loose_lists: bool = False,
+    list_loose_threshold: float = 1.5,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -2565,6 +2694,10 @@ def convert_document(
     profile.extract_highlights = extract_highlights
     profile.emit_figure_anchors = emit_figure_anchors
     profile.table_column_align = table_column_align
+    profile.tight_loose_lists = tight_loose_lists
+    profile.list_loose_threshold = list_loose_threshold
+    profile.detect_task_lists = detect_task_lists
+    profile.task_list_extended = task_list_extended
     footnote_defs: dict[int, str] = {}
     if footnote_pairing:
         footnote_defs = collect_footnote_definitions(doc, profile)
@@ -3071,6 +3204,8 @@ def main() -> int:
         action="store_true",
         help="Detect table-cell alignment and emit GFM separator markers (opt-in, #175)",
     )
+    parser.add_argument("--tight-loose-lists", action="store_true", help="Preserve PDF list spacing as CommonMark tight or loose lists (opt-in, #168)")
+    parser.add_argument("--list-loose-threshold", type=_positive_finite_float, default=1.5, metavar="N", help="Gap in body line-heights that marks a list loose (positive finite, default: 1.5, #168)")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -3107,6 +3242,8 @@ def main() -> int:
         extract_highlights=args.extract_highlights,
         emit_figure_anchors=args.emit_figure_anchors,
         table_column_align=args.table_column_align,
+        tight_loose_lists=args.tight_loose_lists,
+        list_loose_threshold=args.list_loose_threshold,
     )
     return 0
 
