@@ -686,6 +686,8 @@ class DocProfile:
     extract_abbreviations: bool = False  # opt-in: emit *[ABBR]: defs from a glossary section (#163)
     caption_alt_text: bool = False  # opt-in: use a caption line below an image as its alt text (#149)
     table_column_align: bool = False  # opt-in: detect cell alignment and emit GFM markers in separator row (#175)
+    tight_loose_lists: bool = False  # opt-in: preserve list spacing as CommonMark tight/loose lists (#168)
+    list_loose_threshold: float = 1.5
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
@@ -2202,6 +2204,11 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
     """
     out_parts: list[str] = []
     numbered_run: list[str] = []
+    numbered_loose = False
+    numbered_last_bottom: float | None = None
+    bullet_run: list[str] = []
+    bullet_loose = False
+    bullet_last_bottom: float | None = None
     # x0 of the open list item's marker, or None when not inside a list.
     list_marker_x0: float | None = None
     # Leading-space indent that nests a continuation under the item. The
@@ -2214,11 +2221,24 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
     numbered_loose_pending = False
 
     def flush_numbered() -> None:
-        nonlocal numbered_loose_pending
+        nonlocal numbered_loose_pending, numbered_loose, numbered_last_bottom
         if numbered_run:
-            out_parts.append("\n".join(numbered_run))
+            out_parts.append(("\n\n" if numbered_loose else "\n").join(numbered_run))
             numbered_run.clear()
         numbered_loose_pending = False
+        numbered_loose = False
+        numbered_last_bottom = None
+
+    def flush_bullets() -> None:
+        nonlocal bullet_loose, bullet_last_bottom
+        if bullet_run:
+            out_parts.append(("\n\n" if bullet_loose else "\n").join(bullet_run))
+            bullet_run.clear()
+        bullet_loose = False
+        bullet_last_bottom = None
+
+    def is_loose_gap(previous_bottom: float | None, current_top: float) -> bool:
+        return previous_bottom is not None and current_top - previous_bottom > profile.list_loose_threshold * profile.body_size
 
     # Consecutive blockquote blocks are one quote with multiple paragraphs
     # (#174). Each PDF paragraph is its own Block, so we buffer the rendered
@@ -2247,6 +2267,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
     for kind, payload in items:
         if kind == "table":
             flush_numbered()
+            flush_bullets()
             flush_blockquote()
             flush_heading()
             list_marker_x0 = None
@@ -2255,6 +2276,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             continue
         if kind == "image":
             flush_numbered()
+            flush_bullets()
             flush_blockquote()
             flush_heading()
             list_marker_x0 = None
@@ -2287,10 +2309,16 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                     numbered_run.append("")
                     numbered_run.append(cont_block)
                     numbered_loose_pending = True
+                    if profile.tight_loose_lists:
+                        numbered_loose = True
+                elif profile.tight_loose_lists and bullet_run:
+                    bullet_run.extend(["", cont_block])
+                    bullet_loose = True
                 else:
                     out_parts.append(cont_block)
                 continue
             flush_numbered()
+            flush_bullets()
             flush_blockquote()
             flush_heading()
             list_marker_x0 = None
@@ -2346,6 +2374,11 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                 numbered_run.append("")
                 numbered_run.append(cont_line)
                 numbered_loose_pending = True
+                if profile.tight_loose_lists:
+                    numbered_loose = True
+            elif profile.tight_loose_lists and bullet_run:
+                bullet_run.extend(["", cont_line])
+                bullet_loose = True
             else:
                 out_parts.append(cont_line)
             continue
@@ -2355,6 +2388,8 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
         # must NOT self-flush (it accumulates), hence the guard.
         if cls != "numbered":
             flush_numbered()
+        if cls != "bullet":
+            flush_bullets()
         if cls != "blockquote":
             flush_blockquote()
         if not cls.startswith("heading"):
@@ -2383,7 +2418,14 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                     stripped = stripped[len(ch):].lstrip()
                     break
             nesting = profile.nesting_level(block.bbox[0])
-            out_parts.append(f"{'  ' * nesting}- {stripped}")
+            item = f"{'  ' * nesting}- {stripped}"
+            if profile.tight_loose_lists:
+                if is_loose_gap(bullet_last_bottom, block.bbox[1]):
+                    bullet_loose = True
+                bullet_run.append(item)
+                bullet_last_bottom = block.bbox[3]
+            else:
+                out_parts.append(item)
             list_marker_x0 = block.bbox[0]
             list_cont_indent = "  " * nesting + "    "
         elif cls == "numbered":
@@ -2392,6 +2434,8 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             if numbered_loose_pending:
                 numbered_run.append("")
                 numbered_loose_pending = False
+            if profile.tight_loose_lists and is_loose_gap(numbered_last_bottom, block.bbox[1]):
+                numbered_loose = True
             if marker:
                 numbered_run.append(f"{'  ' * nesting}{marker} {content}")
             else:
@@ -2399,6 +2443,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                 numbered_run.append(f"{'  ' * nesting}{text_clean}")
             list_cont_indent = "  " * nesting + "    "
             list_marker_x0 = block.bbox[0]
+            numbered_last_bottom = block.bbox[3]
         elif cls == "blockquote":
             # Accumulate into the current quote run; consecutive quote blocks
             # become one <blockquote> with multiple paragraphs (#174). The run
@@ -2420,6 +2465,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             out_parts.append(escape_line_start_specials(para_clean))
 
     flush_numbered()
+    flush_bullets()
     flush_blockquote()
     flush_heading()
     return "\n\n".join(out_parts)
@@ -2551,6 +2597,8 @@ def convert_document(
     task_list_extended: bool = False,
     emit_figure_anchors: bool = False,
     table_column_align: bool = False,
+    tight_loose_lists: bool = False,
+    list_loose_threshold: float = 1.5,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -2565,6 +2613,8 @@ def convert_document(
     profile.extract_highlights = extract_highlights
     profile.emit_figure_anchors = emit_figure_anchors
     profile.table_column_align = table_column_align
+    profile.tight_loose_lists = tight_loose_lists
+    profile.list_loose_threshold = list_loose_threshold
     footnote_defs: dict[int, str] = {}
     if footnote_pairing:
         footnote_defs = collect_footnote_definitions(doc, profile)
@@ -3071,6 +3121,8 @@ def main() -> int:
         action="store_true",
         help="Detect table-cell alignment and emit GFM separator markers (opt-in, #175)",
     )
+    parser.add_argument("--tight-loose-lists", action="store_true", help="Preserve PDF list spacing as CommonMark tight or loose lists (opt-in, #168)")
+    parser.add_argument("--list-loose-threshold", type=float, default=1.5, metavar="N", help="Gap in body line-heights that marks a list loose (default: 1.5, #168)")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -3107,6 +3159,8 @@ def main() -> int:
         extract_highlights=args.extract_highlights,
         emit_figure_anchors=args.emit_figure_anchors,
         table_column_align=args.table_column_align,
+        tight_loose_lists=args.tight_loose_lists,
+        list_loose_threshold=args.list_loose_threshold,
     )
     return 0
 

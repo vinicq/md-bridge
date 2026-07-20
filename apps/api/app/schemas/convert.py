@@ -60,6 +60,8 @@ class PdfToMdOptions(BaseModel):
     # Detect cell alignment in table cells and emit GFM markers in the
     # separator row (| :--- | ---: |) (#175). Off by default so output stays byte-identical.
     table_column_align: bool = False
+    tight_loose_lists: bool = False
+    list_loose_threshold: float = Field(default=1.5, gt=0)
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")
