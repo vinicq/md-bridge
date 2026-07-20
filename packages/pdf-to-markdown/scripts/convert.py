@@ -24,7 +24,7 @@ import sys
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
-from math import ceil
+from math import ceil, isfinite
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -360,6 +360,35 @@ def _normalize_task_lists(md: str, *, extended: bool) -> str:
     return "\n".join(lines)
 
 
+def _is_task_line(text: str, *, extended: bool) -> bool:
+    """True when a line opens with a task-list checkbox glyph or bracket (#172).
+
+    Mirrors the recognition in `_normalize_task_lists`: any checkbox glyph, and
+    a `[x]`/`[ ]` bracket (plus the todo-md `[-]` only under `extended`). Used so
+    the tight/loose list pass (#168) treats these paragraph-classified blocks as
+    list items for spacing, matching how the post-pass later rewrites them.
+    """
+    if _TASK_GLYPH_RE.match(text):
+        return True
+    bracket = _TASK_BRACKET_RE.match(text)
+    if bracket:
+        return extended or bracket.group("mark") != "-"
+    return False
+
+
+def _positive_finite_float(value: str) -> float:
+    """Argparse type for a strictly positive, finite float (mirrors the API `gt=0`).
+
+    Bare `type=float` accepts `-1`, `nan`, and `inf`; a negative threshold makes
+    nearly every gap loose, and `nan`/`inf` silently force every list tight (#168
+    review). Reject them at parse time so the CLI matches the schema constraint.
+    """
+    parsed = float(value)
+    if not isfinite(parsed) or parsed <= 0:
+        raise argparse.ArgumentTypeError(f"must be a positive finite number, got {value!r}")
+    return parsed
+
+
 # Deterministic heading anchors (#152). A document-level post-pass appends a
 # Pandoc/mkdocs `{#slug}` attribute to each ATX heading so the same heading
 # lands at the same anchor across renderers. Off by default so existing output
@@ -688,6 +717,8 @@ class DocProfile:
     table_column_align: bool = False  # opt-in: detect cell alignment and emit GFM markers in separator row (#175)
     tight_loose_lists: bool = False  # opt-in: preserve list spacing as CommonMark tight/loose lists (#168)
     list_loose_threshold: float = 1.5
+    detect_task_lists: bool = False  # opt-in (#172); read here so #168 spacing treats checkbox items as list items
+    task_list_extended: bool = False  # opt-in: also recognize the todo-md [-] marker (#172)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
 
     def heading_level(self, size: float) -> int | None:
@@ -2383,6 +2414,56 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
                 out_parts.append(cont_line)
             continue
 
+        # A nested sublist of the OTHER marker (numbered children under a bullet
+        # item, or vice versa) must stay inside the open run. Otherwise the
+        # cross-marker flush below closes the outer run, the two runs land as
+        # separate out_parts, and the final "\n\n" join splits one tight list
+        # into loose blocks even when every gap is tight (#168 review). Keep the
+        # nested item in the open run, rendered tight at its own nesting.
+        if (
+            profile.tight_loose_lists
+            and cls in ("numbered", "bullet")
+            and list_marker_x0 is not None
+            and block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
+            and ((cls == "numbered" and bullet_run) or (cls == "bullet" and numbered_run))
+        ):
+            nested = profile.nesting_level(block.bbox[0])
+            run = bullet_run or numbered_run
+            if cls == "bullet":
+                sub = text_clean.lstrip()
+                for ch in BULLET_CHARS:
+                    if sub.startswith(ch):
+                        sub = sub[len(ch):].lstrip()
+                        break
+                run.append(f"{'  ' * nested}- {sub}")
+            else:
+                sub_marker, sub_content = normalize_ordered_marker(text_clean, first=True)
+                run.append(f"{'  ' * nested}{sub_marker} {sub_content}" if sub_marker else f"{'  ' * nested}{text_clean}")
+            list_marker_x0 = block.bbox[0]
+            list_cont_indent = "  " * nested + "    "
+            continue
+
+        # Checkbox / bracket task items classify as paragraphs, so without this
+        # they reach out_parts, get joined with a blank line, and the task-list
+        # post-pass rewrites them to `- [ ]` while keeping those separators,
+        # forcing every task list loose regardless of geometry (#168 review).
+        # When task detection is on, buffer them through the same spacing path
+        # so tight source stays tight; the post-pass converts the glyph.
+        if (
+            profile.tight_loose_lists
+            and profile.detect_task_lists
+            and cls not in ("numbered", "bullet")
+            and _is_task_line(text_clean, extended=profile.task_list_extended)
+        ):
+            flush_numbered()
+            if is_loose_gap(bullet_last_bottom, block.bbox[1]):
+                bullet_loose = True
+            bullet_run.append(text_clean)
+            bullet_last_bottom = block.bbox[3]
+            list_marker_x0 = block.bbox[0]
+            list_cont_indent = "    "
+            continue
+
         # Any non-numbered block ends the current ordered-list run; any
         # non-quote block ends the current blockquote run. A consecutive quote
         # must NOT self-flush (it accumulates), hence the guard.
@@ -2615,6 +2696,8 @@ def convert_document(
     profile.table_column_align = table_column_align
     profile.tight_loose_lists = tight_loose_lists
     profile.list_loose_threshold = list_loose_threshold
+    profile.detect_task_lists = detect_task_lists
+    profile.task_list_extended = task_list_extended
     footnote_defs: dict[int, str] = {}
     if footnote_pairing:
         footnote_defs = collect_footnote_definitions(doc, profile)
@@ -3122,7 +3205,7 @@ def main() -> int:
         help="Detect table-cell alignment and emit GFM separator markers (opt-in, #175)",
     )
     parser.add_argument("--tight-loose-lists", action="store_true", help="Preserve PDF list spacing as CommonMark tight or loose lists (opt-in, #168)")
-    parser.add_argument("--list-loose-threshold", type=float, default=1.5, metavar="N", help="Gap in body line-heights that marks a list loose (default: 1.5, #168)")
+    parser.add_argument("--list-loose-threshold", type=_positive_finite_float, default=1.5, metavar="N", help="Gap in body line-heights that marks a list loose (positive finite, default: 1.5, #168)")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
