@@ -714,6 +714,7 @@ class DocProfile:
     autolink_emails: bool = False  # opt-in: wrap bare email addresses in body text as autolinks (#157)
     extract_abbreviations: bool = False  # opt-in: emit *[ABBR]: defs from a glossary section (#163)
     caption_alt_text: bool = False  # opt-in: use a caption line below an image as its alt text (#149)
+    image_width_hints: bool = False  # opt-in: emit image bbox width in an attr-list (#169)
     table_column_align: bool = False  # opt-in: detect cell alignment and emit GFM markers in separator row (#175)
     tight_loose_lists: bool = False  # opt-in: preserve list spacing as CommonMark tight/loose lists (#168)
     list_loose_threshold: float = 1.5
@@ -2049,7 +2050,7 @@ def convert_page(
     except Exception:
         page_links = []
 
-    image_items: list[tuple[float, float, str]] = []
+    image_items: list[tuple[float, float, float, float, str]] = []
     if images_dir is not None or inline_images:
         image_items = extract_page_images(page, images_dir, pdf_stem, inline=inline_images)
 
@@ -2091,7 +2092,7 @@ def convert_page(
     anchor_claimed: set[int] = set()    # used for a figure anchor: still emitted as prose
     for top_y, bottom_y, left_x, right_x, rel in image_items:
         alt = ""
-        attr = ""
+        attr_tokens: list[str] = []
         # The caption line below the image feeds both the alt text (#149) and the
         # figure anchor id (#165), so find it once when either option is on.
         if profile.caption_alt_text or profile.emit_figure_anchors:
@@ -2121,7 +2122,7 @@ def convert_page(
                 if profile.emit_figure_anchors:
                     fid = _figure_anchor_id(best.text, profile.figure_ids_used)
                     if fid:
-                        attr = f"{{#{fid} .figure}}"
+                        attr_tokens.extend((f"#{fid}", ".figure"))
                         anchor_claimed.add(id(best))
                 # Alt text from the caption (#149) consumes the caption line so it
                 # is not also emitted as prose below the image.
@@ -2130,6 +2131,11 @@ def convert_page(
                     if candidate:
                         alt = candidate
                         caption_blocks.add(id(best))
+        if profile.image_width_hints:
+            width_hint = _image_width_attr(right_x - left_x)
+            if width_hint:
+                attr_tokens.append(width_hint)
+        attr = f"{{{' '.join(attr_tokens)}}}" if attr_tokens else ""
         items.append((top_y, "image", f"![{alt}]({rel}){attr}"))
 
     for block in parsed_blocks:
@@ -2597,6 +2603,14 @@ def _figure_anchor_id(caption: str, used: set[str]) -> str | None:
     return slug
 
 
+def _image_width_attr(width: float) -> str | None:
+    """Return a compact attr-list width hint for a positive image bbox width."""
+    if width <= 0:
+        return None
+    rounded = max(1, int(width + 0.5))
+    return f"width={rounded}"
+
+
 def extract_page_images(
     page: fitz.Page, images_dir: Path | None, pdf_stem: str, inline: bool = False
 ) -> list[tuple[float, float, float, float, str]]:
@@ -2677,6 +2691,7 @@ def convert_document(
     detect_task_lists: bool = False,
     task_list_extended: bool = False,
     emit_figure_anchors: bool = False,
+    image_width_hints: bool = False,
     table_column_align: bool = False,
     tight_loose_lists: bool = False,
     list_loose_threshold: float = 1.5,
@@ -2693,6 +2708,7 @@ def convert_document(
     profile.autolink_emails = autolink_emails
     profile.extract_highlights = extract_highlights
     profile.emit_figure_anchors = emit_figure_anchors
+    profile.image_width_hints = image_width_hints
     profile.table_column_align = table_column_align
     profile.tight_loose_lists = tight_loose_lists
     profile.list_loose_threshold = list_loose_threshold
@@ -3200,6 +3216,11 @@ def main() -> int:
         help="Emit {#fig-N .figure} on numbered figures for cross-references (opt-in, needs --with-images, #165)",
     )
     parser.add_argument(
+        "--image-width-hints",
+        action="store_true",
+        help="Emit each extracted image bbox width as an attr-list hint (opt-in, needs --with-images or --inline-images, #169)",
+    )
+    parser.add_argument(
         "--table-column-align",
         action="store_true",
         help="Detect table-cell alignment and emit GFM separator markers (opt-in, #175)",
@@ -3241,6 +3262,7 @@ def main() -> int:
         task_list_extended=args.task_list_extended,
         extract_highlights=args.extract_highlights,
         emit_figure_anchors=args.emit_figure_anchors,
+        image_width_hints=args.image_width_hints,
         table_column_align=args.table_column_align,
         tight_loose_lists=args.tight_loose_lists,
         list_loose_threshold=args.list_loose_threshold,
