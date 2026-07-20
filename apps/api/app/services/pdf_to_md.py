@@ -220,6 +220,7 @@ def convert_pdf_bytes(
                 extract_highlights=opts.extract_highlights,
                 emit_figure_anchors=opts.emit_figure_anchors,
                 image_width_hints=opts.image_width_hints,
+                image_link_anchors=opts.image_link_anchors,
                 table_column_align=opts.table_column_align,
                 tight_loose_lists=opts.tight_loose_lists,
                 list_loose_threshold=opts.list_loose_threshold,
