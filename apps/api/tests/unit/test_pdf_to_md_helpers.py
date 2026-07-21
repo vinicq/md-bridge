@@ -98,3 +98,25 @@ def test_build_warnings_ignores_inline_image_data_for_ocr_check():
         md_body=body, options=PdfToMdOptions(with_images=True), pages=1
     )
     assert "needs_ocr" in warnings
+
+
+def test_build_warnings_ignores_click_target_url_for_ocr_check():
+    """A click-through image (#170) carries a long tracking URL as its target.
+    Neither the image source nor the target is prose, so a sparse page wrapped
+    in one still warns needs_ocr instead of the URL masking the empty text."""
+    payload = "A" * 5000
+    target = "https://track.example.com/" + "q" * 400
+    body = f"Hi\n\n[![fig](data:image/png;base64,{payload})]({target})\n"
+    warnings = _build_warnings(md_body=body, options=PdfToMdOptions(), pages=1)
+    assert "needs_ocr" in warnings
+
+
+def test_build_warnings_ignores_collapsed_reference_definition():
+    """With reference-link collapsing on, a repeated click target lands in a
+    `[id]: url` definition (#158/#170). That bare URL is not prose either, so it
+    must not mask a sparse scan."""
+    payload = "A" * 5000
+    target = "https://track.example.com/" + "q" * 400
+    body = f"Hi\n\n[![fig](data:image/png;base64,{payload})][1]\n\n[1]: {target}\n"
+    warnings = _build_warnings(md_body=body, options=PdfToMdOptions(), pages=1)
+    assert "needs_ocr" in warnings

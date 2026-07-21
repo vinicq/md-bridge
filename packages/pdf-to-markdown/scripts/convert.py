@@ -176,10 +176,19 @@ def _autolink_escape(text: str, *, urls: bool, emails: bool) -> str:
 # destination allows one level of balanced parens, so a Wikipedia-style
 # `.../Foo_(bar)` is captured whole instead of truncating at the first `)`.
 # Autolinks (`<url>`, #157) are a different syntax and are left untouched.
+#
+# A click-through image `[![alt](src){attr}](target)` (#170) is matched by its
+# own arm ahead of `image`/`link`: without it the `link` arm would swallow the
+# leading `[![alt](src)` and collapse the image SOURCE as if it were a link URL,
+# converting the image to reference style (images must be skipped) and leaving
+# repeated click TARGETS uncollapsed. This arm collapses the external target and
+# never the image source. The optional `{...}` is the image's attr-list (#165).
 _REF_LINK_TOKEN_RE = re.compile(
     r"(?P<fence>^(?P<fence_marker>```|~~~)[^\n]*\n.*?^(?P=fence_marker)[^\n]*$)"
     r"|(?P<indented>^(?: {4}|\t)[^\n]*$)"
     r"|(?P<code>`+[^`]*`+)"
+    r"|(?P<linked_image>\[(?P<li_text>!\[[^\]]*\]\([^)]*\)(?:\{[^}]*\})?)\]"
+    r"\((?P<li_url>(?:[^()\s]|\([^()\s]*\))+)\))"
     r"|(?P<image>!\[[^\]]*\]\([^)]*\))"
     r"|(?P<link>\[(?P<link_text>[^\]]*)\]\((?P<link_url>(?:[^()\s]|\([^()\s]*\))+)\))",
     re.MULTILINE | re.DOTALL,
@@ -199,9 +208,12 @@ def _collapse_reference_links(md: str, threshold: int) -> str:
     counts: dict[str, int] = {}
     order: list[str] = []
     for m in _REF_LINK_TOKEN_RE.finditer(md):
-        if m.group("link") is None:
+        # A linked image contributes its external click target (#170); a plain
+        # link contributes its URL. Every other arm (code, image, ...) is skipped
+        # so an image source is never collapsed.
+        url = m.group("li_url") if m.group("linked_image") is not None else m.group("link_url")
+        if url is None:
             continue
-        url = m.group("link_url")
         if url not in counts:
             counts[url] = 0
             order.append(url)
@@ -214,6 +226,11 @@ def _collapse_reference_links(md: str, threshold: int) -> str:
         return md
 
     def _rewrite(m: re.Match[str]) -> str:
+        if m.group("linked_image") is not None:
+            rid = ids.get(m.group("li_url"))
+            # `[![alt](src){attr}][id]`: the image stays inline as the link text,
+            # only the external target becomes a reference.
+            return m.group(0) if rid is None else f"[{m.group('li_text')}][{rid}]"
         if m.group("link") is None:
             return m.group(0)
         rid = ids.get(m.group("link_url"))
@@ -247,10 +264,16 @@ _TYPO_PROTECT_RE = re.compile(
     # line-bounded with [^\n] so DOTALL's `.` cannot run past the line. The
     # link/image destinations allow one level of balanced parens, mirroring
     # `_REF_LINK_TOKEN_RE`, so a URL like `Foo_(bar)` is captured whole (#171).
+    # The linked_image arm sits ahead of image/link so a click-through image
+    # `[![alt](src){attr}](target)` (#170) is protected whole, target URL
+    # included; otherwise the link arm captures only `[![alt](src)` and the
+    # transforms fold en/em-dash and quotes inside the click target URL.
     r"(?P<fence>^(?P<fence_marker>```|~~~)[^\n]*\n.*?^(?P=fence_marker)[^\n]*$)"
     r"|(?P<indented>^(?: {4}|\t)[^\n]*$)"
     r"|(?P<refdef>^ {0,3}\[[^\]]+\]:[^\n]+$)"
     r"|(?P<code>`+[^`]*`+)"
+    r"|(?P<linked_image>\[!\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))+\)(?:\{[^}]*\})?\]"
+    r"\((?:[^()\s]|\([^()\s]*\))+\))"
     r"|(?P<image>!\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))+\))"
     r"|(?P<link>\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))+\))"
     r"|(?P<autolink><[^>\s]+>)",

@@ -33,7 +33,9 @@ def _tiny_png() -> bytes:
     )
 
 
-def _build_pdf(*, partial_link: bool = False, caption: bool = False) -> bytes:
+def _build_pdf(
+    *, partial_link: bool = False, caption: bool = False, uri: str = _TARGET_URI
+) -> bytes:
     doc = pymupdf.open()
     page = doc.new_page(width=400, height=300)
     page.insert_text(
@@ -44,7 +46,7 @@ def _build_pdf(*, partial_link: bool = False, caption: bool = False) -> bytes:
     image_rect = pymupdf.Rect(40, 100, 190, 180)
     page.insert_image(image_rect, stream=_tiny_png())
     link_rect = pymupdf.Rect(40, 100, 160, 180) if partial_link else image_rect
-    page.insert_link({"kind": pymupdf.LINK_URI, "from": link_rect, "uri": _TARGET_URI})
+    page.insert_link({"kind": pymupdf.LINK_URI, "from": link_rect, "uri": uri})
     if caption:
         page.insert_text((40, 192), "Figure 1: Linked image", fontsize=8)
     try:
@@ -112,6 +114,22 @@ def test_api_with_images_forwards_image_link_anchor_to_inline_image():
     image_line = next(line for line in response.md.splitlines() if line.startswith("[!["))
     assert image_line.startswith("[![](data:image/")
     assert image_line.endswith(f"]({_TARGET_URI})")
+
+
+def test_smart_typography_leaves_the_click_target_url_intact():
+    # End-to-end (#170 review): a click target carrying an en-dash must survive
+    # the smart-typography dash fold. Without protecting the whole linked-image
+    # construct, the dash-fold pass would rewrite `a–b` inside the URL to `a--b`
+    # and break the link.
+    uri = "https://example.com/a–b?ref=“q”"
+    md = _convert(
+        _build_pdf(uri=uri),
+        image_link_anchors=True,
+        smart_typography_dashes="ascii",
+        smart_typography_quotes="ascii",
+    )
+    image_line = next(line for line in md.splitlines() if line.startswith("[!["))
+    assert image_line.endswith(f"]({uri})")  # target URL byte-for-byte intact
 
 
 def test_cli_with_images_forwards_image_link_anchor(monkeypatch: pytest.MonkeyPatch):

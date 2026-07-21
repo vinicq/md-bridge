@@ -38,6 +38,16 @@ FRONT_MATTER_LINE = re.compile(r'^(\w[\w-]*):\s*(.*)$')
 HEADING_RE = re.compile(r"^(#{1,6})\s+\S", re.MULTILINE)
 TABLE_ROW_RE = re.compile(r"^\|.*\|\s*$", re.MULTILINE)
 BULLET_RE = re.compile(r"^\s*[-*+]\s+\S", re.MULTILINE)
+# A click-through image `[![alt](src){attr}](target)` (#170): neither the image
+# source nor the click target is extractable prose, so the whole wrapper is
+# dropped before the text-density count. Stripped ahead of the plain-image regex
+# so the inner image is not peeled off first, which would leave `[{attr}](target)`
+# and count the target URL as text.
+LINKED_IMAGE_RE = re.compile(r"\[!\[[^\]]*\]\([^)]*\)(?:\{[^}]*\})?\]\([^)]*\)")
+IMAGE_RE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+# A reference-definition line (`[id]: url`) is the `[id]: url` block that a
+# repeated URL collapses to (#158/#170). A bare URL is never readable text.
+REF_DEF_LINE_RE = re.compile(r"^ {0,3}\[[^\]]+\]:[^\n]+$", re.MULTILINE)
 
 
 def _parse_front_matter(md: str) -> tuple[FrontMatter, str]:
@@ -98,7 +108,12 @@ def _build_warnings(md_body: str, options: PdfToMdOptions, pages: int) -> list[s
     # Drop image markdown before counting: an inline base64 data URI (#372) adds
     # thousands of non-whitespace characters that are not extractable text, and
     # would otherwise mask a sparse-text scan and suppress the needs_ocr warning.
-    text_only = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", md_body)
+    # A click-through image (#170) also carries a target URL (a long tracking
+    # link) that is not prose, so strip the whole wrapper first, then any plain
+    # image, then the reference-definition lines a repeated URL collapses to.
+    text_only = LINKED_IMAGE_RE.sub("", md_body)
+    text_only = IMAGE_RE.sub("", text_only)
+    text_only = REF_DEF_LINE_RE.sub("", text_only)
     plain_chars = len(re.sub(r"\s+", "", text_only))
     if plain_chars < max(80, pages * 40):
         warnings.append("needs_ocr")

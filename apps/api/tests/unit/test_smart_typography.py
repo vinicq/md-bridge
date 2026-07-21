@@ -80,6 +80,26 @@ def test_balanced_paren_link_destination_is_protected():
     assert "prose---here" in out  # surrounding prose folded
 
 
+def test_linked_image_target_url_is_protected():
+    # A click-through image `[![alt](src)](target)` (#170): the smart chars in
+    # the external target URL must survive, or the link breaks. The prose around
+    # it still folds.
+    mod = pdf_to_md_module()
+    src = "[![logo](http://cdn/l.png)](http://x/a–b?q=“y”) then prose—here"
+    out = mod._smart_typography(src, **ALL_ASCII)
+    assert "[![logo](http://cdn/l.png)](http://x/a–b?q=“y”)" in out  # whole wrapper intact
+    assert "prose---here" in out  # surrounding prose folded
+
+
+def test_linked_image_target_with_attr_list_is_protected():
+    # The image may carry an attr-list (#165) between its `)` and the outer `]`;
+    # the target URL past it is still protected whole.
+    mod = pdf_to_md_module()
+    src = "[![l](http://cdn/l.png){#fig-1 .figure}](http://x/c–d“z”)"
+    out = mod._smart_typography(src, **ALL_ASCII)
+    assert out == src
+
+
 def test_is_idempotent():
     mod = pdf_to_md_module()
     src = "a—b…“x” `keep —this`"
