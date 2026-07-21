@@ -60,6 +60,9 @@ class PdfToMdOptions(BaseModel):
     # Emit the source image bbox width as an attr-list hint (#169). Off by default;
     # only relevant with with_images or inline_images.
     image_width_hints: bool = False
+    # Wrap an extracted image in its source click-action link (#170). Off by
+    # default; only relevant with with_images or inline_images.
+    image_link_anchors: bool = False
     # Detect cell alignment in table cells and emit GFM markers in the
     # separator row (| :--- | ---: |) (#175). Off by default so output stays byte-identical.
     table_column_align: bool = False
