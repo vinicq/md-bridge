@@ -125,6 +125,30 @@ one-line inline rule as `==mark==`; task lists use a treeprocessor that rewrites
 `[ ]`/`[x]` list item into a disabled `<input type="checkbox">`. No
 `pymdown-extensions` dependency. A document without the syntax renders unchanged.
 
+### 2026-07-21 - Grid tables, issue #166
+
+Added to the adopted set: **Pandoc grid tables** (the `+---+` / `+===+` border
+syntax). A GFM pipe table cannot hold a cell that spans several lines, so a
+source table with a multi-line cell either collapses the cell to one line or
+breaks the row. A grid table draws explicit borders, so the line breaks survive,
+and GitHub renders it the same as a pipe table.
+
+`pdf-to-markdown` emits a grid table under the opt-in `multiline_table_format`
+option: with `"grid"`, a table that has any multi-line cell is promoted to grid
+syntax, while an all-single-line table stays a pipe table. The default,
+`"pipe"`, flattens as before, so the default output is byte-identical. The
+emitter is pure string formatting and needs no dependency.
+
+`markdown-to-pdf` parses grid tables through the `grids` extension
+(`markdown-grids`, MIT-licensed, compatible with md-bridge's MIT license). It is
+an **optional extra** (`grid-tables`), consistent with the lean-default-install
+contract: the base install stays dependency-free and a grid table degrades to
+literal text; installing the extra makes the renderer reparse it into a
+`<table>`. This was ratified by the maintainer over the initial reviewer caution
+once a round-trip (emit grid, reparse, `<table>`) was proven with a
+license-compatible dependency. The GPLv3 `markdown-grid-tables` package was
+rejected as incompatible with the MIT license.
+
 ## References
 
 - CommonMark 0.31.2 specification: https://spec.commonmark.org/0.31.2/

@@ -20,6 +20,7 @@ def test_pdf_to_md_options_defaults():
     assert opts.image_width_hints is False
     assert opts.image_link_anchors is False
     assert opts.nested_ordered_lists is False
+    assert opts.multiline_table_format == "pipe"
     assert opts.front_matter is True
     assert opts.detect_blockquotes is False
     assert opts.cluster_headings is False

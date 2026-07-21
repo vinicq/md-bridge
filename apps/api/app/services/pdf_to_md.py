@@ -240,6 +240,7 @@ def convert_pdf_bytes(
                 tight_loose_lists=opts.tight_loose_lists,
                 list_loose_threshold=opts.list_loose_threshold,
                 nested_ordered_lists=opts.nested_ordered_lists,
+                multiline_table_format=opts.multiline_table_format,
             )
 
         md_text = md_path.read_text(encoding="utf-8")

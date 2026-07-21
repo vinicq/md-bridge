@@ -280,6 +280,20 @@ class _CalloutExtension(Extension):
         )
 
 
+def _grids_available() -> bool:
+    """Whether the optional `grid-tables` extra (markdown-grids, MIT) is installed.
+
+    Grid-table rendering (#166) is opt-in: the lean default install does not
+    carry markdown-grids, so a grid table would round-trip as literal text. When
+    the extra is present, the `grids` extension parses it back into a `<table>`.
+    """
+    try:
+        import markdown_grids  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
 MD_EXTENSIONS = [
     "extra",         # tables, fenced code, attribute lists, abbreviations, def lists, footnotes
     "sane_lists",
@@ -290,6 +304,11 @@ MD_EXTENSIONS = [
     _DelExtension(),  # ~~text~~ -> <del> (#143)
     _TaskListExtension(),  # - [ ] / - [x] -> disabled checkbox (#143)
 ]
+# Pandoc grid tables (#166) render only when the optional extra is installed, so
+# the lean install stays dependency-free and a grid table degrades to literal
+# text rather than erroring.
+if _grids_available():
+    MD_EXTENSIONS.append("grids")
 
 # Front matter is metadata: a few hundred bytes in practice. Cap the block before
 # parsing so a pathological document cannot make the YAML tokenizer chew through

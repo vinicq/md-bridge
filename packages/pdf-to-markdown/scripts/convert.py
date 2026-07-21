@@ -743,6 +743,7 @@ class DocProfile:
     tight_loose_lists: bool = False  # opt-in: preserve list spacing as CommonMark tight/loose lists (#168)
     list_loose_threshold: float = 1.5
     nested_ordered_lists: bool = False  # opt-in: per-level start + 4-space indent for nested ordered lists (#194)
+    multiline_table_format: str = "pipe"  # "grid" auto-promotes multi-line-cell tables to Pandoc grid tables (#166)
     detect_task_lists: bool = False  # opt-in (#172); read here so #168 spacing treats checkbox items as list items
     task_list_extended: bool = False  # opt-in: also recognize the todo-md [-] marker (#172)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
@@ -1620,12 +1621,70 @@ def _render_table_separators(alignment: list[str], column_count: int) -> str:
     return "| " + " | ".join(marker.get(alignment[i], "---") for i in range(column_count)) + " |"
 
 
+def _format_grid_table(raw_rows: list[list]) -> str:
+    """Render rows as a Pandoc grid table, keeping in-cell line breaks (#166).
+
+    A GFM pipe table cannot hold a cell that spans several lines, so a source
+    cell with a hard break collapses to one line (or breaks the row). A grid
+    table draws explicit `+---+` borders, so a multi-line cell survives; GitHub
+    and the shipped renderer (with the `grids` extension) render it the same as
+    a pipe table. markdown-grids reads column boundaries from the border `+`
+    positions, not from `|`, so a literal `|` inside a cell needs no escaping.
+    """
+    rows = [
+        ["\n".join(normalize_span_text(ln).rstrip() for ln in (c or "").split("\n")).strip("\n") for c in row]
+        for row in raw_rows
+    ]
+    width = max((len(r) for r in rows), default=0)
+    if not width:
+        return ""
+    rows = [r + [""] * (width - len(r)) for r in rows]
+    keep_cols = [i for i in range(width) if any(r[i].strip() for r in rows)]
+    if not keep_cols:
+        return ""
+    rows = [[r[i] for i in keep_cols] for r in rows]
+    width = len(keep_cols)
+    # Column width: the widest single line in any cell of that column (min 1),
+    # so every border `+` lands at the same column across the whole table.
+    col_w = [1] * width
+    for r in rows:
+        for i, cell in enumerate(r):
+            for line in cell.split("\n"):
+                col_w[i] = max(col_w[i], len(line))
+
+    def border(fill: str) -> str:
+        return "+" + "+".join(fill * (w + 2) for w in col_w) + "+"
+
+    def render_row(cells: list[str]) -> str:
+        split = [cell.split("\n") for cell in cells]
+        height = max(len(s) for s in split)
+        lines = []
+        for h in range(height):
+            fields = [
+                " " + (split[i][h] if h < len(split[i]) else "").ljust(col_w[i]) + " "
+                for i in range(width)
+            ]
+            lines.append("|" + "|".join(fields) + "|")
+        return "\n".join(lines)
+
+    out = [border("-"), render_row(rows[0]), border("=")]
+    for r in rows[1:]:
+        out.append(render_row(r))
+        out.append(border("-"))
+    return "\n".join(out)
+
+
 def render_table(table, profile: DocProfile | None = None, page_text: dict | None = None) -> str:
     """Render a PyMuPDF Table to a Markdown table.
 
     Drops columns that are empty across all rows, merges duplicate adjacent
     columns (PyMuPDF sometimes splits a single header cell into two), and
     merges rows that look like wrapped continuations of the previous row.
+
+    Under the opt-in `multiline_table_format="grid"`, a table that has any cell
+    spanning more than one line is emitted as a Pandoc grid table so the line
+    breaks survive (#166); a table whose cells are all single-line still emits a
+    GFM pipe table, so the common case (and the default) stays byte-identical.
     """
     try:
         rows = table.extract()
@@ -1633,6 +1692,15 @@ def render_table(table, profile: DocProfile | None = None, page_text: dict | Non
         return ""
     if not rows:
         return ""
+
+    if (
+        profile is not None
+        and getattr(profile, "multiline_table_format", "pipe") == "grid"
+        and any("\n" in (c or "") for row in rows for c in row)
+    ):
+        grid = _format_grid_table(rows)
+        if grid:
+            return grid
 
     rows = [[normalize_span_text((c or "").replace("\n", " ")).strip() for c in row] for row in rows]
     width = max(len(r) for r in rows)
@@ -2835,6 +2903,7 @@ def convert_document(
     tight_loose_lists: bool = False,
     list_loose_threshold: float = 1.5,
     nested_ordered_lists: bool = False,
+    multiline_table_format: str = "pipe",
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -2854,6 +2923,7 @@ def convert_document(
     profile.tight_loose_lists = tight_loose_lists
     profile.list_loose_threshold = list_loose_threshold
     profile.nested_ordered_lists = nested_ordered_lists
+    profile.multiline_table_format = multiline_table_format
     profile.detect_task_lists = detect_task_lists
     profile.task_list_extended = task_list_extended
     footnote_defs: dict[int, str] = {}
@@ -3375,6 +3445,7 @@ def main() -> int:
     parser.add_argument("--tight-loose-lists", action="store_true", help="Preserve PDF list spacing as CommonMark tight or loose lists (opt-in, #168)")
     parser.add_argument("--list-loose-threshold", type=_positive_finite_float, default=1.5, metavar="N", help="Gap in body line-heights that marks a list loose (positive finite, default: 1.5, #168)")
     parser.add_argument("--nested-ordered-lists", action="store_true", help="Preserve each nested ordered sublist's own start and indent it to nest in the renderer (opt-in, #194)")
+    parser.add_argument("--multiline-table-format", choices=("pipe", "grid"), default="pipe", help="Table syntax when a cell spans multiple lines: 'grid' emits a Pandoc grid table so the line breaks survive; 'pipe' (default) flattens them (opt-in, #166)")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -3416,6 +3487,7 @@ def main() -> int:
         tight_loose_lists=args.tight_loose_lists,
         list_loose_threshold=args.list_loose_threshold,
         nested_ordered_lists=args.nested_ordered_lists,
+        multiline_table_format=args.multiline_table_format,
     )
     return 0
 
