@@ -39,6 +39,13 @@ ocr = [
     "Pillow>=11.0",
 ]
 
+# Renders Pandoc grid tables back to a PDF (#166). Opt-in: the emitter needs no
+# dependency, but the md-to-pdf renderer needs the `grids` extension to reparse
+# a grid table. MIT-licensed, compatible with md-bridge's MIT license.
+grid-tables = [
+    "markdown-grids>=1.0,<2",
+]
+
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
