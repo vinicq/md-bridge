@@ -22,6 +22,8 @@
   --c-accent-soft: var(--theme-accent-soft);
   --c-accent-strong: var(--theme-accent-strong); /* accent text on accent-soft tint (#178) */
   --c-ok: var(--theme-ok);
+  --c-ok-soft: var(--theme-ok-soft); /* privacy-badge fill (#64) */
+  --c-ok-strong: var(--theme-ok-strong); /* ok-text on the ok-soft tint (#64) */
   --c-warn: var(--theme-warn);
   --c-error: var(--theme-error);
   --c-focus-ring: var(--theme-accent);

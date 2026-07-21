@@ -51,6 +51,17 @@
   color: var(--c-accent);
 }
 
+.btn--destructive {
+  background: transparent;
+  color: var(--c-error);
+  border-color: var(--c-error);
+}
+
+.btn--destructive:hover:not(:disabled) {
+  background: var(--c-error);
+  color: var(--c-bg);
+}
+
 .btn__spinner {
   width: 14px;
   height: 14px;

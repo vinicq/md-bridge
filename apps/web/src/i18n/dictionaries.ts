@@ -11,6 +11,7 @@ interface Dictionary {
     pdfToMd: string
     mdToPdf: string
     about: string
+    preferences: string
     mainLabel: string
   }
   a11y: {
@@ -204,6 +205,26 @@ interface Dictionary {
   languageSwitcher: {
     label: string
   }
+  preferences: {
+    title: string
+    subtitle: string
+    sections: { defaults: string; ui: string; privacy: string }
+    defaultLanguage: { label: string; hint: string }
+    defaultPdfTheme: { label: string; hint: string }
+    pageSize: { label: string; hint: string }
+    previewNewTab: { label: string; hint: string }
+    accent: {
+      label: string
+      hint: string
+      swatch: { brand: string; blue: string; green: string; graphite: string }
+    }
+    reduceMotion: { label: string; hint: string }
+    darkMode: { label: string; hint: string }
+    privacy: { badge: string; verified: string; viewReport: string }
+    reset: string
+    on: string
+    off: string
+  }
   workshop: {
     title: string
     subtitle: string
@@ -231,6 +252,7 @@ const en: Dictionary = {
     pdfToMd: 'PDF · MD',
     mdToPdf: 'MD · PDF',
     about: 'About',
+    preferences: 'Preferences',
     mainLabel: 'Main navigation',
   },
   a11y: {
@@ -445,6 +467,48 @@ const en: Dictionary = {
   languageSwitcher: {
     label: 'Language',
   },
+  preferences: {
+    title: 'Preferences',
+    subtitle: 'Per-browser. Nothing leaves this device.',
+    sections: { defaults: 'defaults', ui: 'UI', privacy: 'privacy' },
+    defaultLanguage: {
+      label: 'Default language',
+      hint: 'Falls back if your browser locale is unsupported.',
+    },
+    defaultPdfTheme: {
+      label: 'Default PDF theme',
+      hint: 'Applied to every new Markdown to PDF batch.',
+    },
+    pageSize: {
+      label: 'Default page size',
+      hint: 'A4 outside the US, Letter inside.',
+    },
+    previewNewTab: {
+      label: 'Open PDF preview in a new tab',
+      hint: 'Off keeps the inline preview.',
+    },
+    accent: {
+      label: 'Accent colour',
+      hint: 'Brand red by default.',
+      swatch: { brand: 'Brand red', blue: 'Blue', green: 'Green', graphite: 'Graphite' },
+    },
+    reduceMotion: {
+      label: 'Reduce motion',
+      hint: 'Skip fades and transitions. On automatically if your system asks.',
+    },
+    darkMode: {
+      label: 'Dark mode',
+      hint: 'Switch between the light and dark theme.',
+    },
+    privacy: {
+      badge: 'No telemetry. No cookies. No accounts.',
+      verified: 'Verified at build by scripts/audit-deps.py.',
+      viewReport: 'View report',
+    },
+    reset: 'Reset all preferences',
+    on: 'On',
+    off: 'Off',
+  },
   workshop: {
     title: 'Language Workshop',
     subtitle:
@@ -473,6 +537,7 @@ const pt: Dictionary = {
     pdfToMd: 'PDF · MD',
     mdToPdf: 'MD · PDF',
     about: 'Sobre',
+    preferences: 'Preferências',
     mainLabel: 'Navegação principal',
   },
   a11y: {
@@ -687,6 +752,48 @@ const pt: Dictionary = {
   languageSwitcher: {
     label: 'Idioma',
   },
+  preferences: {
+    title: 'Preferências',
+    subtitle: 'Por navegador. Nada sai deste dispositivo.',
+    sections: { defaults: 'padrões', ui: 'interface', privacy: 'privacidade' },
+    defaultLanguage: {
+      label: 'Idioma padrão',
+      hint: 'Usado quando o idioma do navegador não é suportado.',
+    },
+    defaultPdfTheme: {
+      label: 'Tema padrão do PDF',
+      hint: 'Aplicado a cada novo lote de Markdown para PDF.',
+    },
+    pageSize: {
+      label: 'Tamanho de página padrão',
+      hint: 'A4 fora dos EUA, Letter dentro.',
+    },
+    previewNewTab: {
+      label: 'Abrir a prévia do PDF em nova aba',
+      hint: 'Desligado mantém a prévia embutida.',
+    },
+    accent: {
+      label: 'Cor de destaque',
+      hint: 'Vermelho da marca por padrão.',
+      swatch: { brand: 'Vermelho da marca', blue: 'Azul', green: 'Verde', graphite: 'Grafite' },
+    },
+    reduceMotion: {
+      label: 'Reduzir animações',
+      hint: 'Corta fades e transições. Liga sozinho se o seu sistema pedir.',
+    },
+    darkMode: {
+      label: 'Modo escuro',
+      hint: 'Alterna entre o tema claro e o escuro.',
+    },
+    privacy: {
+      badge: 'Sem telemetria. Sem cookies. Sem contas.',
+      verified: 'Verificado no build por scripts/audit-deps.py.',
+      viewReport: 'Ver relatório',
+    },
+    reset: 'Limpar todas as preferências',
+    on: 'Ligado',
+    off: 'Desligado',
+  },
   workshop: {
     title: 'Oficina de Idiomas',
     subtitle:
@@ -715,6 +822,7 @@ const es: Dictionary = {
     pdfToMd: 'PDF · MD',
     mdToPdf: 'MD · PDF',
     about: 'Acerca de',
+    preferences: 'Preferencias',
     mainLabel: 'Navegación principal',
   },
   a11y: {
@@ -928,6 +1036,48 @@ const es: Dictionary = {
   },
   languageSwitcher: {
     label: 'Idioma',
+  },
+  preferences: {
+    title: 'Preferencias',
+    subtitle: 'Por navegador. Nada sale de este dispositivo.',
+    sections: { defaults: 'valores por defecto', ui: 'interfaz', privacy: 'privacidad' },
+    defaultLanguage: {
+      label: 'Idioma predeterminado',
+      hint: 'Se usa cuando el idioma del navegador no es compatible.',
+    },
+    defaultPdfTheme: {
+      label: 'Tema de PDF predeterminado',
+      hint: 'Se aplica a cada nuevo lote de Markdown a PDF.',
+    },
+    pageSize: {
+      label: 'Tamaño de página predeterminado',
+      hint: 'A4 fuera de EE. UU., Letter dentro.',
+    },
+    previewNewTab: {
+      label: 'Abrir la vista previa del PDF en una pestaña nueva',
+      hint: 'Apagado mantiene la vista previa incrustada.',
+    },
+    accent: {
+      label: 'Color de acento',
+      hint: 'Rojo de marca por defecto.',
+      swatch: { brand: 'Rojo de marca', blue: 'Azul', green: 'Verde', graphite: 'Grafito' },
+    },
+    reduceMotion: {
+      label: 'Reducir movimiento',
+      hint: 'Omite fundidos y transiciones. Se activa solo si tu sistema lo pide.',
+    },
+    darkMode: {
+      label: 'Modo oscuro',
+      hint: 'Alterna entre el tema claro y el oscuro.',
+    },
+    privacy: {
+      badge: 'Sin telemetría. Sin cookies. Sin cuentas.',
+      verified: 'Verificado en la compilación por scripts/audit-deps.py.',
+      viewReport: 'Ver informe',
+    },
+    reset: 'Restablecer todas las preferencias',
+    on: 'Activado',
+    off: 'Desactivado',
   },
   workshop: {
     title: 'Taller de Idiomas',

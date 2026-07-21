@@ -21,6 +21,7 @@ export function App() {
             <NavLink to="/convert/pdf-to-md">{t.nav.pdfToMd}</NavLink>
             <NavLink to="/convert/md-to-pdf">{t.nav.mdToPdf}</NavLink>
             <NavLink to="/about">{t.nav.about}</NavLink>
+            <NavLink to="/preferences">{t.nav.preferences}</NavLink>
             <LanguageSwitcher />
             <ThemeToggle />
           </nav>

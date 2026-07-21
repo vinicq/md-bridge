@@ -13,6 +13,10 @@ html {
   --theme-surface-5: #1a1a1a;     /* inverse ink (for buttons)   */
 
   --theme-ok:    #2e7d4a;
+  /* Privacy-badge tint + its text. ok-strong (#1e6b3a) clears AA (4.6:1) on the
+     ok-soft fill; the base --theme-ok is only 4.4:1 there, under the 4.5 floor. */
+  --theme-ok-soft:   #eaf2ec;
+  --theme-ok-strong: #1e6b3a;
   --theme-warn:  #b8860b;
   --theme-error: #b41c18;
 
@@ -54,6 +58,10 @@ html[data-theme="dark"] {
   --theme-accent-strong: #ff8a80;
 
   --theme-error: #ff6b6b;
+
+  /* Dark badge: a deep green fill with a light-green text that clears AA on it. */
+  --theme-ok-soft:   #16281c;
+  --theme-ok-strong: #7cc99a;
 
   --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
   --theme-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.4);
