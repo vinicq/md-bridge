@@ -742,6 +742,7 @@ class DocProfile:
     table_column_align: bool = False  # opt-in: detect cell alignment and emit GFM markers in separator row (#175)
     tight_loose_lists: bool = False  # opt-in: preserve list spacing as CommonMark tight/loose lists (#168)
     list_loose_threshold: float = 1.5
+    nested_ordered_lists: bool = False  # opt-in: per-level start + 4-space indent for nested ordered lists (#194)
     detect_task_lists: bool = False  # opt-in (#172); read here so #168 spacing treats checkbox items as list items
     task_list_extended: bool = False  # opt-in: also recognize the todo-md [-] marker (#172)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
@@ -2298,6 +2299,12 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
     numbered_run: list[str] = []
     numbered_loose = False
     numbered_last_bottom: float | None = None
+    # Nesting levels with an open ordered sublist in the current run (#194). An
+    # item is the start of its sublist when its level is not already open, so a
+    # nested sublist keeps its own first-item start; returning to a shallower
+    # level closes the deeper ones so a later re-entry starts fresh. Only read
+    # under nested_ordered_lists, so the default path is untouched.
+    numbered_levels_started: set[int] = set()
     bullet_run: list[str] = []
     bullet_loose = False
     bullet_last_bottom: float | None = None
@@ -2317,6 +2324,7 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
         if numbered_run:
             out_parts.append(("\n\n" if numbered_loose else "\n").join(numbered_run))
             numbered_run.clear()
+        numbered_levels_started.clear()
         numbered_loose_pending = False
         numbered_loose = False
         numbered_last_bottom = None
@@ -2572,18 +2580,36 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             list_cont_indent = "  " * nesting + "    "
         elif cls == "numbered":
             nesting = profile.nesting_level(block.bbox[0])
-            marker, content = normalize_ordered_marker(text_clean, first=not numbered_run)
+            if profile.nested_ordered_lists:
+                # A sublist starting mid-run (its level not yet open) keeps its
+                # own first-item start; a level already open continues at `1.`.
+                # Descending back to a shallower level closes deeper sublists so
+                # the next descent starts fresh (#194).
+                first_item = nesting not in numbered_levels_started
+                numbered_levels_started.difference_update(
+                    {n for n in numbered_levels_started if n > nesting}
+                )
+                numbered_levels_started.add(nesting)
+                # The shipped renderer (python-markdown, tab_length 4) nests an
+                # ordered sublist only at a 4-space step, and then honors the
+                # child's own `start`. Two spaces (the bullet convention) would
+                # flatten the sublist into the parent list.
+                indent = "    " * nesting
+            else:
+                first_item = not numbered_run
+                indent = "  " * nesting
+            marker, content = normalize_ordered_marker(text_clean, first=first_item)
             if numbered_loose_pending:
                 numbered_run.append("")
                 numbered_loose_pending = False
             if profile.tight_loose_lists and is_loose_gap(numbered_last_bottom, block.bbox[1]):
                 numbered_loose = True
             if marker:
-                numbered_run.append(f"{'  ' * nesting}{marker} {content}")
+                numbered_run.append(f"{indent}{marker} {content}")
             else:
                 # Classified numbered but no recognizable marker: keep as-is.
-                numbered_run.append(f"{'  ' * nesting}{text_clean}")
-            list_cont_indent = "  " * nesting + "    "
+                numbered_run.append(f"{indent}{text_clean}")
+            list_cont_indent = indent + "    "
             list_marker_x0 = block.bbox[0]
             numbered_last_bottom = block.bbox[3]
         elif cls == "blockquote":
@@ -2757,6 +2783,7 @@ def convert_document(
     table_column_align: bool = False,
     tight_loose_lists: bool = False,
     list_loose_threshold: float = 1.5,
+    nested_ordered_lists: bool = False,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -2775,6 +2802,7 @@ def convert_document(
     profile.table_column_align = table_column_align
     profile.tight_loose_lists = tight_loose_lists
     profile.list_loose_threshold = list_loose_threshold
+    profile.nested_ordered_lists = nested_ordered_lists
     profile.detect_task_lists = detect_task_lists
     profile.task_list_extended = task_list_extended
     footnote_defs: dict[int, str] = {}
@@ -3295,6 +3323,7 @@ def main() -> int:
     )
     parser.add_argument("--tight-loose-lists", action="store_true", help="Preserve PDF list spacing as CommonMark tight or loose lists (opt-in, #168)")
     parser.add_argument("--list-loose-threshold", type=_positive_finite_float, default=1.5, metavar="N", help="Gap in body line-heights that marks a list loose (positive finite, default: 1.5, #168)")
+    parser.add_argument("--nested-ordered-lists", action="store_true", help="Preserve each nested ordered sublist's own start and indent it to nest in the renderer (opt-in, #194)")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -3335,6 +3364,7 @@ def main() -> int:
         table_column_align=args.table_column_align,
         tight_loose_lists=args.tight_loose_lists,
         list_loose_threshold=args.list_loose_threshold,
+        nested_ordered_lists=args.nested_ordered_lists,
     )
     return 0
 
