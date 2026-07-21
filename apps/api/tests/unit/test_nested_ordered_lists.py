@@ -96,3 +96,67 @@ def test_off_output_does_not_nest_in_the_renderer():
         output_format="html5",
     )
     assert html.count("<ol") == 1
+
+
+def test_children_outnumbering_parents_still_nest():
+    # The run-local base comes from the outermost (first) item, not the most
+    # frequent margin, so a sublist with more children than parents still nests
+    # instead of clamping every item to level 0 (#194 review, finding 1).
+    items = [
+        ("block", _block("1. p-one", 0.0)),
+        ("block", _block("2. p-two", 14.0)),
+        ("block", _block("3. c1", 28.0, x0=90.0)),
+        ("block", _block("4. c2", 42.0, x0=90.0)),
+        ("block", _block("5. c3", 56.0, x0=90.0)),
+    ]
+    # Even when the profile's own base is the child margin, nesting holds.
+    prof = mod.DocProfile(
+        body_size=11.0,
+        body_font="Body",
+        heading_thresholds={1: 18.0, 2: 14.0, 3: 12.5},
+        small_size=10.0,
+        body_x0=72.0,
+        list_base_x0=90.0,  # the dominant-child-margin trap
+        indent_unit=18.0,
+        nested_ordered_lists=True,
+    )
+    assert mod.assemble_markdown(items, prof) == (
+        "1. p-one\n1. p-two\n    3. c1\n    1. c2\n    1. c3"
+    )
+
+
+def _mixed_profile():
+    return mod.DocProfile(
+        body_size=11.0,
+        body_font="Body",
+        heading_thresholds={1: 18.0, 2: 14.0, 3: 12.5},
+        small_size=10.0,
+        body_x0=72.0,
+        list_base_x0=72.0,
+        indent_unit=18.0,
+        tight_loose_lists=True,
+        nested_ordered_lists=True,
+    )
+
+
+def test_ordered_children_under_a_bullet_share_one_consistent_indent():
+    # With both opt-ins on, every ordered child of a bullet parent takes the same
+    # 4-space step in the same run, instead of the first child at 2 spaces and the
+    # rest at 4 in a split run (#194 review, finding 2).
+    items = [
+        ("block", _block("• Parent", 0.0)),
+        ("block", _block("1. child-a", 14.0, x0=90.0)),
+        ("block", _block("2. child-b", 28.0, x0=90.0)),
+    ]
+    rendered = mod.assemble_markdown(items, _mixed_profile())
+    lines = rendered.splitlines()
+    child_lines = [ln for ln in lines if ln.lstrip().startswith(("1.", "2."))]
+    assert len(child_lines) == 2
+    assert all(ln.startswith("    ") and not ln.startswith("     ") for ln in child_lines)
+    # It round-trips to one bullet list holding one nested ordered list.
+    md_mod = md_to_pdf_module()
+    html = md_mod.markdown.markdown(
+        rendered, extensions=md_mod.MD_EXTENSIONS, output_format="html5"
+    )
+    assert html.count("<ul") == 1
+    assert html.count("<ol") == 1

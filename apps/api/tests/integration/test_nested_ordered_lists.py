@@ -18,13 +18,16 @@ WIN_TEMPDIR_LOCK = pytest.mark.skipif(
 
 # Level-0 items sit at x=72, the sublist at x=90 (one 18pt indent step), so the
 # profile reads the sublist as nesting level 1. The sublist starts at "3." to
-# exercise start preservation, not just the indent.
+# exercise start preservation, not just the indent. The children (3) outnumber
+# the parents (2) on purpose: `build_profile` then picks the child margin as the
+# most-common list margin, so this fixture fails unless nesting is measured from
+# the outermost margin rather than the dominant one (#194 review, finding 1).
 _ROWS = (
     (100, 72, "1. First point"),
     (124, 72, "2. Second point"),
     (148, 90, "3. Sub point three"),
     (172, 90, "4. Sub point four"),
-    (196, 72, "3. Third point"),
+    (196, 90, "5. Sub point five"),
 )
 
 
@@ -54,14 +57,18 @@ def test_default_and_explicit_off_keep_flat_numbering_byte_identical():
     omitted = _convert(pdf)
     disabled = _convert(pdf, enabled=False)
     assert omitted == disabled
-    # Legacy: the sublist flattens to `1.` at a 2-space indent.
-    assert "1. Second point\n  1. Sub point three\n  1. Sub point four\n1. Third point" in disabled
+    # Legacy: every item flattens to `1.` at level 0 (the dominant child margin
+    # is what the profile reads as the base, so nothing nests).
+    assert (
+        "1. Second point\n1. Sub point three\n1. Sub point four\n1. Sub point five"
+        in disabled
+    )
 
 
 def test_enabled_preserves_sublist_start_and_indents_to_nest():
     enabled = _convert(_build_pdf(), enabled=True)
     assert (
-        "1. Second point\n    3. Sub point three\n    1. Sub point four\n1. Third point"
+        "1. Second point\n    3. Sub point three\n    1. Sub point four\n    1. Sub point five"
         in enabled
     )
 
