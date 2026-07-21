@@ -23,7 +23,10 @@
 
 .segmented__item.is-on {
   background: var(--c-accent);
-  color: #fff;
+  /* --c-bg (the page background) inverts with the theme, so it clears AA on the
+     accent in both light (dark accent) and dark (light accent) - a literal #fff
+     fails 2.28:1 on the light dark-theme accent (#447 review). */
+  color: var(--c-bg);
 }
 
 .segmented__item:hover:not(.is-on) {

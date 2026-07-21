@@ -83,7 +83,9 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #fff;
+  /* --c-bg keeps the thumb ≥3:1 (1.4.11) on the accent track in both themes;
+     a literal #fff drops to 2.28:1 on the light dark-theme accent (#447). */
+  background: var(--c-bg);
   transition: transform var(--t-fast) var(--easing);
 }
 
