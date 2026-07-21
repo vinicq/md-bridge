@@ -164,8 +164,11 @@ short line (bounded by `definition_list_max_term_length`) at the body font and
 size, at the body margin, with no trailing punctuation, and each definition is
 a body paragraph indented into a tight band past the term (floor
 `definition_list_min_indent_pt`). A heading, a styled label (which classifies
-as a heading), a list item, or a sentence never reads as a term. Off by
-default, so the default output stays byte-identical. Ratified by the maintainer.
+as a heading), a list item, or a sentence never reads as a term. Detection is
+per page (the guards read block geometry), so a run straddling a page boundary
+with fewer than two pairs on a side stays plain paragraphs there, deliberate
+under-detection. Off by default, so the default output stays byte-identical.
+Ratified by the maintainer.
 
 ## References
 

@@ -2400,20 +2400,10 @@ _DEF_TERM_TRAILING_PUNCT = (".", ":", ";", ",", "?", "!")
 
 
 def _block_text_rendered(block: Block, profile: DocProfile) -> str:
-    """Inline-rendered, space-joined text of a block, matching the paragraph path."""
-    return HEADING_DOTS_RE.sub(
-        "",
-        " ".join(
-            render_line(
-                line,
-                profile.footnote_numbers,
-                autolink_urls=profile.autolink_urls,
-                autolink_emails=profile.autolink_emails,
-            ).strip()
-            for line in block.lines
-            if line.text.strip()
-        ).strip(),
-    )
+    """Rendered block text, matching the standalone-paragraph path exactly so a
+    definition honors `preserve_line_breaks` (hard breaks) rather than always
+    flattening its layout lines to a space (#161 review)."""
+    return HEADING_DOTS_RE.sub("", render_paragraph(block, profile))
 
 
 def _is_definition_term(block: Block, profile: DocProfile) -> bool:
@@ -2431,12 +2421,19 @@ def _is_definition_term(block: Block, profile: DocProfile) -> bool:
         return False
     if profile.body_font and dominant_font(block) != profile.body_font:
         return False
-    return block.bbox[0] <= profile.body_x0 + LIST_CONTINUATION_MIN_INDENT
+    # Near the body margin on BOTH sides: a label in a left sidebar/marginal
+    # column (x0 well left of body_x0) is not a term, even though its value sits
+    # a plausible indent to its right (#161 review).
+    return abs(block.bbox[0] - profile.body_x0) <= LIST_CONTINUATION_MIN_INDENT
 
 
 def _is_definition_body(block: Block, term: Block, profile: DocProfile) -> bool:
     """A body paragraph indented into a tight band past the term (the definition)."""
-    if classify_block(block, profile) != "paragraph":
+    # A definition indented past the blockquote threshold classifies as a
+    # blockquote when detect_blockquotes is also on; the stricter multi-pair
+    # definition-list run takes precedence, so accept that candidate too (#161
+    # review). The term is at the margin, so it is never a blockquote.
+    if classify_block(block, profile) not in ("paragraph", "blockquote"):
         return False
     if not block.text.strip():
         return False
@@ -2464,7 +2461,14 @@ def _promote_definition_lists(
 ) -> list[tuple[str, object]]:
     """Replace runs of >= 2 consecutive term/definition block pairs with a
     single pre-rendered `deflist` item (#161). Non-block items and blocks that
-    do not form a pair are passed through untouched."""
+    do not form a pair are passed through untouched.
+
+    Scope is per page: this runs inside `assemble_markdown`, which the converter
+    calls once per page, because the guards read block geometry (font, size,
+    margin) that only exists at the page level. A glossary run that straddles a
+    page boundary with fewer than two pairs on a side is therefore left as plain
+    paragraphs on that side. That is deliberate under-detection (the safe
+    direction for a conservative heuristic), not corruption (#161 review)."""
     out: list[tuple[str, object]] = []
     i, n = 0, len(items)
     while i < n:
@@ -3372,6 +3376,10 @@ def is_block_paragraph(block: str) -> bool:
         return False
     if s.startswith(">"):
         return False  # blockquote (#147): structural, never fused into prose
+    if s.startswith(": ") or "\n: " in block:
+        return False  # definition list (#161): a `: ` line is structural, never
+        # merged, or the lowercase-continuation heuristic would fuse a later term
+        # onto the previous definition and drop a `<dt>`.
     if NUMBERED_RE.match(s):
         return False
     # A running header/footer is not prose; keep it out of the merge so it is

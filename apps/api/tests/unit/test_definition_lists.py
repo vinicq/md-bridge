@@ -97,6 +97,29 @@ def test_unindented_definition_is_rejected():
     assert ": " not in _render(items, enabled=True)
 
 
+def _two_line_def_block(line1: str, line2: str, x0: float):
+    def _line(text, top):
+        bbox = (x0, top, x0 + 200.0, top + 10.0)
+        return mod.Line(spans=[mod.Span(text=text, size=11.0, font="Body", flags=0, bbox=bbox)], bbox=bbox)
+    lines = [_line(line1, 0.0), _line(line2, 12.0)]
+    bbox = (x0, 0.0, x0 + 200.0, 22.0)
+    return ("block", mod.Block(lines=lines, bbox=bbox))
+
+
+def test_multiline_definition_space_joins_by_default():
+    # `_block_text_rendered` now delegates to `render_paragraph`; with
+    # preserve_line_breaks off (default) a multi-line definition still space-joins
+    # its layout lines, so the default path is unchanged (#161 review, finding 3).
+    items = [
+        _block("HTML", 72.0),
+        _two_line_def_block("HyperText", "Markup Language", 96.0),
+        _block("CSS", 72.0),
+        _block("Cascading Style Sheets", 96.0),
+    ]
+    out = _render(items, enabled=True)
+    assert "HTML\n: HyperText Markup Language" in out
+
+
 def test_heading_sized_term_is_rejected():
     # A heading-sized first line classifies as a heading, never a term.
     items = [
