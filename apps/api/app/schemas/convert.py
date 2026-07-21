@@ -57,11 +57,31 @@ class PdfToMdOptions(BaseModel):
     # them (#165). Off by default; only relevant with with_images (needs the
     # extracted image and its caption).
     emit_figure_anchors: bool = False
+    # Emit the source image bbox width as an attr-list hint (#169). Off by default;
+    # only relevant with with_images or inline_images.
+    image_width_hints: bool = False
+    # Wrap an extracted image in its source click-action link (#170). Off by
+    # default; only relevant with with_images or inline_images.
+    image_link_anchors: bool = False
     # Detect cell alignment in table cells and emit GFM markers in the
     # separator row (| :--- | ---: |) (#175). Off by default so output stays byte-identical.
     table_column_align: bool = False
     tight_loose_lists: bool = False
     list_loose_threshold: float = Field(default=1.5, gt=0)
+    # Preserve each nested ordered sublist's own start number and indent it so
+    # the renderer nests it (#194). Off by default so output stays byte-identical.
+    nested_ordered_lists: bool = False
+    # Table syntax when a cell spans multiple lines (#166): "grid" emits a Pandoc
+    # grid table so the line breaks survive; "pipe" (default) flattens them, so
+    # the default output stays byte-identical. Rendering a grid table back to a
+    # PDF needs the optional `grid-tables` extra installed.
+    multiline_table_format: Literal["pipe", "grid"] = "pipe"
+    # Emit a definition list (`Term` + `: definition`) for a run of term/indented-
+    # definition pairs (#161). Conservative and off by default, so output stays
+    # byte-identical. The two tunables bound what counts as a term/definition.
+    detect_definition_lists: bool = False
+    definition_list_max_term_length: int = Field(default=80, gt=0)
+    definition_list_min_indent_pt: float = Field(default=20.0, gt=0)
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")
