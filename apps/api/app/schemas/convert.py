@@ -20,8 +20,11 @@ class PdfToMdOptions(BaseModel):
     page_break: bool = False
     with_images: bool = False
     # Selectively transcribe text embedded in raster images. Off by default so
-    # existing clients retain byte-identical Markdown.
-    ocr_images: Literal["off", "auto", "all"] = "off"
+    # existing clients retain byte-identical Markdown. `all` transcribes every
+    # embedded image over the geometry floor; a smarter `auto` mode that picks
+    # only text-bearing images is deferred to #444 (its density heuristic
+    # rejected the common sparse-text case, so it is not shipped yet).
+    ocr_images: Literal["off", "all"] = "off"
     front_matter: bool = True
     detect_blockquotes: bool = False
     cluster_headings: bool = False

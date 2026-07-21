@@ -161,6 +161,7 @@ def convert_pdf_bytes(
     # instead of an empty file. `force=True` is the explicit escape hatch for
     # the false positive (e.g. an image-only cover that the user wants anyway).
     ocr_applied = False
+    page_ocr_superseded_image_ocr = False
     diagnostics = inspect_pdf_bytes(pdf_bytes, filename)
     if diagnostics.needs_ocr:
         # OCR rasterizes every page at 300 DPI, so a scan past the configured
@@ -191,6 +192,15 @@ def convert_pdf_bytes(
                     detail=str(exc),
                 ) from exc
             ocr_applied = True
+            if image_ocr is not None:
+                # Page OCR replaced every page with a full-page raster carrying a
+                # searchable text layer, so the original embedded images no longer
+                # exist to transcribe. Running image OCR now would only re-OCR the
+                # generated page rasters, duplicating the text the page layer already
+                # holds and ballooning the Markdown with per-page base64 (#443
+                # review). Skip image OCR on this path and record why.
+                image_ocr = None
+                page_ocr_superseded_image_ocr = True
         elif not force:
             if over_cap:
                 raise ApiError(
@@ -276,6 +286,8 @@ def convert_pdf_bytes(
     pages = front.pages or 1
     stats = _compute_stats(body)
     warnings = _build_warnings(body, opts, pages)
+    if page_ocr_superseded_image_ocr:
+        warnings.append("ocr_images_skipped_page_ocr")
     for warning in converter_warnings + (image_ocr.warnings if image_ocr is not None else []):
         if warning not in warnings:
             warnings.append(warning)

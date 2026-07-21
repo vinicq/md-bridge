@@ -76,3 +76,10 @@ def test_selector_can_reject_a_geometrically_eligible_image():
     doc = _doc([(600, 300, pymupdf.Rect(40, 40, 600, 400))])
     keys, _ = _keys(doc, selector=lambda _b, _e: False)
     assert keys == frozenset()
+
+
+def test_image_ocr_block_emits_the_ocr_container():
+    # The converter emits the `::: ocr` marker (renderer builds the figure from
+    # it, ADR-001). This locks the exact emitted syntax without depending on the
+    # CI-Linux-only real-Tesseract integration test, which Windows skips.
+    assert mod._image_ocr_block("recognized text") == "::: ocr\nrecognized text\n:::"

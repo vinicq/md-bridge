@@ -1,9 +1,9 @@
 """Unit coverage for the per-image OCR service (#140).
 
-The deterministic density filter runs on Pillow alone (no subprocess), and the
-Tesseract error handling is exercised by mocking only the pytesseract binding,
-so both run without the Tesseract binary and without a skip on Windows. This is
-the coverage the real-Tesseract integration test cannot give (it is skipped
+`is_candidate` runs on Pillow alone (no subprocess) and the Tesseract error
+handling is exercised by mocking only the pytesseract binding, so both run
+without the Tesseract binary and without a skip on Windows. This is the
+coverage the real-Tesseract integration test cannot give (it is skipped
 wherever the binary is absent), so the chain is proven on every platform.
 """
 from __future__ import annotations
@@ -25,41 +25,43 @@ def _png(image) -> bytes:
 
 
 def _uniform_png() -> bytes:
-    """A flat white fill: every pixel in one bin, variance 0 -> a non-text photo."""
+    """A flat white fill: no text, but `all` skips content filtering entirely."""
     from PIL import Image
 
     return _png(Image.new("RGB", (400, 200), "white"))
 
 
-def _texty_png() -> bytes:
-    """A high-contrast image (half black, half white): the histogram spreads
-    across two far bins and the variance is high, so the density filter reads it
-    as content worth OCR rather than a flat fill or smooth photo."""
-    from PIL import Image, ImageDraw
+def _cmyk_jpg() -> bytes:
+    """A CMYK JPEG, the print-oriented colorspace the OCR path cannot read yet."""
+    from PIL import Image
 
-    image = Image.new("RGB", (400, 200), "white")
-    ImageDraw.Draw(image).rectangle([0, 0, 200, 200], fill="black")
-    return _png(image)
+    buffer = io.BytesIO()
+    Image.new("CMYK", (400, 200), (0, 0, 0, 0)).save(buffer, format="JPEG")
+    return buffer.getvalue()
 
 
-def test_auto_rejects_a_uniform_photo_but_all_accepts_it():
-    uniform = _uniform_png()
-    assert ImageOcrProcessor(mode="auto", lang="eng").is_candidate(uniform, "png") is False
-    assert ImageOcrProcessor(mode="all", lang="eng").is_candidate(uniform, "png") is True
+def test_all_mode_accepts_any_non_cmyk_image():
+    # `all` transcribes every image over the converter's geometry floor; it does
+    # not second-guess the content. A flat fill is eligible (Tesseract just
+    # returns nothing), which keeps the mode's contract simple and predictable.
+    proc = ImageOcrProcessor(mode="all", lang="eng")
+    assert proc.is_candidate(_uniform_png(), "png") is True
 
 
-def test_auto_accepts_a_high_contrast_text_image():
-    texty = _texty_png()
-    assert ImageOcrProcessor(mode="auto", lang="eng").is_candidate(texty, "png") is True
-    assert ImageOcrProcessor(mode="all", lang="eng").is_candidate(texty, "png") is True
+def test_all_mode_still_skips_cmyk_pinning_446():
+    # Pins the current CMYK exclusion. `all` should eventually transcribe CMYK
+    # too (convert to RGB first), tracked in #446; until then it is held back so
+    # the OCR path never hands Tesseract a colorspace it misreads.
+    proc = ImageOcrProcessor(mode="all", lang="eng")
+    assert proc.is_candidate(_cmyk_jpg(), "jpg") is False
 
 
 def test_is_candidate_caches_by_image_hash():
-    proc = ImageOcrProcessor(mode="auto", lang="eng")
-    texty = _texty_png()
-    assert proc.is_candidate(texty, "png") is True
+    proc = ImageOcrProcessor(mode="all", lang="eng")
+    image = _uniform_png()
+    assert proc.is_candidate(image, "png") is True
     # second call is served from the per-request eligibility cache, same answer.
-    assert proc.is_candidate(texty, "png") is True
+    assert proc.is_candidate(image, "png") is True
 
 
 def test_tesseract_error_warns_failed_not_timeout(monkeypatch: pytest.MonkeyPatch):
@@ -70,7 +72,7 @@ def test_tesseract_error_warns_failed_not_timeout(monkeypatch: pytest.MonkeyPatc
 
     monkeypatch.setattr(pytesseract, "image_to_data", boom)
     proc = ImageOcrProcessor(mode="all", lang="eng")
-    assert proc(_texty_png(), "png") is None
+    assert proc(_uniform_png(), "png") is None
     assert "ocr_image_failed" in proc.warnings
     assert "ocr_image_timeout" not in proc.warnings
 
@@ -82,6 +84,6 @@ def test_plain_runtime_error_warns_timeout(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(pytesseract, "image_to_data", boom)
     proc = ImageOcrProcessor(mode="all", lang="eng")
-    assert proc(_texty_png(), "png") is None
+    assert proc(_uniform_png(), "png") is None
     assert "ocr_image_timeout" in proc.warnings
     assert "ocr_image_failed" not in proc.warnings

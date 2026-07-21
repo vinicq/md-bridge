@@ -81,6 +81,24 @@ def test_converter_places_callback_ocr_after_each_selected_image():
     assert "diagram text" in markdown
 
 
+@pytest.mark.xfail(
+    reason="#445: OCR body is not shielded from the document-wide heading passes",
+    strict=False,
+)
+def test_ocr_body_headings_survive_the_document_wide_passes():
+    # A screenshot whose OCR text has heading-like lines must reach the renderer
+    # verbatim, but merge_wrapped_headings / normalize_headings_from_toc /
+    # drop_orphan_heading_fragments run over the whole Markdown without knowing
+    # the OCR container's bounds, so `# Terms of` + `# Service` can be merged or
+    # dropped. Pins the gap tracked in #445; xfail until the passes stash the
+    # container. Non-strict so a future fix flips it to pass without a red build.
+    def callback(_image_bytes: bytes, _extension: str) -> str:
+        return "# Terms of\n# Service"
+
+    _warnings, markdown = _converter_result(_pdf_with_ocrable_image(), callback)
+    assert "# Terms of\n# Service" in markdown
+
+
 @WIN_TEMPDIR_LOCK
 @pytest.mark.skipif(not ocr_stack_available(), reason="requires the optional Tesseract OCR runtime")
 def test_image_ocr_reaches_convert_pdf_bytes_with_real_tesseract(monkeypatch: pytest.MonkeyPatch):
@@ -119,7 +137,7 @@ def test_image_ocr_returns_typed_422_when_runtime_is_disabled(monkeypatch: pytes
         convert_pdf_bytes(
             _pdf_with_ocrable_image(),
             filename="image-ocr.pdf",
-            options=PdfToMdOptions(ocr_images="auto"),
+            options=PdfToMdOptions(ocr_images="all"),
         )
     assert caught.value.status_code == 422
     assert caught.value.code == "ocr_not_available"
@@ -159,3 +177,40 @@ def test_image_ocr_chain_runs_via_convert_pdf_bytes_with_mocked_binding(
     assert "::: ocr" in response.md
     assert "MOCKED OCR" in response.md
     assert response.ocr_images_applied is True
+
+
+def test_page_ocr_supersedes_image_ocr(monkeypatch: pytest.MonkeyPatch):
+    """When the page pre-pass OCRs a scan, every page becomes a full-page raster
+    with a text layer and the original embedded images are gone. Image OCR must
+    not run on the generated rasters (it would duplicate the text and balloon
+    the Markdown, #443 review): ocr_images_applied stays False, a warning fires,
+    and no `::: ocr` container is emitted. Page OCR is mocked to identity so this
+    runs on every platform without the Tesseract binary."""
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        pdf_to_md, "inspect_pdf_bytes", lambda _b, _f: SimpleNamespace(needs_ocr=True, pages=1)
+    )
+    monkeypatch.setattr(pdf_to_md, "ocr_enabled", lambda: True)
+    monkeypatch.setattr(pdf_to_md, "image_ocr_enabled", lambda: True)
+    monkeypatch.setattr(pdf_to_md, "ocr_max_pages", lambda: 0)
+    # Page OCR "succeeds" but returns the same bytes: no real Tesseract, and the
+    # source embedded image survives so any leaked image OCR would still fire.
+    monkeypatch.setattr(pdf_to_md, "ocr_pdf_bytes", lambda pdf_bytes, lang: pdf_bytes)
+
+    @contextlib.contextmanager
+    def _safe_tempdir():
+        with tempfile.TemporaryDirectory(prefix="page-ocr-", ignore_cleanup_errors=True) as raw:
+            yield Path(raw)
+
+    monkeypatch.setattr(pdf_to_md, "_tempdir", _safe_tempdir)
+
+    response = convert_pdf_bytes(
+        _pdf_with_ocrable_image(),
+        filename="scan.pdf",
+        options=PdfToMdOptions(front_matter=False, with_images=True, ocr_images="all"),
+    )
+    assert response.ocr_applied is True
+    assert response.ocr_images_applied is False
+    assert "::: ocr" not in response.md
+    assert "ocr_images_skipped_page_ocr" in response.warnings

@@ -135,44 +135,21 @@ class ImageOcrProcessor:
         image.load()
         return image
 
-    @staticmethod
-    def _has_text_density(image) -> bool:
-        """Return whether an image is unlike a flat fill or smooth photo.
-
-        The 16-bin histogram is intentionally small and deterministic. Alpha
-        is composited on white first so transparent PNG diagrams are evaluated
-        by their visible pixels rather than arbitrary transparent RGB values.
-        """
-        from PIL import Image, ImageStat
-
-        if image.mode == "CMYK":
-            return False
-        if image.mode in {"RGBA", "LA"} or "transparency" in image.info:
-            rgba = image.convert("RGBA")
-            background = Image.new("RGBA", rgba.size, "white")
-            image = Image.alpha_composite(background, rgba).convert("RGB")
-        gray = image.convert("L")
-        histogram = gray.histogram()
-        bins = [sum(histogram[offset : offset + 16]) for offset in range(0, 256, 16)]
-        total = sum(bins)
-        if not total:
-            return False
-        densest_pair = max((bins[index] + bins[index + 1] for index in range(15)), default=0)
-        if densest_pair / total >= 0.8:
-            return False
-        return ImageStat.Stat(gray).var[0] >= 100
-
     def is_candidate(self, image_bytes: bytes, _extension: str) -> bool:
-        """Run the Pillow-only portion of the deterministic auto filter."""
+        """Whether this image is eligible for OCR under the current mode.
+
+        `all` transcribes every image the converter's geometry and format floor
+        already passed; the only image held back is CMYK, which the OCR path
+        cannot read yet (pinned, follow-up #446). A density-aware `auto` mode
+        that picks only text-bearing images is deferred to #444.
+        ponytail: no content heuristic here on purpose - it lives with `auto` (#444).
+        """
         digest = sha256(image_bytes).hexdigest()
         cached = self._eligible.get(digest)
         if cached is not None:
             return cached
         try:
-            image = self._open_image(image_bytes)
-            eligible = image.mode != "CMYK" and (
-                self.mode == "all" or self._has_text_density(image)
-            )
+            eligible = self._open_image(image_bytes).mode != "CMYK"
         except Exception:
             eligible = False
         self._eligible[digest] = eligible
