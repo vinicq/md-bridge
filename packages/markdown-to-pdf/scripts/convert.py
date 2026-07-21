@@ -286,10 +286,16 @@ def _grids_available() -> bool:
     Grid-table rendering (#166) is opt-in: the lean default install does not
     carry markdown-grids, so a grid table would round-trip as literal text. When
     the extra is present, the `grids` extension parses it back into a `<table>`.
+
+    Probes the extension registration itself (`markdown.Markdown(extensions=
+    ["grids"])`) rather than importing a guessed module name: the package's
+    importable module is not guaranteed to match the `grids` entry-point name,
+    so the registration check is the one that actually mirrors how the renderer
+    loads it (#166 review).
     """
     try:
-        import markdown_grids  # noqa: F401
-    except ImportError:
+        markdown.Markdown(extensions=["grids"])
+    except Exception:
         return False
     return True
 

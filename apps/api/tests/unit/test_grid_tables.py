@@ -6,14 +6,22 @@ detection through `convert_document`) is in tests/integration/test_grid_tables.p
 """
 from __future__ import annotations
 
-import importlib.util
-
+import markdown
 import pytest
 from app.services.packages_loader import md_to_pdf_module, pdf_to_md_module
 
 mod = pdf_to_md_module()
 
-_GRIDS_AVAILABLE = importlib.util.find_spec("markdown_grids") is not None
+
+def _grids_installed() -> bool:
+    try:
+        markdown.Markdown(extensions=["grids"])
+    except Exception:
+        return False
+    return True
+
+
+_GRIDS_AVAILABLE = _grids_installed()
 
 
 class _Table:
@@ -65,6 +73,24 @@ def test_grid_format_keeps_single_line_tables_as_pipe():
     # table stays a pipe table, so grid mode does not churn the common case.
     assert mod.render_table(_SINGLE_LINE, _profile("grid")) == mod.render_table(_SINGLE_LINE)
     assert "+" not in mod.render_table(_SINGLE_LINE, _profile("grid"))
+
+
+def test_grid_applies_the_same_structural_cleanup_as_pipe():
+    # An all-empty column and a blank-first-cell continuation row must be cleaned
+    # in grid mode too, not just pipe (#166 review): grid changes syntax, not the
+    # corrections. The empty middle column is dropped and the continuation row
+    # ("", "", "more") folds into the row above.
+    table = _Table([
+        ["Term", "", "Definition"],
+        ["A", "", "line one\nline two"],
+        ["", "", "more"],
+    ])
+    out = mod.render_table(table, _profile("grid"))
+    assert out.startswith("+")
+    # Two columns after dropping the empty one: two '+' borders framing two fields.
+    assert out.splitlines()[0].count("+") == 3
+    assert "line one" in out and "line two" in out
+    assert "more" in out
 
 
 @pytest.mark.skipif(not _GRIDS_AVAILABLE, reason="grid-tables extra (markdown-grids) not installed")

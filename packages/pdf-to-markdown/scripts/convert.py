@@ -270,6 +270,12 @@ _TYPO_PROTECT_RE = re.compile(
     # transforms fold en/em-dash and quotes inside the click target URL.
     r"(?P<fence>^(?P<fence_marker>```|~~~)[^\n]*\n.*?^(?P=fence_marker)[^\n]*$)"
     r"|(?P<indented>^(?: {4}|\t)[^\n]*$)"
+    # A Pandoc grid table (#166) is protected whole: markdown-grids requires
+    # every line to be exactly equal length, so folding a `…`/en-dash inside a
+    # cell after the borders are sized would lengthen that line and make the
+    # renderer drop the table to plain text. Match the top border then the
+    # following border/content lines.
+    r"|(?P<gridtable>^\+[-=+]+\+\n(?:[|+][^\n]*\n?)+)"
     r"|(?P<refdef>^ {0,3}\[[^\]]+\]:[^\n]+$)"
     r"|(?P<code>`+[^`]*`+)"
     r"|(?P<linked_image>\[!\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))+\)(?:\{[^}]*\})?\]"
@@ -1639,11 +1645,40 @@ def _format_grid_table(raw_rows: list[list]) -> str:
     if not width:
         return ""
     rows = [r + [""] * (width - len(r)) for r in rows]
+    # Grid mode changes the SYNTAX, not the structural corrections: apply the
+    # same empty-column drop, duplicate-column merge, and continuation-row merge
+    # the pipe path runs, so a split column or wrapped row is fixed here too and
+    # grid mode does not emit bogus extra columns/rows (#166 review). Cells keep
+    # their in-cell newlines throughout; only these structural merges run.
     keep_cols = [i for i in range(width) if any(r[i].strip() for r in rows)]
     if not keep_cols:
         return ""
     rows = [[r[i] for i in keep_cols] for r in rows]
     width = len(keep_cols)
+    merged_cols: list[list[str]] = [[r[0] for r in rows]]
+    for ci in range(1, width):
+        col = [r[ci] for r in rows]
+        prev = merged_cols[-1]
+        identical_or_subset = all(
+            (a == b) or (not a) or (not b) for a, b in zip(prev, col, strict=False)
+        )
+        if identical_or_subset and any(a == b and a for a, b in zip(prev, col, strict=False)):
+            merged_cols[-1] = [a or b for a, b in zip(prev, col, strict=False)]
+        else:
+            merged_cols.append(col)
+    rows = [list(t) for t in zip(*merged_cols, strict=False)]
+    if not rows:
+        return ""
+    cleaned: list[list[str]] = []
+    for r in rows:
+        if cleaned and not r[0].strip() and any(c.strip() for c in r):
+            for i, cell in enumerate(r):
+                if cell.strip():
+                    cleaned[-1][i] = (cleaned[-1][i] + " " + cell).strip()
+        else:
+            cleaned.append(list(r))
+    rows = cleaned
+    width = len(rows[0])
     # Column width: the widest single line in any cell of that column (min 1),
     # so every border `+` lands at the same column across the whole table.
     col_w = [1] * width
