@@ -68,6 +68,9 @@ class PdfToMdOptions(BaseModel):
     table_column_align: bool = False
     tight_loose_lists: bool = False
     list_loose_threshold: float = Field(default=1.5, gt=0)
+    # Preserve each nested ordered sublist's own start number and indent it so
+    # the renderer nests it (#194). Off by default so output stays byte-identical.
+    nested_ordered_lists: bool = False
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")
