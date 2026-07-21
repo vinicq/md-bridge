@@ -17,6 +17,7 @@ def test_pdf_to_md_options_defaults():
     opts = PdfToMdOptions()
     assert opts.page_break is False
     assert opts.with_images is False
+    assert opts.ocr_images == "off"
     assert opts.image_width_hints is False
     assert opts.image_link_anchors is False
     assert opts.nested_ordered_lists is False
@@ -37,6 +38,22 @@ def test_md_to_pdf_options_theme_defaults_to_default():
     from app.schemas.convert import MdToPdfOptions
 
     assert MdToPdfOptions().theme == "default"
+
+
+def test_ocr_images_accepts_auto_and_all():
+    assert PdfToMdOptions(ocr_images="auto").ocr_images == "auto"
+    assert PdfToMdOptions(ocr_images="all").ocr_images == "all"
+
+
+def test_ocr_images_rejects_an_invalid_mode():
+    with pytest.raises(ValidationError):
+        PdfToMdOptions(ocr_images="always")
+
+
+def test_pdf_to_md_response_ocr_signals_default_false():
+    resp = PdfToMdResponse(md="x")
+    assert resp.ocr_applied is False
+    assert resp.ocr_images_applied is False
 
 
 def test_pdf_to_md_options_max_heading_level_range():

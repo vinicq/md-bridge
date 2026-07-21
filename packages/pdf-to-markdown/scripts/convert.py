@@ -23,6 +23,7 @@ import re
 import sys
 import unicodedata
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from math import ceil, isfinite
 from pathlib import Path
@@ -32,6 +33,14 @@ import fitz  # PyMuPDF
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 log = logging.getLogger(__name__)
+
+ImageOcrCallback = Callable[[bytes, str], str | None]
+ImageOcrSelector = Callable[[bytes, str], bool]
+OCR_IMAGE_EXTENSIONS = frozenset({"png", "jpg", "jpeg", "tiff", "bmp"})
+OCR_IMAGE_MIN_WIDTH = 200
+OCR_IMAGE_MIN_HEIGHT = 100
+OCR_IMAGE_MIN_PAGE_AREA = 0.005
+OCR_IMAGE_MAX_CANDIDATES = 50
 
 FLAG_SUPERSCRIPT = 1 << 0
 FLAG_ITALIC = 1 << 1
@@ -2189,6 +2198,8 @@ def convert_page(
     images_dir: Path | None = None,
     pdf_stem: str = "",
     inline_images: bool = False,
+    ocr_candidate_keys: frozenset[tuple[int, int]] = frozenset(),
+    image_ocr: ImageOcrCallback | None = None,
     skip_header_footer: bool = True,
     recurring_furniture: frozenset[str] = frozenset(),
 ) -> str:
@@ -2207,9 +2218,16 @@ def convert_page(
     except Exception:
         page_links = []
 
-    image_items: list[tuple[float, float, float, float, str]] = []
+    image_items: list[tuple[float, float, float, float, str, str | None]] = []
     if images_dir is not None or inline_images:
-        image_items = extract_page_images(page, images_dir, pdf_stem, inline=inline_images)
+        image_items = extract_page_images(
+            page,
+            images_dir,
+            pdf_stem,
+            inline=inline_images,
+            ocr_candidate_keys=ocr_candidate_keys,
+            image_ocr=image_ocr,
+        )
 
     items: list[tuple[float, str, object]] = []
     for t in tables:
@@ -2247,7 +2265,7 @@ def convert_page(
     # unchanged. A caption is claimed by at most one image.
     caption_blocks: set[int] = set()   # consumed as alt: not re-emitted as prose
     anchor_claimed: set[int] = set()    # used for a figure anchor: still emitted as prose
-    for top_y, bottom_y, left_x, right_x, rel in image_items:
+    for top_y, bottom_y, left_x, right_x, rel, ocr_text in image_items:
         alt = ""
         attr_tokens: list[str] = []
         # The caption line below the image feeds both the alt text (#149) and the
@@ -2299,6 +2317,10 @@ def convert_page(
             if uri:
                 image_md = f"[{image_md}]({uri})"
         items.append((top_y, "image", image_md))
+        if ocr_text:
+            # The stable append order keeps this block directly after its image
+            # when their vertical coordinates are equal.
+            items.append((top_y, "image", _image_ocr_block(ocr_text)))
 
     for block in parsed_blocks:
         if id(block) in caption_blocks:
@@ -2975,9 +2997,136 @@ def _image_width_attr(width: float) -> str | None:
     return f"width={px}"
 
 
+def _text_span_bboxes(text_dict: dict) -> list[tuple[float, float, float, float]]:
+    """Return vector-text span rectangles from a page text dictionary."""
+    spans: list[tuple[float, float, float, float]] = []
+    for block in text_dict.get("blocks", []):
+        if block.get("type") != 0:
+            continue
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                bbox = span.get("bbox")
+                if not bbox or len(bbox) != 4 or not str(span.get("text", "")).strip():
+                    continue
+                try:
+                    x0, y0, x1, y1 = (float(value) for value in bbox)
+                except (TypeError, ValueError):
+                    continue
+                if x1 > x0 and y1 > y0:
+                    spans.append((x0, y0, x1, y1))
+    return spans
+
+
+def _rect_intersection(
+    left: tuple[float, float, float, float], right: tuple[float, float, float, float]
+) -> tuple[float, float, float, float] | None:
+    x0, y0 = max(left[0], right[0]), max(left[1], right[1])
+    x1, y1 = min(left[2], right[2]), min(left[3], right[3])
+    return (x0, y0, x1, y1) if x1 > x0 and y1 > y0 else None
+
+
+def _union_area(rectangles: list[tuple[float, float, float, float]]) -> float:
+    """Area covered by rectangles, without double-counting overlapping spans."""
+    if not rectangles:
+        return 0.0
+    edges = sorted({edge for rect in rectangles for edge in (rect[0], rect[2])})
+    area = 0.0
+    for left, right in zip(edges, edges[1:], strict=False):
+        if right <= left:
+            continue
+        intervals = sorted(
+            (rect[1], rect[3]) for rect in rectangles if rect[0] < right and rect[2] > left
+        )
+        covered = 0.0
+        current_start: float | None = None
+        current_end: float | None = None
+        for start, end in intervals:
+            if current_start is None or current_end is None:
+                current_start, current_end = start, end
+            elif start > current_end:
+                covered += current_end - current_start
+                current_start, current_end = start, end
+            else:
+                current_end = max(current_end, end)
+        if current_start is not None and current_end is not None:
+            covered += current_end - current_start
+        area += (right - left) * covered
+    return area
+
+
+def _image_has_substantial_vector_text(
+    bbox: tuple[float, float, float, float], spans: list[tuple[float, float, float, float]]
+) -> bool:
+    image_area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+    if image_area <= 0:
+        return True
+    intersections = [hit for span in spans if (hit := _rect_intersection(bbox, span)) is not None]
+    return _union_area(intersections) / image_area > 0.7
+
+
+def _ocr_candidate_keys(
+    doc: fitz.Document, selector: ImageOcrSelector
+) -> tuple[frozenset[tuple[int, int]], bool]:
+    """Select the 50 largest deterministic OCR candidates in a document."""
+    candidates: list[tuple[float, int, int]] = []
+    for page in doc:
+        spans = _text_span_bboxes(page_text_dict(page))
+        page_area = max(page.rect.width * page.rect.height, 1.0)
+        try:
+            infos = page.get_image_info(hashes=False, xrefs=True)
+        except TypeError:
+            infos = page.get_image_info()
+        for index, info in enumerate(infos):
+            xref = info.get("xref", 0)
+            if not xref:
+                continue
+            try:
+                bbox = tuple(float(value) for value in info.get("bbox", (0, 0, 0, 0)))
+                width, height = int(info.get("width", 0)), int(info.get("height", 0))
+            except (TypeError, ValueError):
+                continue
+            if len(bbox) != 4 or width < OCR_IMAGE_MIN_WIDTH or height < OCR_IMAGE_MIN_HEIGHT:
+                continue
+            area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+            if area < page_area * OCR_IMAGE_MIN_PAGE_AREA or _image_has_substantial_vector_text(bbox, spans):
+                continue
+            try:
+                image = doc.extract_image(xref)
+            except Exception:
+                continue
+            extension = str(image.get("ext", "")).lower()
+            image_bytes = image.get("image")
+            if extension not in OCR_IMAGE_EXTENSIONS or not isinstance(image_bytes, bytes):
+                continue
+            if selector(image_bytes, extension):
+                candidates.append((area, page.number, index))
+    candidates.sort(key=lambda item: (-item[0], item[1], item[2]))
+    return (
+        frozenset((page_number, index) for _, page_number, index in candidates[:OCR_IMAGE_MAX_CANDIDATES]),
+        len(candidates) > OCR_IMAGE_MAX_CANDIDATES,
+    )
+
+
+def _image_ocr_block(text: str) -> str:
+    """Emit the per-image OCR text as a Markdown custom container, not raw HTML.
+
+    ADR-001 forbids the converter emitting block-level raw HTML (the allow-list
+    is inline only). So instead of a `<details>` block, this emits a `::: ocr`
+    container (the #164 custom-container dialect). The md-to-pdf renderer maps
+    `::: ocr` to a semantic `<figure><figcaption>` for the OCR provenance (#140),
+    the same converter-emits-marker, renderer-builds-HTML pattern as callouts.
+    """
+    return "::: ocr\n" + text + "\n:::"
+
+
 def extract_page_images(
-    page: fitz.Page, images_dir: Path | None, pdf_stem: str, inline: bool = False
-) -> list[tuple[float, float, float, float, str]]:
+    page: fitz.Page,
+    images_dir: Path | None,
+    pdf_stem: str,
+    inline: bool = False,
+    ocr_candidate_keys: frozenset[tuple[int, int]] = frozenset(),
+    image_ocr: ImageOcrCallback | None = None,
+) -> list[tuple[float, float, float, float, str, str | None]]:
     """Return [(top_y, bottom_y, left_x, right_x, ref), ...] for each image on the
     page, in reading order. The bottom edge and x-span let the caller pair a
     caption line that sits just below AND horizontally overlaps the image (#149).
@@ -2986,7 +3135,7 @@ def extract_page_images(
     <images_dir>/<pdf_stem>/p{N}_img{I}.<ext>) or, when `inline` is set, a base64
     `data:` URI so the Markdown carries the image with no external file (#372).
     Inline needs no images_dir and writes nothing to disk."""
-    out: list[tuple[float, float, float, float, str]] = []
+    out: list[tuple[float, float, float, float, str, str | None]] = []
     doc = page.parent
     page_no = page.number + 1
     try:
@@ -3003,7 +3152,7 @@ def extract_page_images(
             continue
         if not img:
             continue
-        ext = img.get("ext", "png")
+        ext = str(img.get("ext", "png")).lower()
         bbox = info.get("bbox", (0.0, 0.0, 0.0, 0.0))
         try:
             top_y = float(bbox[1])
@@ -3021,7 +3170,10 @@ def extract_page_images(
             target_dir.mkdir(parents=True, exist_ok=True)
             (target_dir / filename).write_bytes(img["image"])
             ref = f"images/{pdf_stem}/{filename}".replace("\\", "/")
-        out.append((top_y, bottom_y, left_x, right_x, ref))
+        ocr_text = None
+        if image_ocr is not None and (page.number, idx) in ocr_candidate_keys:
+            ocr_text = image_ocr(img["image"], ext)
+        out.append((top_y, bottom_y, left_x, right_x, ref, ocr_text))
     return out
 
 
@@ -3065,7 +3217,9 @@ def convert_document(
     detect_definition_lists: bool = False,
     definition_list_max_term_length: int = 80,
     definition_list_min_indent_pt: float = 20.0,
-) -> None:
+    image_ocr_selector: ImageOcrSelector | None = None,
+    image_ocr: ImageOcrCallback | None = None,
+) -> list[str]:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
     profile.caption_alt_text = caption_alt_text
@@ -3108,6 +3262,13 @@ def convert_document(
         # the `abbr` extension expands the tokens wherever they appear (#163).
         abbreviation_defs = collect_abbreviation_definitions(doc, profile)
 
+    ocr_candidate_keys: frozenset[tuple[int, int]] = frozenset()
+    ocr_warnings: list[str] = []
+    if image_ocr_selector is not None and image_ocr is not None:
+        ocr_candidate_keys, truncated = _ocr_candidate_keys(doc, image_ocr_selector)
+        if truncated:
+            ocr_warnings.append("ocr_images_truncated")
+
     recurring_furniture = find_recurring_furniture(doc) if subtract_running_furniture else frozenset()
     toc = doc.get_toc()
 
@@ -3137,6 +3298,8 @@ def convert_document(
         page_md = convert_page(
             page, profile, images_dir=images_dir, pdf_stem=pdf_stem,
             inline_images=inline_images,
+            ocr_candidate_keys=ocr_candidate_keys,
+            image_ocr=image_ocr,
             recurring_furniture=recurring_furniture,
         )
         if page_md.strip():
@@ -3209,6 +3372,7 @@ def convert_document(
 
     output_path.write_text(full, encoding="utf-8")
     print(f"Wrote {output_path}  ({len(out_pages)} non-empty pages)")
+    return ocr_warnings
 
 
 def _yaml_escape(s: str) -> str:

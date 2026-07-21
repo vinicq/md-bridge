@@ -22,10 +22,10 @@ from app.schemas.convert import (
 )
 from app.services.inspect import inspect_pdf_bytes
 from app.services.mupdf_log import capture_mupdf_warnings
+from app.services.ocr import ImageOcrProcessor, image_ocr_enabled, ocr_pdf_bytes
 from app.services.ocr import get_lang as ocr_lang
 from app.services.ocr import get_max_pages as ocr_max_pages
 from app.services.ocr import is_enabled as ocr_enabled
-from app.services.ocr import ocr_pdf_bytes
 from app.services.packages_loader import pdf_to_md_module
 
 log = logging.getLogger(__name__)
@@ -141,6 +141,19 @@ def convert_pdf_bytes(
     opts = options or PdfToMdOptions()
     mod = pdf_to_md_module()
 
+    image_ocr: ImageOcrProcessor | None = None
+    if opts.ocr_images != "off":
+        # Per-image OCR requires the operator to opt in explicitly (#140), unlike
+        # the page pre-pass which auto-enables when the stack is installed.
+        if not image_ocr_enabled():
+            raise ApiError(
+                422,
+                "ocr_not_available",
+                "Image OCR requires the optional OCR runtime. Enable it and retry.",
+                detail={"docs": OCR_DOCS_URL},
+            )
+        image_ocr = ImageOcrProcessor(mode=opts.ocr_images, lang=ocr_lang())
+
     # Always inspect first: a pure scan (no text layer) cannot be converted by
     # the heuristic pipeline and would return near-empty markdown with a 200,
     # which reads as "the tool is broken". When OCR is available we apply it;
@@ -210,13 +223,13 @@ def convert_pdf_bytes(
         # the tempdir. The MuPDF C runtime logs non-fatal resource warnings while
         # parsing malformed PDFs; capture them onto the logger, not bare stderr.
         with capture_mupdf_warnings(log, filename=filename):
-            mod.convert_document(
+            converter_warnings = mod.convert_document(
                 pdf_path,
                 md_path,
                 page_break=opts.page_break,
                 debug=False,
                 extract_images=False,
-                inline_images=opts.with_images,
+                inline_images=opts.with_images or image_ocr is not None,
                 front_matter=opts.front_matter,
                 detect_blockquotes=opts.detect_blockquotes,
                 cluster_headings=opts.cluster_headings,
@@ -249,7 +262,9 @@ def convert_pdf_bytes(
                 detect_definition_lists=opts.detect_definition_lists,
                 definition_list_max_term_length=opts.definition_list_max_term_length,
                 definition_list_min_indent_pt=opts.definition_list_min_indent_pt,
-            )
+                image_ocr_selector=image_ocr.is_candidate if image_ocr is not None else None,
+                image_ocr=image_ocr,
+            ) or []
 
         md_text = md_path.read_text(encoding="utf-8")
 
@@ -261,11 +276,17 @@ def convert_pdf_bytes(
     pages = front.pages or 1
     stats = _compute_stats(body)
     warnings = _build_warnings(body, opts, pages)
+    for warning in converter_warnings + (image_ocr.warnings if image_ocr is not None else []):
+        if warning not in warnings:
+            warnings.append(warning)
 
     return PdfToMdResponse(
         md=md_text,
         front_matter=front,
         warnings=warnings,
         stats=stats,
+        # Keep the two OCR signals distinct (#140 review): ocr_applied stays the
+        # page pre-pass signal it has always been; image OCR reports separately.
         ocr_applied=ocr_applied,
+        ocr_images_applied=image_ocr.applied if image_ocr is not None else False,
     )

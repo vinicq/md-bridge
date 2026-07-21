@@ -13,6 +13,7 @@ type Schemas = components['schemas']
 interface PdfToMdOptions {
   page_break?: boolean
   with_images?: boolean
+  ocr_images?: 'off' | 'auto' | 'all'
   front_matter?: boolean
   detect_blockquotes?: boolean
   cluster_headings?: boolean

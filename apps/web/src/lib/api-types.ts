@@ -398,6 +398,11 @@ export interface components {
              * @default false
              */
             ocr_applied: boolean;
+            /**
+             * Ocr Images Applied
+             * @default false
+             */
+            ocr_images_applied: boolean;
             stats?: components["schemas"]["ConvertStats"];
             /** Warnings */
             warnings?: string[];

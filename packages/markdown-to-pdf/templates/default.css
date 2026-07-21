@@ -171,3 +171,29 @@ del { text-decoration: line-through; color: #777; }
   margin: 0 0.4em 0 0;
   vertical-align: middle;
 }
+
+/* Per-image OCR provenance (#140): text recognized inside an embedded image.
+   Not an admonition - stays off the five callout colors, a neutral gray box.
+   pre-wrap keeps the OCR line breaks and wraps long lines; print-safe. The
+   explicit margin overrides the UA figure 40px inset. */
+figure.ocr {
+  border: 1px solid #c4c4c4;
+  border-left: 4px solid #6a6a6a;
+  border-radius: 6px;
+  background: #f5f5f5;
+  padding: 12px 16px;
+  margin: 1em 0;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+figure.ocr .ocr__label {
+  font-weight: 700; font-size: 0.8rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #454545;
+}
+figure.ocr .ocr__note {
+  margin: 4px 0 0; font-size: 0.75rem; font-style: italic; color: #5f5f5f;
+}
+figure.ocr .ocr__body {
+  margin-top: 8px; white-space: pre-wrap;
+  font-size: 0.9rem; line-height: 1.5; color: #2b2b2b;
+}
