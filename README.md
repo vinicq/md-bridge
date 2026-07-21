@@ -161,6 +161,11 @@ python -m pip install -e ".[dev,ocr]"
 # Optional: export MD_BRIDGE_OCR_MAX_PAGES=50  # reject scans past N pages (0 = no cap)
 # Optional: export MD_BRIDGE_OCR_PAGE_TIMEOUT=60  # per-page Tesseract timeout in seconds
 
+# Optional grid-table rendering: needed for md-to-pdf to render ANY Pandoc grid
+# table (converter output with --multiline-table-format=grid, or hand-authored
+# Markdown). Without it a grid table renders as literal text.
+python -m pip install -e ".[grid-tables]"
+
 # Docker: build the OCR-enabled API image target.
 docker build -f apps/api/Dockerfile --target runtime-ocr -t md-bridge-api:ocr
 

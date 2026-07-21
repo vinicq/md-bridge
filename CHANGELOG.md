@@ -15,6 +15,55 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-07-21
+
+Seven converter heuristics, each opt-in and off by default, so a document
+converted with the defaults is byte-identical to 0.9.0.
+
+### Added
+
+- **Table column alignment.** With `table_column_align` on, the converter reads
+  each column's text extent and emits the GFM alignment markers (`:---`, `---:`,
+  `:---:`) in the separator row. It classifies by comparing the left and right
+  gaps, so left-aligned multi-word text is not misread as centered. (#175)
+- **Tight and loose list spacing.** With `tight_loose_lists` on, the converter
+  reads the vertical gaps between PDF list items and preserves them as
+  CommonMark tight or loose lists. `list_loose_threshold` (default 1.5x the
+  dominant body font size) sets where a gap counts as loose. (#168)
+- **Image width hints.** With `image_width_hints` on, an extracted image carries
+  its source width as an attr-list hint (`{width=N}`). The width is converted
+  from PDF points to CSS pixels (x96/72), so a round-trip through the renderer
+  keeps the image at its original size instead of shrinking it. (#169)
+- **Image click links.** With `image_link_anchors` on, an image that the PDF
+  wraps in a click action is emitted as `[![alt](src)](target)`, preserving the
+  link through the conversion. The three document post-passes (smart typography,
+  reference-link collapsing, and the needs_ocr text-density check) recognize the
+  construct and operate on the external target, never the image source. (#170)
+- **Nested ordered lists.** With `nested_ordered_lists` on, a nested ordered
+  sublist keeps its own first-item start and indents four spaces per level so
+  the renderer nests it (`<ol start="N">`). Depth is measured from the list's
+  outermost margin, so a sublist with more items than its parent still nests.
+  (#194)
+- **Grid tables.** With `multiline_table_format` set to `grid`, a table that has
+  any cell spanning more than one line is emitted as a Pandoc grid table so the
+  line breaks survive; an all-single-line table stays a pipe table. Rendering a
+  grid table back to a PDF needs the optional `grid-tables` extra
+  (`markdown-grids`, MIT). Adopted in ADR-001. (#166)
+- **Definition lists.** With `detect_definition_lists` on, a run of at least two
+  term/definition pairs (a short body-font term at the margin, then an indented
+  body definition) is emitted as `Term` / `: definition`, rendered to
+  `<dl><dt><dd>`. The detector is deliberately strict to keep false positives
+  low: a heading or a styled label classifies as a heading and is excluded, and
+  the run, length, font, and indent guards make ordinary prose unlikely to read
+  as a term. `definition_list_max_term_length` and `definition_list_min_indent_pt`
+  tune the bounds. Adopted in ADR-001. (#161)
+
+### Changed
+
+- **Dependencies.** Bumped the nginx base image digest (#425), the web
+  `typescript-eslint` group (#426), `@testing-library/jest-dom` to 7 (#427), the
+  CI actions group (#428), and `actions/setup-python` to 7 (#429).
+
 ## [0.9.0] — 2026-07-17
 
 ### Added
@@ -656,7 +705,8 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/vinicq/md-bridge/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/vinicq/md-bridge/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/vinicq/md-bridge/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/vinicq/md-bridge/compare/v0.6.0...v0.7.0
