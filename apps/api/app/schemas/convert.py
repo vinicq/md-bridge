@@ -71,6 +71,11 @@ class PdfToMdOptions(BaseModel):
     # Preserve each nested ordered sublist's own start number and indent it so
     # the renderer nests it (#194). Off by default so output stays byte-identical.
     nested_ordered_lists: bool = False
+    # Table syntax when a cell spans multiple lines (#166): "grid" emits a Pandoc
+    # grid table so the line breaks survive; "pipe" (default) flattens them, so
+    # the default output stays byte-identical. Rendering a grid table back to a
+    # PDF needs the optional `grid-tables` extra installed.
+    multiline_table_format: Literal["pipe", "grid"] = "pipe"
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")

@@ -38,6 +38,8 @@ FRONT_MATTER_LINE = re.compile(r'^(\w[\w-]*):\s*(.*)$')
 HEADING_RE = re.compile(r"^(#{1,6})\s+\S", re.MULTILINE)
 TABLE_ROW_RE = re.compile(r"^\|.*\|\s*$", re.MULTILINE)
 BULLET_RE = re.compile(r"^\s*[-*+]\s+\S", re.MULTILINE)
+# A Pandoc grid table's header separator (`+===+===+`), one per grid table (#166).
+GRID_TABLE_HEADER_RE = re.compile(r"^\+=[=+]*\+\s*$", re.MULTILINE)
 # A click-through image `[![alt](src){attr}](target)` (#170): neither the image
 # source nor the click target is extractable prose, so the whole wrapper is
 # dropped before the text-density count. Stripped ahead of the plain-image regex
@@ -79,13 +81,16 @@ def _parse_front_matter(md: str) -> tuple[FrontMatter, str]:
 def _compute_stats(md_body: str) -> ConvertStats:
     headings = len(HEADING_RE.findall(md_body))
     table_lines = TABLE_ROW_RE.findall(md_body)
-    # A table opens with header + separator + body rows; count the separators
-    # (`| --- | --- |`) which appear once per table.
+    # A pipe table opens with header + separator + body rows; count the
+    # separators (`| --- | --- |`) which appear once per table.
     table_count = sum(
         1
         for line in table_lines
         if re.fullmatch(r"\|\s*(:?-{2,}:?\s*\|\s*)+", line.strip())
     )
+    # A Pandoc grid table (#166) has one `+===+` header separator per table, so
+    # count those too or a grid-promoted table would be missing from the count.
+    table_count += len(GRID_TABLE_HEADER_RE.findall(md_body))
     bullets = len(BULLET_RE.findall(md_body))
     return ConvertStats(headings=headings, tables=table_count, bullets=bullets)
 
@@ -240,6 +245,7 @@ def convert_pdf_bytes(
                 tight_loose_lists=opts.tight_loose_lists,
                 list_loose_threshold=opts.list_loose_threshold,
                 nested_ordered_lists=opts.nested_ordered_lists,
+                multiline_table_format=opts.multiline_table_format,
             )
 
         md_text = md_path.read_text(encoding="utf-8")

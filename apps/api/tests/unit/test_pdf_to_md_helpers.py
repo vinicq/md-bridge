@@ -62,6 +62,29 @@ def test_compute_stats_empty_input():
     assert stats.headings == 0 and stats.bullets == 0 and stats.tables == 0
 
 
+def test_compute_stats_counts_grid_tables():
+    # A Pandoc grid table (#166) is counted by its `+===+` header separator, so
+    # a grid-promoted table is not missing from the table count.
+    md = (
+        "+------+------------+\n"
+        "| Term | Definition |\n"
+        "+======+============+\n"
+        "| A    | line one   |\n"
+        "|      | line two   |\n"
+        "+------+------------+\n"
+    )
+    stats = _compute_stats(md)
+    assert stats.tables == 1
+
+
+def test_compute_stats_counts_pipe_and_grid_tables_together():
+    md = (
+        "| a | b |\n| --- | --- |\n| 1 | 2 |\n\n"
+        "+---+---+\n| x | y |\n+===+===+\n| 1 | 2 |\n+---+---+\n"
+    )
+    assert _compute_stats(md).tables == 2
+
+
 def test_build_warnings_emits_needs_ocr_code_on_sparse_text():
     """Sparse text → `needs_ocr` code (not the English message).
 
