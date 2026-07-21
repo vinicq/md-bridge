@@ -92,7 +92,7 @@ def test_image_ocr_reaches_convert_pdf_bytes_with_real_tesseract(monkeypatch: py
         options=PdfToMdOptions(front_matter=False, ocr_images="all"),
     )
     assert "data:image/png;base64," in response.md
-    assert "<details><summary>Text extracted from the image (OCR)</summary>" in response.md
+    assert "::: ocr" in response.md
     assert "OCR IMAGE CONTRACT" in response.md.upper()
     assert response.ocr_images_applied is True
     assert response.ocr_applied is False  # page pre-pass did not run, only image OCR
