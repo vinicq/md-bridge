@@ -97,9 +97,10 @@ stays byte-identical:
 - `table_column_align`: emit GFM alignment markers in the table separator (#175).
 - `tight_loose_lists` (with `list_loose_threshold`): keep a PDF list's tight or
   loose spacing (#168).
-- `image_width_hints`: emit each image's source width as a `{width=N}` hint (#169).
+- `image_width_hints`: emit each image's source width as a `{width=N}` hint;
+  needs `with_images` (it acts on the extracted images) (#169).
 - `image_link_anchors`: wrap an image in its click-action link as
-  `[![alt](src)](target)` (#170).
+  `[![alt](src)](target)`; needs `with_images` (#170).
 - `nested_ordered_lists`: keep a nested ordered sublist's own start and indent it
   to nest in the renderer (#194).
 - `multiline_table_format` (`pipe` or `grid`): emit a Pandoc grid table for a

@@ -28,8 +28,8 @@ converted with the defaults is byte-identical to 0.9.0.
   gaps, so left-aligned multi-word text is not misread as centered. (#175)
 - **Tight and loose list spacing.** With `tight_loose_lists` on, the converter
   reads the vertical gaps between PDF list items and preserves them as
-  CommonMark tight or loose lists. `list_loose_threshold` (default 1.5 body
-  line-heights) sets where a gap counts as loose. (#168)
+  CommonMark tight or loose lists. `list_loose_threshold` (default 1.5x the
+  dominant body font size) sets where a gap counts as loose. (#168)
 - **Image width hints.** With `image_width_hints` on, an extracted image carries
   its source width as an attr-list hint (`{width=N}`). The width is converted
   from PDF points to CSS pixels (x96/72), so a round-trip through the renderer
@@ -52,9 +52,11 @@ converted with the defaults is byte-identical to 0.9.0.
 - **Definition lists.** With `detect_definition_lists` on, a run of at least two
   term/definition pairs (a short body-font term at the margin, then an indented
   body definition) is emitted as `Term` / `: definition`, rendered to
-  `<dl><dt><dd>`. The detector is deliberately strict so a heading, a styled
-  label, or a sentence is never mistaken for a term. `definition_list_max_term_length`
-  and `definition_list_min_indent_pt` tune the bounds. Adopted in ADR-001. (#161)
+  `<dl><dt><dd>`. The detector is deliberately strict to keep false positives
+  low: a heading or a styled label classifies as a heading and is excluded, and
+  the run, length, font, and indent guards make ordinary prose unlikely to read
+  as a term. `definition_list_max_term_length` and `definition_list_min_indent_pt`
+  tune the bounds. Adopted in ADR-001. (#161)
 
 ### Changed
 
