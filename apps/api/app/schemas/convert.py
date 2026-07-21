@@ -19,6 +19,12 @@ class PdfToMdOptions(BaseModel):
 
     page_break: bool = False
     with_images: bool = False
+    # Selectively transcribe text embedded in raster images. Off by default so
+    # existing clients retain byte-identical Markdown. `all` transcribes every
+    # embedded image over the geometry floor; a smarter `auto` mode that picks
+    # only text-bearing images is deferred to #444 (its density heuristic
+    # rejected the common sparse-text case, so it is not shipped yet).
+    ocr_images: Literal["off", "all"] = "off"
     front_matter: bool = True
     detect_blockquotes: bool = False
     cluster_headings: bool = False
@@ -190,7 +196,11 @@ class PdfToMdResponse(BaseModel):
     front_matter: FrontMatter = Field(default_factory=FrontMatter)
     warnings: list[str] = Field(default_factory=list)
     stats: ConvertStats = Field(default_factory=ConvertStats)
+    # Whether the full-page OCR pre-pass ran (a scanned PDF, #139).
     ocr_applied: bool = False
+    # Whether per-image OCR transcribed at least one embedded image (#140). A
+    # separate signal so ocr_applied keeps its page-level meaning.
+    ocr_images_applied: bool = False
 
 
 class FontUsage(BaseModel):

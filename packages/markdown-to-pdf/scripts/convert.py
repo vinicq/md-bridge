@@ -264,6 +264,70 @@ class _ContainerPreprocessor(Preprocessor):
         return out
 
 
+# Per-image OCR provenance (#140). `pdf-to-markdown` emits `::: ocr` ... `:::`
+# after an image, carrying the plain OCR text (a Markdown-native marker; ADR-001
+# vetoes raw HTML only in the CONVERTER). The renderer builds a
+# `<figure class="ocr">` so recognized text reads as machine provenance, not an
+# admonition. The body is LITERAL - a line starting with `#`/`-` must not become
+# a heading/list - so it is stashed as final HTML via htmlStash, the same path
+# fenced_code uses, instead of being rewritten into a callout blockquote.
+_OCR_OPEN = re.compile(r"^:{3,}[ \t]*ocr[ \t]*$", re.IGNORECASE)
+_OCR_CLOSE = re.compile(r"^:{3,}[ \t]*$")
+_OCR_LABELS = {
+    "en": "Recognized text (OCR)",
+    "pt": "Texto reconhecido (OCR)",
+    "es": "Texto reconocido (OCR)",
+}
+_OCR_NOTES = {
+    "en": "Automatic transcription, may contain errors.",
+    "pt": "Transcrição automática, pode conter erros.",
+    "es": "Transcripción automática, puede contener errores.",
+}
+
+
+class _OcrPreprocessor(Preprocessor):
+    """Turn `::: ocr` ... `:::` into a `<figure class="ocr">` of OCR provenance (#140).
+
+    Runs at priority 24.5: below the fenced-code preprocessor (25, so a `::: ocr`
+    inside a code fence is already stashed and ignored) and above the generic
+    container preprocessor (24, so `ocr` is claimed before its NOTE fallback).
+    """
+
+    def __init__(self, md, lang: str):
+        super().__init__(md)
+        self.lang = _callout_lang(lang)
+
+    def run(self, lines: list[str]) -> list[str]:
+        out: list[str] = []
+        i = 0
+        while i < len(lines):
+            if _OCR_OPEN.match(lines[i]):
+                # Closer is a bare `:::`; an OCR body is plain text with no
+                # nesting, so the container's length-matched close (#417) is not
+                # needed here. ponytail: simple `:::` closer, no nesting.
+                j = i + 1
+                while j < len(lines) and not _OCR_CLOSE.match(lines[j]):
+                    j += 1
+                if j < len(lines):  # matched closer: it is an OCR block
+                    body = "\n".join(lines[i + 1:j])
+                    placeholder = self.md.htmlStash.store(self._figure(body))
+                    out.extend(["", placeholder, ""])  # own block: restored unwrapped
+                    i = j + 1
+                    continue
+            out.append(lines[i])
+            i += 1
+        return out
+
+    def _figure(self, text: str) -> str:
+        return (
+            '<figure class="ocr">'
+            f'<figcaption class="ocr__label">{escape_html(_OCR_LABELS[self.lang])}</figcaption>'
+            f'<p class="ocr__note">{escape_html(_OCR_NOTES[self.lang])}</p>'
+            f'<div class="ocr__body">{escape_html(text)}</div>'
+            "</figure>"
+        )
+
+
 class _CalloutExtension(Extension):
     """Register the callout preprocessor + treeprocessor with the label language."""
 
@@ -274,6 +338,12 @@ class _CalloutExtension(Extension):
     def extendMarkdown(self, md: markdown.Markdown) -> None:
         # Run just below the fenced-code preprocessor (25) so code fences are
         # already stashed and a `:::` inside one is not rewritten.
+        # OCR provenance (#140) claims `::: ocr` at 24.5, above the generic
+        # container (24) so it is not swallowed as a NOTE callout, and below the
+        # fenced-code preprocessor (25) so `::: ocr` inside a fence stays literal.
+        md.preprocessors.register(
+            _OcrPreprocessor(md, self.getConfig("lang")), "md_bridge_ocr", 24.5
+        )
         md.preprocessors.register(_ContainerPreprocessor(md), "md_bridge_container", 24)
         md.treeprocessors.register(
             _CalloutTreeprocessor(md, self.getConfig("lang")), "md_bridge_callout", 15

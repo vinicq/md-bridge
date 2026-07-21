@@ -332,6 +332,11 @@
             "title": "Ocr Applied",
             "type": "boolean"
           },
+          "ocr_images_applied": {
+            "default": false,
+            "title": "Ocr Images Applied",
+            "type": "boolean"
+          },
           "stats": {
             "$ref": "#/components/schemas/ConvertStats"
           },

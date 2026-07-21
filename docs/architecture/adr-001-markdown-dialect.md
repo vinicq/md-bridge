@@ -170,6 +170,23 @@ with fewer than two pairs on a side stays plain paragraphs there, deliberate
 under-detection. Off by default, so the default output stays byte-identical.
 Ratified by the maintainer.
 
+### 2026-07-21 - OCR provenance container (`::: ocr`), issue #140
+
+Added to the adopted set: an **OCR provenance container** (`::: ocr` ... `:::`).
+`pdf-to-markdown`, under the opt-in `ocr_images` option (`auto`/`all`, default
+`off`), emits the text recognized inside an embedded image as a Markdown-native
+custom container right after the image, never as raw HTML: the emit gate stays
+closed. `markdown-to-pdf` renders `::: ocr` as a semantic `<figure class="ocr">`
+with a localized `<figcaption>` label ("Texto reconhecido (OCR)") and a body that
+preserves the OCR line breaks verbatim. The renderer builds the figure (permitted:
+the raw-HTML veto binds the converter, not the renderer's own output) and stashes
+it as literal final HTML, so the OCR text is never reparsed as Markdown: a line
+starting with `#` or `-` stays literal, not a heading or list. OCR is provenance,
+not an admonition, so it carries its own neutral `.ocr` vocabulary, off the five
+callout colors. The renderer loads no external resource, so the render egress
+policy (#363) is untouched. Default output stays byte-identical when `ocr_images`
+is off. Ratified by the maintainer.
+
 ## References
 
 - CommonMark 0.31.2 specification: https://spec.commonmark.org/0.31.2/
