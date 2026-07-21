@@ -29,6 +29,10 @@ function wrap(node: React.ReactNode, locale: Locale) {
 
 describe('MdToPdf', () => {
   beforeEach(() => {
+    // The MD→PDF theme now lives in the unified prefs key (#64), migrated once
+    // from the legacy key. Clear storage so each test's seeded legacy value
+    // actually migrates instead of being shadowed by a prior test's prefs blob.
+    window.localStorage.clear()
     vi.mocked(convertMdToPdf).mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }))
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
