@@ -76,6 +76,12 @@ class PdfToMdOptions(BaseModel):
     # the default output stays byte-identical. Rendering a grid table back to a
     # PDF needs the optional `grid-tables` extra installed.
     multiline_table_format: Literal["pipe", "grid"] = "pipe"
+    # Emit a definition list (`Term` + `: definition`) for a run of term/indented-
+    # definition pairs (#161). Conservative and off by default, so output stays
+    # byte-identical. The two tunables bound what counts as a term/definition.
+    detect_definition_lists: bool = False
+    definition_list_max_term_length: int = Field(default=80, gt=0)
+    definition_list_min_indent_pt: float = Field(default=20.0, gt=0)
     lang: SupportedLang = "pt-BR"
 
     @field_validator("allow_html")

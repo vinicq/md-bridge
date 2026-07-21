@@ -41,7 +41,6 @@ A proposal that implements one of these is in scope by default and does not need
 - Math (default). Math support lands as an optional extra, tracked in #151, not in the base install.
 - Subscript (`~x~`). No use case is tracked; only superscript is emitted today. Reconsider via an ADR amendment if a real need appears.
 - Emoji shortcodes (`:smile:`)
-- Definition lists
 - Abbreviations
 - MathJax or any JS-rendered syntax by default
 
@@ -61,7 +60,7 @@ This ADR declares the target. The current implementation is close but not identi
 - `markdown-to-pdf` renders with python-markdown and the extensions `extra`, `sane_lists`, `smarty`, `toc`, `md_in_html`. python-markdown is a pragmatic implementation, not a certified CommonMark parser, so a handful of edge cases differ from the 0.31.2 spec.
 - Known deltas to close in later work, each its own change:
   - python-markdown core does not parse GFM strikethrough or Pandoc caret superscript. A `~~` or `^x^` produced by `pdf-to-markdown` renders literally if round-tripped through `markdown-to-pdf` today. Aligning the renderer (for example via `pymdownx` equivalents) is follow-up work, not part of this ADR.
-  - The `extra` bundle incidentally enables definition lists and abbreviations. They are not part of the declared dialect; they are tolerated as renderer input, not guaranteed, and `pdf-to-markdown` never produces them.
+  - The `extra` bundle enables definition lists (now part of the dialect, see the #161 amendment) and abbreviations. Abbreviations stay renderer-tolerated input only; `pdf-to-markdown` does not produce them.
 
 ## Consequences
 
@@ -148,6 +147,28 @@ literal text; installing the extra makes the renderer reparse it into a
 once a round-trip (emit grid, reparse, `<table>`) was proven with a
 license-compatible dependency. The GPLv3 `markdown-grid-tables` package was
 rejected as incompatible with the MIT license.
+
+### 2026-07-21 - Definition lists, issue #161
+
+Removed from "Out of scope" and added to the adopted-and-emitted set:
+**definition lists** (`Term` then `: definition`, rendered to `<dl><dt><dd>`).
+The renderer already parses them through the `extra` bundle's `def_list`; this
+amendment covers the converter now producing them.
+
+`pdf-to-markdown` emits a definition list under the opt-in
+`detect_definition_lists` option. Definition lists carry the highest
+false-positive risk of the Phase 7 heuristics (a term looks like a short
+paragraph), so the detector is deliberately strict: it fires only on a run of
+at least two consecutive term/definition pairs, where each term is a single
+short line (bounded by `definition_list_max_term_length`) at the body font and
+size, at the body margin, with no trailing punctuation, and each definition is
+a body paragraph indented into a tight band past the term (floor
+`definition_list_min_indent_pt`). A heading, a styled label (which classifies
+as a heading), a list item, or a sentence never reads as a term. Detection is
+per page (the guards read block geometry), so a run straddling a page boundary
+with fewer than two pairs on a side stays plain paragraphs there, deliberate
+under-detection. Off by default, so the default output stays byte-identical.
+Ratified by the maintainer.
 
 ## References
 

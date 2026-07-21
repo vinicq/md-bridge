@@ -750,6 +750,9 @@ class DocProfile:
     list_loose_threshold: float = 1.5
     nested_ordered_lists: bool = False  # opt-in: per-level start + 4-space indent for nested ordered lists (#194)
     multiline_table_format: str = "pipe"  # "grid" auto-promotes multi-line-cell tables to Pandoc grid tables (#166)
+    detect_definition_lists: bool = False  # opt-in: term + indented definition -> `Term\n: def` (#161)
+    definition_list_max_term_length: int = 80  # a def-list term must be at most this many chars (#161)
+    definition_list_min_indent_pt: float = 20.0  # the definition must be indented at least this far past the term (#161)
     detect_task_lists: bool = False  # opt-in (#172); read here so #168 spacing treats checkbox items as list items
     task_list_extended: bool = False  # opt-in: also recognize the todo-md [-] marker (#172)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
@@ -2385,6 +2388,114 @@ def render_paragraph(block: Block, profile: DocProfile) -> str:
     return "".join(parts).strip()
 
 
+# Definition lists (#161). The highest false-positive risk of the Phase 7
+# heuristics, so the detector is deliberately strict: it only fires on a run of
+# at least two consecutive term/definition pairs, where each term is a single
+# short line at the body font and size sitting at the body margin with no
+# trailing punctuation (so a heading, a styled label, a list item, or a
+# sentence never reads as a term), and each definition is a body paragraph
+# indented into a tight band past the term. Off by default so output stays
+# byte-identical; runs as a pre-pass over the assembled block items.
+_DEF_TERM_TRAILING_PUNCT = (".", ":", ";", ",", "?", "!")
+
+
+def _block_text_rendered(block: Block, profile: DocProfile) -> str:
+    """Rendered block text, matching the standalone-paragraph path exactly so a
+    definition honors `preserve_line_breaks` (hard breaks) rather than always
+    flattening its layout lines to a space (#161 review)."""
+    return HEADING_DOTS_RE.sub("", render_paragraph(block, profile))
+
+
+def _is_definition_term(block: Block, profile: DocProfile) -> bool:
+    """A short body-font paragraph line at the body margin, no trailing punctuation."""
+    if classify_block(block, profile) != "paragraph":
+        return False  # a heading, styled label, list item, or code never qualifies
+    if len(block.lines) != 1:
+        return False
+    text = block.text.strip()
+    if not text or len(text) > profile.definition_list_max_term_length:
+        return False
+    if text.endswith(_DEF_TERM_TRAILING_PUNCT):
+        return False
+    if round(block.dominant_size, 1) != round(profile.body_size, 1):
+        return False
+    if profile.body_font and dominant_font(block) != profile.body_font:
+        return False
+    # Near the body margin on BOTH sides: a label in a left sidebar/marginal
+    # column (x0 well left of body_x0) is not a term, even though its value sits
+    # a plausible indent to its right (#161 review).
+    return abs(block.bbox[0] - profile.body_x0) <= LIST_CONTINUATION_MIN_INDENT
+
+
+def _is_definition_body(block: Block, term: Block, profile: DocProfile) -> bool:
+    """A body paragraph indented into a tight band past the term (the definition)."""
+    # A definition indented past the blockquote threshold classifies as a
+    # blockquote when detect_blockquotes is also on; the stricter multi-pair
+    # definition-list run takes precedence, so accept that candidate too (#161
+    # review). The term is at the margin, so it is never a blockquote.
+    if classify_block(block, profile) not in ("paragraph", "blockquote"):
+        return False
+    if not block.text.strip():
+        return False
+    if round(block.dominant_size, 1) != round(profile.body_size, 1):
+        return False
+    if profile.body_font and dominant_font(block) != profile.body_font:
+        return False
+    indent = block.bbox[0] - term.bbox[0]
+    lo = profile.definition_list_min_indent_pt
+    return lo <= indent <= 2 * lo
+
+
+def _render_definition_list(run: list[tuple[Block, Block]], profile: DocProfile) -> str:
+    """Render term/definition pairs as `Term\\n: definition`, blank-separated."""
+    parts: list[str] = []
+    for term, body in run:
+        parts.append(escape_line_start_specials(_block_text_rendered(term, profile)))
+        parts.append(f": {_block_text_rendered(body, profile)}")
+        parts.append("")
+    return "\n".join(parts).rstrip()
+
+
+def _promote_definition_lists(
+    items: list[tuple[str, object]], profile: DocProfile
+) -> list[tuple[str, object]]:
+    """Replace runs of >= 2 consecutive term/definition block pairs with a
+    single pre-rendered `deflist` item (#161). Non-block items and blocks that
+    do not form a pair are passed through untouched.
+
+    Scope is per page: this runs inside `assemble_markdown`, which the converter
+    calls once per page, because the guards read block geometry (font, size,
+    margin) that only exists at the page level. A glossary run that straddles a
+    page boundary with fewer than two pairs on a side is therefore left as plain
+    paragraphs on that side. That is deliberate under-detection (the safe
+    direction for a conservative heuristic), not corruption (#161 review)."""
+    out: list[tuple[str, object]] = []
+    i, n = 0, len(items)
+    while i < n:
+        if items[i][0] != "block":
+            out.append(items[i])
+            i += 1
+            continue
+        run: list[tuple[Block, Block]] = []
+        j = i
+        while (
+            j + 1 < n
+            and items[j][0] == "block"
+            and items[j + 1][0] == "block"
+            and _is_definition_term(items[j][1], profile)
+            and _is_definition_body(items[j + 1][1], items[j][1], profile)
+        ):
+            run.append((items[j][1], items[j + 1][1]))
+            j += 2
+        if len(run) >= 2:
+            out.append(("deflist", _render_definition_list(run, profile)))
+            i = j
+        else:
+            out.append(items[i])
+            i += 1
+    return out
+
+
 def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> str:
     """Join page items (tables, images, text blocks) into Markdown.
 
@@ -2398,6 +2509,8 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
     contiguous list so an ordered list does not collapse into one single-item
     list per line (#144).
     """
+    if profile.detect_definition_lists:
+        items = _promote_definition_lists(items, profile)
     out_parts: list[str] = []
     numbered_run: list[str] = []
     numbered_loose = False
@@ -2515,6 +2628,16 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             flush_heading()
             list_marker_x0 = None
             out_parts.append(payload)
+            continue
+        if kind == "deflist":
+            # A pre-rendered definition list (#161); it stands as its own block.
+            flush_numbered()
+            flush_bullets()
+            flush_blockquote()
+            flush_heading()
+            list_marker_x0 = None
+            if payload:
+                out_parts.append(payload)
             continue
 
         block: Block = payload
@@ -2939,6 +3062,9 @@ def convert_document(
     list_loose_threshold: float = 1.5,
     nested_ordered_lists: bool = False,
     multiline_table_format: str = "pipe",
+    detect_definition_lists: bool = False,
+    definition_list_max_term_length: int = 80,
+    definition_list_min_indent_pt: float = 20.0,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -2959,6 +3085,9 @@ def convert_document(
     profile.list_loose_threshold = list_loose_threshold
     profile.nested_ordered_lists = nested_ordered_lists
     profile.multiline_table_format = multiline_table_format
+    profile.detect_definition_lists = detect_definition_lists
+    profile.definition_list_max_term_length = definition_list_max_term_length
+    profile.definition_list_min_indent_pt = definition_list_min_indent_pt
     profile.detect_task_lists = detect_task_lists
     profile.task_list_extended = task_list_extended
     footnote_defs: dict[int, str] = {}
@@ -3247,6 +3376,10 @@ def is_block_paragraph(block: str) -> bool:
         return False
     if s.startswith(">"):
         return False  # blockquote (#147): structural, never fused into prose
+    if s.startswith(": ") or "\n: " in block:
+        return False  # definition list (#161): a `: ` line is structural, never
+        # merged, or the lowercase-continuation heuristic would fuse a later term
+        # onto the previous definition and drop a `<dt>`.
     if NUMBERED_RE.match(s):
         return False
     # A running header/footer is not prose; keep it out of the merge so it is
@@ -3481,6 +3614,9 @@ def main() -> int:
     parser.add_argument("--list-loose-threshold", type=_positive_finite_float, default=1.5, metavar="N", help="Gap in body line-heights that marks a list loose (positive finite, default: 1.5, #168)")
     parser.add_argument("--nested-ordered-lists", action="store_true", help="Preserve each nested ordered sublist's own start and indent it to nest in the renderer (opt-in, #194)")
     parser.add_argument("--multiline-table-format", choices=("pipe", "grid"), default="pipe", help="Table syntax when a cell spans multiple lines: 'grid' emits a Pandoc grid table so the line breaks survive; 'pipe' (default) flattens them (opt-in, #166)")
+    parser.add_argument("--detect-definition-lists", action="store_true", help="Emit `Term` + `: definition` for a run of term/indented-definition pairs (opt-in, conservative, #161)")
+    parser.add_argument("--definition-list-max-term-length", type=int, default=80, metavar="N", help="A definition-list term must be at most this many characters (default: 80, #161)")
+    parser.add_argument("--definition-list-min-indent-pt", type=float, default=20.0, metavar="PT", help="A definition must be indented at least this far past its term, in PDF points (default: 20, #161)")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -3523,6 +3659,9 @@ def main() -> int:
         list_loose_threshold=args.list_loose_threshold,
         nested_ordered_lists=args.nested_ordered_lists,
         multiline_table_format=args.multiline_table_format,
+        detect_definition_lists=args.detect_definition_lists,
+        definition_list_max_term_length=args.definition_list_max_term_length,
+        definition_list_min_indent_pt=args.definition_list_min_indent_pt,
     )
     return 0
 
