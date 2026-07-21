@@ -11,6 +11,7 @@ interface Dictionary {
     pdfToMd: string
     mdToPdf: string
     about: string
+    preferences: string
     mainLabel: string
   }
   a11y: {
@@ -204,6 +205,19 @@ interface Dictionary {
   languageSwitcher: {
     label: string
   }
+  preferences: {
+    title: string
+    subtitle: string
+    sections: { defaults: string; ui: string; privacy: string }
+    defaultLanguage: { label: string; hint: string }
+    defaultPdfTheme: { label: string; hint: string }
+    reduceMotion: { label: string; hint: string }
+    darkMode: { label: string; hint: string }
+    privacy: { badge: string; body: string }
+    reset: string
+    on: string
+    off: string
+  }
   workshop: {
     title: string
     subtitle: string
@@ -231,6 +245,7 @@ const en: Dictionary = {
     pdfToMd: 'PDF · MD',
     mdToPdf: 'MD · PDF',
     about: 'About',
+    preferences: 'Preferences',
     mainLabel: 'Main navigation',
   },
   a11y: {
@@ -445,6 +460,34 @@ const en: Dictionary = {
   languageSwitcher: {
     label: 'Language',
   },
+  preferences: {
+    title: 'Preferences',
+    subtitle: 'Per-browser. Nothing leaves this device.',
+    sections: { defaults: 'defaults', ui: 'UI', privacy: 'privacy' },
+    defaultLanguage: {
+      label: 'Default language',
+      hint: 'Falls back if your browser locale is unsupported.',
+    },
+    defaultPdfTheme: {
+      label: 'Default PDF theme',
+      hint: 'Applied to every new Markdown to PDF batch.',
+    },
+    reduceMotion: {
+      label: 'Reduce motion',
+      hint: 'Skip fades and transitions. On automatically if your system asks.',
+    },
+    darkMode: {
+      label: 'Dark mode',
+      hint: 'Switch between the light and dark theme.',
+    },
+    privacy: {
+      badge: 'No telemetry. No cookies. No accounts.',
+      body: 'md-bridge runs entirely in your browser and on your own server. Nothing is sent anywhere.',
+    },
+    reset: 'Reset all preferences',
+    on: 'On',
+    off: 'Off',
+  },
   workshop: {
     title: 'Language Workshop',
     subtitle:
@@ -473,6 +516,7 @@ const pt: Dictionary = {
     pdfToMd: 'PDF · MD',
     mdToPdf: 'MD · PDF',
     about: 'Sobre',
+    preferences: 'Preferências',
     mainLabel: 'Navegação principal',
   },
   a11y: {
@@ -687,6 +731,34 @@ const pt: Dictionary = {
   languageSwitcher: {
     label: 'Idioma',
   },
+  preferences: {
+    title: 'Preferências',
+    subtitle: 'Por navegador. Nada sai deste dispositivo.',
+    sections: { defaults: 'padrões', ui: 'interface', privacy: 'privacidade' },
+    defaultLanguage: {
+      label: 'Idioma padrão',
+      hint: 'Usado quando o idioma do navegador não é suportado.',
+    },
+    defaultPdfTheme: {
+      label: 'Tema padrão do PDF',
+      hint: 'Aplicado a cada novo lote de Markdown para PDF.',
+    },
+    reduceMotion: {
+      label: 'Reduzir animações',
+      hint: 'Corta fades e transições. Liga sozinho se o seu sistema pedir.',
+    },
+    darkMode: {
+      label: 'Modo escuro',
+      hint: 'Alterna entre o tema claro e o escuro.',
+    },
+    privacy: {
+      badge: 'Sem telemetria. Sem cookies. Sem contas.',
+      body: 'O md-bridge roda inteiro no seu navegador e no seu próprio servidor. Nada é enviado a lugar nenhum.',
+    },
+    reset: 'Limpar todas as preferências',
+    on: 'Ligado',
+    off: 'Desligado',
+  },
   workshop: {
     title: 'Oficina de Idiomas',
     subtitle:
@@ -715,6 +787,7 @@ const es: Dictionary = {
     pdfToMd: 'PDF · MD',
     mdToPdf: 'MD · PDF',
     about: 'Acerca de',
+    preferences: 'Preferencias',
     mainLabel: 'Navegación principal',
   },
   a11y: {
@@ -928,6 +1001,34 @@ const es: Dictionary = {
   },
   languageSwitcher: {
     label: 'Idioma',
+  },
+  preferences: {
+    title: 'Preferencias',
+    subtitle: 'Por navegador. Nada sale de este dispositivo.',
+    sections: { defaults: 'valores por defecto', ui: 'interfaz', privacy: 'privacidad' },
+    defaultLanguage: {
+      label: 'Idioma predeterminado',
+      hint: 'Se usa cuando el idioma del navegador no es compatible.',
+    },
+    defaultPdfTheme: {
+      label: 'Tema de PDF predeterminado',
+      hint: 'Se aplica a cada nuevo lote de Markdown a PDF.',
+    },
+    reduceMotion: {
+      label: 'Reducir movimiento',
+      hint: 'Omite fundidos y transiciones. Se activa solo si tu sistema lo pide.',
+    },
+    darkMode: {
+      label: 'Modo oscuro',
+      hint: 'Alterna entre el tema claro y el oscuro.',
+    },
+    privacy: {
+      badge: 'Sin telemetría. Sin cookies. Sin cuentas.',
+      body: 'md-bridge se ejecuta por completo en tu navegador y en tu propio servidor. Nada se envía a ningún sitio.',
+    },
+    reset: 'Restablecer todas las preferencias',
+    on: 'Activado',
+    off: 'Desactivado',
   },
   workshop: {
     title: 'Taller de Idiomas',

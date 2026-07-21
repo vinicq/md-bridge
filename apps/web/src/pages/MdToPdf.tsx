@@ -14,12 +14,14 @@ import { useBatchZip } from '../hooks/useBatchZip'
 import { useThemes } from '../hooks/useThemes'
 import { useTranslation } from '../i18n'
 import { convertMdToPdf } from '../lib/api'
-
-const THEME_STORAGE_KEY = 'md-bridge:md-to-pdf:theme'
+import { readPrefs, writePrefs } from '../lib/prefs'
 
 function initialTheme(): string {
   if (typeof window === 'undefined') return 'default'
-  return window.localStorage.getItem(THEME_STORAGE_KEY) || 'default'
+  // The MD→PDF theme is the `defaultPdfTheme` in the unified prefs store (#64);
+  // the preferences page edits the same value. readPrefs migrates the legacy
+  // `md-bridge:md-to-pdf:theme` key.
+  return readPrefs().defaultPdfTheme
 }
 
 export function MdToPdf() {
@@ -88,9 +90,10 @@ export function MdToPdf() {
     }),
   })
 
-  // Persist the picked theme so it survives a page reload (#24).
+  // Persist the picked theme so it survives a page reload (#24), now in the
+  // unified prefs store (#64).
   useEffect(() => {
-    if (typeof window !== 'undefined') window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+    if (typeof window !== 'undefined') writePrefs({ defaultPdfTheme: theme })
   }, [theme])
 
   // Re-run the queue when the effective theme changes so the preview reflects

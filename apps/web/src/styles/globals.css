@@ -263,3 +263,15 @@ pre {
     scroll-behavior: auto !important;
   }
 }
+
+/* Manual override from the preferences page (#64). Mirrors the @media block so
+   the toggle reduces motion even when the OS does not ask. Following the OS is
+   the floor (the @media above); this only adds reduction, never forces motion. */
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
