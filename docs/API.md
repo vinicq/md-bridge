@@ -90,9 +90,26 @@ Convert a PDF into structured Markdown using deterministic heuristics.
 - `lang` (default `"pt-BR"`): informational tag stored in the front matter.
 
 The converter accepts more options than shown here (blockquote detection,
-autolinks, footnote pairing, smart typography, task-list detection, and others);
-each defaults to preserving byte-identical output. See
-`packages/pdf-to-markdown/scripts/convert.py --help` for the full CLI surface.
+autolinks, footnote pairing, smart typography, task-list detection, and others).
+The 0.10.0 heuristics join the same opt-in family, each off by default so output
+stays byte-identical:
+
+- `table_column_align`: emit GFM alignment markers in the table separator (#175).
+- `tight_loose_lists` (with `list_loose_threshold`): keep a PDF list's tight or
+  loose spacing (#168).
+- `image_width_hints`: emit each image's source width as a `{width=N}` hint (#169).
+- `image_link_anchors`: wrap an image in its click-action link as
+  `[![alt](src)](target)` (#170).
+- `nested_ordered_lists`: keep a nested ordered sublist's own start and indent it
+  to nest in the renderer (#194).
+- `multiline_table_format` (`pipe` or `grid`): emit a Pandoc grid table for a
+  table with a multi-line cell; rendering it back needs the `grid-tables` extra
+  (#166).
+- `detect_definition_lists` (with `definition_list_max_term_length` and
+  `definition_list_min_indent_pt`): emit `Term` / `: definition` for a glossary
+  layout (#161).
+
+See `packages/pdf-to-markdown/scripts/convert.py --help` for the full CLI surface.
 
 ### Example: minimal
 

@@ -16,9 +16,10 @@ The canonical Markdown dialect the converters target (CommonMark 0.31.2 plus a n
 | Highlight annotation | Highlighter pen over text | Opt-in: `--extract-highlights` emits `==text==` (rendered as `<mark>`) |
 | Alignment | Left, center, right, justify | Partial (HTML or GFM tables only) |
 | Spacing, indent | Line spacing, first-line indent, tabs | No semantic |
-| Lists | Bullets, numbered, multi-level | Yes |
-| Tables | Headers, cells, merged cells | Yes for simple; merged cells need rework |
-| Images | Inline images | Yes (`![]()`) |
+| Lists | Bullets, numbered, multi-level | Yes; `--tight-loose-lists` keeps tight/loose spacing (#168), `--nested-ordered-lists` keeps a nested ordered sublist's own start and indent (#194) |
+| Tables | Headers, cells, merged cells | Yes for simple; `--table-column-align` emits GFM alignment (#175); `--multiline-table-format=grid` emits a Pandoc grid table so a multi-line cell survives (#166, needs the `grid-tables` extra to render back) |
+| Definition lists | Glossary term + indented definition | Opt-in: `--detect-definition-lists` emits `Term` / `: definition` (rendered as `<dl>`) for a run of at least two pairs (#161) |
+| Images | Inline images | Yes (`![]()`); `--image-width-hints` emits `{width=N}` (#169); `--image-link-anchors` keeps a click-through link as `[![alt](src)](target)` (#170) |
 | Shapes, SmartArt | Drawings, diagrams | No (rasterize as image) |
 | Text boxes | Floating boxes | Partial |
 | Columns | Multi-column layout | No |
