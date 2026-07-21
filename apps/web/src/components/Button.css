@@ -93,3 +93,9 @@
     border-right-color: currentColor;
   }
 }
+
+/* Same static fallback for the manual Reduce-motion toggle (#64/#447). */
+html[data-reduce-motion="true"] .btn__spinner {
+  border-style: dotted;
+  border-right-color: currentColor;
+}

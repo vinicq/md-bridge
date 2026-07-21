@@ -96,31 +96,6 @@
   text-align: left;
 }
 
-/* Accent swatches (role=radiogroup) */
-.pref-swatches {
-  display: flex;
-  gap: var(--s-2);
-}
-
-.pref-swatch {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid var(--c-ink-soft);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  color: #fff;
-  font-size: 12px;
-}
-
-.pref-swatch.is-on {
-  border-color: var(--c-ink);
-  box-shadow: 0 0 0 2px var(--c-bg), 0 0 0 4px var(--c-ink);
-}
-
 /* Privacy badge */
 .pref-badge {
   display: flex;
@@ -159,4 +134,17 @@
 
 .preferences__actions {
   margin-top: var(--s-4);
+}
+
+/* Narrow phones: stack label above the control so the segmented controls and
+   longer PT/ES labels never overflow or clip the 1fr auto grid (#447 review). */
+@media (max-width: 400px) {
+  .pref-row {
+    grid-template-columns: 1fr;
+    gap: var(--s-2);
+  }
+
+  .pref-row__control {
+    justify-self: start;
+  }
 }

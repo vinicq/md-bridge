@@ -31,3 +31,15 @@
     display: none;
   }
 }
+
+/* The manual Reduce-motion toggle (#64) must reach the same static fallback,
+   not only the OS @media, or the spinner freezes as a partial arc (#447). */
+html[data-reduce-motion="true"] .spinner {
+  border: 2px dotted currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+html[data-reduce-motion="true"] .spinner svg {
+  display: none;
+}

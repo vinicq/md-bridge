@@ -3,10 +3,9 @@ import { test, expect } from '@playwright/test'
 /**
  * Preferences page (#64).
  *
- * Two persistence paths across the store boundaries the page touches: dark mode
- * (owned by the theme provider) survives a round-trip through another route, and
- * the accent colour (owned by the unified prefs store) survives a full reload as
- * the `--c-accent` variable on :root.
+ * Dark mode (owned by the theme provider) toggled here survives a round-trip
+ * through another route, and the manual reduce-motion toggle sets the
+ * `data-reduce-motion` flag on <html> that the static spinner fallbacks read.
  */
 
 test.beforeEach(async ({ context }) => {
@@ -35,18 +34,11 @@ test('dark mode toggled here persists across navigation', async ({ page }) => {
   )
 })
 
-test('accent colour applies to :root and survives a reload', async ({ page }) => {
+test('reduce-motion toggle sets the data-reduce-motion flag on <html>', async ({ page }) => {
   await page.goto('/preferences')
 
-  await page.getByRole('radio', { name: /green/i }).click()
-  const accentAfterPick = await page.evaluate(() =>
-    document.documentElement.style.getPropertyValue('--c-accent').trim(),
-  )
-  expect(accentAfterPick).toBe('#2e7d4a')
-
-  await page.reload()
-  const accentAfterReload = await page.evaluate(() =>
-    document.documentElement.style.getPropertyValue('--c-accent').trim(),
-  )
-  expect(accentAfterReload).toBe('#2e7d4a')
+  const motionSwitch = page.getByRole('switch', { name: /reduce motion/i })
+  await motionSwitch.click()
+  await expect(motionSwitch).toHaveAttribute('aria-checked', 'true')
+  await expect(page.locator('html')).toHaveAttribute('data-reduce-motion', 'true')
 })

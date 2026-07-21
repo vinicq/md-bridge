@@ -3,22 +3,20 @@ import { useTranslation } from '../i18n'
 import { useTheme } from '../theme'
 import { usePrefs } from '../hooks/usePrefs'
 import { useThemes } from '../hooks/useThemes'
-import { clearAllPrefs, PAGE_SIZES, type PageSize } from '../lib/prefs'
+import { clearAllPrefs } from '../lib/prefs'
 import { Button } from '../components/Button'
 import { Segmented } from '../components/Segmented'
 import { ThemePicker } from '../components/ThemePicker'
 import type { Locale } from '../i18n/dictionaries'
 import './Preferences.css'
 
-const ACCENTS = [
-  { value: '#c8362f', key: 'brand' },
-  { value: '#1f5e9e', key: 'blue' },
-  { value: '#2e7d4a', key: 'green' },
-  { value: '#1a1a1a', key: 'graphite' },
-] as const
-
-const AUDIT_REPORT_URL =
-  'https://github.com/vinicq/md-bridge/blob/main/scripts/audit-deps.py'
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    !!window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
 
 function Row({
   label,
@@ -77,6 +75,11 @@ export function Preferences() {
   const { themes, status, error } = useThemes()
   const p = t.preferences
 
+  // The switch reflects the effective state: an explicit manual override, or
+  // the OS request when the preference follows the OS (null). Announcing "Off"
+  // while the OS reduces motion would lie to the screen reader (4.1.2).
+  const reduceMotionOn = prefs.reduceMotion ?? prefersReducedMotion()
+
   function handleReset() {
     clearAllPrefs()
     // Reinitialize both providers and the prefs store from a clean slate. The
@@ -122,33 +125,6 @@ export function Preferences() {
             />
           }
         />
-
-        <Row
-          label={p.pageSize.label}
-          hint={p.pageSize.hint}
-          control={
-            <Segmented<PageSize>
-              label={p.pageSize.label}
-              options={PAGE_SIZES.map((size) => ({ value: size, label: size }))}
-              value={prefs.pageSize}
-              onChange={(pageSize) => set({ pageSize })}
-            />
-          }
-        />
-
-        <Row
-          label={p.previewNewTab.label}
-          hint={p.previewNewTab.hint}
-          control={
-            <Switch
-              checked={prefs.previewNewTab}
-              onChange={(previewNewTab) => set({ previewNewTab })}
-              label={p.previewNewTab.label}
-              onText={p.on}
-              offText={p.off}
-            />
-          }
-        />
       </section>
 
       <section className="pref-section" aria-label={p.sections.ui}>
@@ -169,41 +145,11 @@ export function Preferences() {
         />
 
         <Row
-          label={p.accent.label}
-          hint={p.accent.hint}
-          control={
-            <div className="pref-swatches" role="radiogroup" aria-label={p.accent.label}>
-              {ACCENTS.map(({ value, key }) => {
-                const selected = prefs.accent.toLowerCase() === value
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    aria-label={p.accent.swatch[key]}
-                    className={`pref-swatch ${selected ? 'is-on' : ''}`}
-                    style={{ background: value }}
-                    onClick={() => set({ accent: value })}
-                  >
-                    {selected && (
-                      <span className="pref-swatch__check" aria-hidden="true">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          }
-        />
-
-        <Row
           label={p.reduceMotion.label}
           hint={p.reduceMotion.hint}
           control={
             <Switch
-              checked={prefs.reduceMotion === true}
+              checked={reduceMotionOn}
               onChange={(on) => set({ reduceMotion: on ? true : null })}
               label={p.reduceMotion.label}
               onText={p.on}
@@ -221,12 +167,7 @@ export function Preferences() {
           </span>
           <div>
             <b className="pref-badge__title">{p.privacy.badge}</b>
-            <p className="pref-badge__body">
-              {p.privacy.verified}{' '}
-              <a href={AUDIT_REPORT_URL} target="_blank" rel="noreferrer">
-                {p.privacy.viewReport} →
-              </a>
-            </p>
+            <p className="pref-badge__body">{p.privacy.body}</p>
           </div>
         </div>
       </section>

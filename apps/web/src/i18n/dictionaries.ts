@@ -211,16 +211,9 @@ interface Dictionary {
     sections: { defaults: string; ui: string; privacy: string }
     defaultLanguage: { label: string; hint: string }
     defaultPdfTheme: { label: string; hint: string }
-    pageSize: { label: string; hint: string }
-    previewNewTab: { label: string; hint: string }
-    accent: {
-      label: string
-      hint: string
-      swatch: { brand: string; blue: string; green: string; graphite: string }
-    }
     reduceMotion: { label: string; hint: string }
     darkMode: { label: string; hint: string }
-    privacy: { badge: string; verified: string; viewReport: string }
+    privacy: { badge: string; body: string }
     reset: string
     on: string
     off: string
@@ -479,19 +472,6 @@ const en: Dictionary = {
       label: 'Default PDF theme',
       hint: 'Applied to every new Markdown to PDF batch.',
     },
-    pageSize: {
-      label: 'Default page size',
-      hint: 'A4 outside the US, Letter inside.',
-    },
-    previewNewTab: {
-      label: 'Open PDF preview in a new tab',
-      hint: 'Off keeps the inline preview.',
-    },
-    accent: {
-      label: 'Accent colour',
-      hint: 'Brand red by default.',
-      swatch: { brand: 'Brand red', blue: 'Blue', green: 'Green', graphite: 'Graphite' },
-    },
     reduceMotion: {
       label: 'Reduce motion',
       hint: 'Skip fades and transitions. On automatically if your system asks.',
@@ -502,8 +482,7 @@ const en: Dictionary = {
     },
     privacy: {
       badge: 'No telemetry. No cookies. No accounts.',
-      verified: 'Verified at build by scripts/audit-deps.py.',
-      viewReport: 'View report',
+      body: 'md-bridge runs entirely in your browser and on your own server. Nothing is sent anywhere.',
     },
     reset: 'Reset all preferences',
     on: 'On',
@@ -764,19 +743,6 @@ const pt: Dictionary = {
       label: 'Tema padrão do PDF',
       hint: 'Aplicado a cada novo lote de Markdown para PDF.',
     },
-    pageSize: {
-      label: 'Tamanho de página padrão',
-      hint: 'A4 fora dos EUA, Letter dentro.',
-    },
-    previewNewTab: {
-      label: 'Abrir a prévia do PDF em nova aba',
-      hint: 'Desligado mantém a prévia embutida.',
-    },
-    accent: {
-      label: 'Cor de destaque',
-      hint: 'Vermelho da marca por padrão.',
-      swatch: { brand: 'Vermelho da marca', blue: 'Azul', green: 'Verde', graphite: 'Grafite' },
-    },
     reduceMotion: {
       label: 'Reduzir animações',
       hint: 'Corta fades e transições. Liga sozinho se o seu sistema pedir.',
@@ -787,8 +753,7 @@ const pt: Dictionary = {
     },
     privacy: {
       badge: 'Sem telemetria. Sem cookies. Sem contas.',
-      verified: 'Verificado no build por scripts/audit-deps.py.',
-      viewReport: 'Ver relatório',
+      body: 'O md-bridge roda inteiro no seu navegador e no seu próprio servidor. Nada é enviado a lugar nenhum.',
     },
     reset: 'Limpar todas as preferências',
     on: 'Ligado',
@@ -1049,19 +1014,6 @@ const es: Dictionary = {
       label: 'Tema de PDF predeterminado',
       hint: 'Se aplica a cada nuevo lote de Markdown a PDF.',
     },
-    pageSize: {
-      label: 'Tamaño de página predeterminado',
-      hint: 'A4 fuera de EE. UU., Letter dentro.',
-    },
-    previewNewTab: {
-      label: 'Abrir la vista previa del PDF en una pestaña nueva',
-      hint: 'Apagado mantiene la vista previa incrustada.',
-    },
-    accent: {
-      label: 'Color de acento',
-      hint: 'Rojo de marca por defecto.',
-      swatch: { brand: 'Rojo de marca', blue: 'Azul', green: 'Verde', graphite: 'Grafito' },
-    },
     reduceMotion: {
       label: 'Reducir movimiento',
       hint: 'Omite fundidos y transiciones. Se activa solo si tu sistema lo pide.',
@@ -1072,8 +1024,7 @@ const es: Dictionary = {
     },
     privacy: {
       badge: 'Sin telemetría. Sin cookies. Sin cuentas.',
-      verified: 'Verificado en la compilación por scripts/audit-deps.py.',
-      viewReport: 'Ver informe',
+      body: 'md-bridge se ejecuta por completo en tu navegador y en tu propio servidor. Nada se envía a ningún sitio.',
     },
     reset: 'Restablecer todas las preferencias',
     on: 'Activado',

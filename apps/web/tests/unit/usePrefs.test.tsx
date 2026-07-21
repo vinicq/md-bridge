@@ -1,11 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it } from 'vitest'
-import {
-  applyPrefsToDocument,
-  clearAllPrefs,
-  readPrefs,
-  writePrefs,
-  DEFAULT_ACCENT,
-} from '../../src/lib/prefs'
+import { applyPrefsToDocument, clearAllPrefs, readPrefs, writePrefs } from '../../src/lib/prefs'
 
 const PREFS_KEY = 'md-bridge:prefs'
 
@@ -13,29 +7,25 @@ describe('prefs store (#64)', () => {
   beforeEach(() => {
     window.localStorage.clear()
     document.documentElement.removeAttribute('data-reduce-motion')
-    document.documentElement.style.removeProperty('--c-accent')
   })
   afterEach(() => {
     window.localStorage.clear()
     document.documentElement.removeAttribute('data-reduce-motion')
-    document.documentElement.style.removeProperty('--c-accent')
   })
 
   it('round-trips a written patch through the unified key', () => {
-    writePrefs({ accent: '#123456', pageSize: 'Letter' })
+    writePrefs({ defaultPdfTheme: 'academic', reduceMotion: true })
     const prefs = readPrefs()
-    expect(prefs.accent).toBe('#123456')
-    expect(prefs.pageSize).toBe('Letter')
-    expect(JSON.parse(window.localStorage.getItem(PREFS_KEY)!).accent).toBe('#123456')
+    expect(prefs.defaultPdfTheme).toBe('academic')
+    expect(prefs.reduceMotion).toBe(true)
+    expect(JSON.parse(window.localStorage.getItem(PREFS_KEY)!).defaultPdfTheme).toBe('academic')
   })
 
   it('defaults fill fields absent from a partial stored blob (merge on read)', () => {
-    // A blob written by an older release that only knew about `accent`.
-    window.localStorage.setItem(PREFS_KEY, JSON.stringify({ accent: '#0000ff' }))
+    // A blob written by an older release that only knew about defaultPdfTheme.
+    window.localStorage.setItem(PREFS_KEY, JSON.stringify({ defaultPdfTheme: 'academic' }))
     const prefs = readPrefs()
-    expect(prefs.accent).toBe('#0000ff')
-    expect(prefs.pageSize).toBe('A4')
-    expect(prefs.previewNewTab).toBe(false)
+    expect(prefs.defaultPdfTheme).toBe('academic')
     expect(prefs.reduceMotion).toBeNull()
   })
 
@@ -66,29 +56,16 @@ describe('prefs store (#64)', () => {
     expect(window.localStorage.getItem('unrelated:key')).toBe('keep')
   })
 
-  it('applyPrefsToDocument writes the accent variable and reduce-motion flag', () => {
+  it('applyPrefsToDocument sets the reduce-motion flag only when forced true', () => {
     const root = document.documentElement
-    applyPrefsToDocument({
-      defaultPdfTheme: 'default',
-      pageSize: 'A4',
-      previewNewTab: false,
-      accent: '#abcdef',
-      reduceMotion: true,
-    })
-    expect(root.style.getPropertyValue('--c-accent')).toBe('#abcdef')
+    applyPrefsToDocument({ defaultPdfTheme: 'default', reduceMotion: true })
     expect(root.getAttribute('data-reduce-motion')).toBe('true')
   })
 
   it('applyPrefsToDocument removes the reduce-motion flag when following the OS', () => {
     const root = document.documentElement
     root.setAttribute('data-reduce-motion', 'true')
-    applyPrefsToDocument({
-      defaultPdfTheme: 'default',
-      pageSize: 'A4',
-      previewNewTab: false,
-      accent: DEFAULT_ACCENT,
-      reduceMotion: null,
-    })
+    applyPrefsToDocument({ defaultPdfTheme: 'default', reduceMotion: null })
     expect(root.hasAttribute('data-reduce-motion')).toBe(false)
   })
 })

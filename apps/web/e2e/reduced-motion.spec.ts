@@ -58,6 +58,29 @@ test('anchor transition-duration collapses with reduced motion', async ({ page }
   expect(toMs(transitionDuration)).toBeLessThan(NEAR_ZERO_MS)
 })
 
+/**
+ * O toggle manual da pagina de preferencias (#64) deve alcancar as mesmas
+ * regras que o @media, via `html[data-reduce-motion="true"]`. Aqui o SO NAO
+ * pede reduce (`no-preference`), entao so o toggle explica a supressao: se o
+ * seletor manual nao existisse, a animacao seguiria rodando.
+ */
+test('manual reduce-motion toggle suppresses animation without an OS request', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.goto('/preferences')
+
+  await page.getByRole('switch', { name: /reduce motion/i }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-reduce-motion', 'true')
+
+  const animationDuration = await page
+    .locator('.page')
+    .first()
+    .evaluate((el) => getComputedStyle(el).animationDuration)
+
+  expect(toMs(animationDuration)).toBeLessThan(NEAR_ZERO_MS)
+})
+
 test('spinner remains visible (dotted ring fallback) under reduced motion', async ({ page }) => {
   // /convert/md-to-pdf importa BatchPanel, que importa Spinner. Sem isso,
   // a CSS de Spinner nao seria carregada (Vite faz code-splitting de CSS

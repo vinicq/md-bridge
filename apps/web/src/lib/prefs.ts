@@ -2,10 +2,10 @@
  *
  * locale and theme already persist through their own providers
  * (`md-bridge:locale`, `md-bridge:theme`) and are edited through those
- * contexts; unifying those two into this key is a follow-up. Everything the
- * preferences page introduces (plus the MD→PDF default theme) lives here under
- * one `md-bridge:prefs` key, merged over the defaults on read so a field added
- * in a later release never breaks an older stored blob.
+ * contexts; unifying those two into this key is a follow-up. The settings the
+ * preferences page owns (plus the MD→PDF default theme) live here under one
+ * `md-bridge:prefs` key, merged over the defaults on read so a field added in a
+ * later release never breaks an older stored blob.
  *
  * The first read migrates the legacy `md-bridge:md-to-pdf:theme` key into the
  * unified key and leaves the original in place for one release (backwards
@@ -14,25 +14,14 @@
 const PREFS_KEY = 'md-bridge:prefs'
 const LEGACY_PDF_THEME_KEY = 'md-bridge:md-to-pdf:theme'
 
-export type PageSize = 'A4' | 'Letter' | 'Legal'
-export const PAGE_SIZES: readonly PageSize[] = ['A4', 'Letter', 'Legal']
-
-export const DEFAULT_ACCENT = '#c8362f'
-
 export interface Prefs {
   defaultPdfTheme: string
-  pageSize: PageSize
-  previewNewTab: boolean
-  accent: string
   /** null follows the OS `prefers-reduced-motion`; true/false is a manual override. */
   reduceMotion: boolean | null
 }
 
 export const DEFAULTS: Prefs = {
   defaultPdfTheme: 'default',
-  pageSize: 'A4',
-  previewNewTab: false,
-  accent: DEFAULT_ACCENT,
   reduceMotion: null,
 }
 
@@ -85,11 +74,10 @@ export function clearAllPrefs(): void {
   doomed.forEach((key) => ls.removeItem(key))
 }
 
-/** Apply the document-level effects: accent CSS variable and reduce-motion flag. */
+/** Apply the document-level effect: the reduce-motion flag on <html>. */
 export function applyPrefsToDocument(prefs: Prefs): void {
   if (typeof document === 'undefined') return
   const root = document.documentElement
-  root.style.setProperty('--c-accent', prefs.accent)
   // Only `true` forces reduction; null (follow OS) and false (force motion, not
   // wired to the UI yet) both leave the OS `@media` rule as the sole authority.
   if (prefs.reduceMotion === true) {
