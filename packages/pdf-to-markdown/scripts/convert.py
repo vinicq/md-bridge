@@ -176,10 +176,19 @@ def _autolink_escape(text: str, *, urls: bool, emails: bool) -> str:
 # destination allows one level of balanced parens, so a Wikipedia-style
 # `.../Foo_(bar)` is captured whole instead of truncating at the first `)`.
 # Autolinks (`<url>`, #157) are a different syntax and are left untouched.
+#
+# A click-through image `[![alt](src){attr}](target)` (#170) is matched by its
+# own arm ahead of `image`/`link`: without it the `link` arm would swallow the
+# leading `[![alt](src)` and collapse the image SOURCE as if it were a link URL,
+# converting the image to reference style (images must be skipped) and leaving
+# repeated click TARGETS uncollapsed. This arm collapses the external target and
+# never the image source. The optional `{...}` is the image's attr-list (#165).
 _REF_LINK_TOKEN_RE = re.compile(
     r"(?P<fence>^(?P<fence_marker>```|~~~)[^\n]*\n.*?^(?P=fence_marker)[^\n]*$)"
     r"|(?P<indented>^(?: {4}|\t)[^\n]*$)"
     r"|(?P<code>`+[^`]*`+)"
+    r"|(?P<linked_image>\[(?P<li_text>!\[[^\]]*\]\([^)]*\)(?:\{[^}]*\})?)\]"
+    r"\((?P<li_url>(?:[^()\s]|\([^()\s]*\))+)\))"
     r"|(?P<image>!\[[^\]]*\]\([^)]*\))"
     r"|(?P<link>\[(?P<link_text>[^\]]*)\]\((?P<link_url>(?:[^()\s]|\([^()\s]*\))+)\))",
     re.MULTILINE | re.DOTALL,
@@ -199,9 +208,12 @@ def _collapse_reference_links(md: str, threshold: int) -> str:
     counts: dict[str, int] = {}
     order: list[str] = []
     for m in _REF_LINK_TOKEN_RE.finditer(md):
-        if m.group("link") is None:
+        # A linked image contributes its external click target (#170); a plain
+        # link contributes its URL. Every other arm (code, image, ...) is skipped
+        # so an image source is never collapsed.
+        url = m.group("li_url") if m.group("linked_image") is not None else m.group("link_url")
+        if url is None:
             continue
-        url = m.group("link_url")
         if url not in counts:
             counts[url] = 0
             order.append(url)
@@ -214,6 +226,11 @@ def _collapse_reference_links(md: str, threshold: int) -> str:
         return md
 
     def _rewrite(m: re.Match[str]) -> str:
+        if m.group("linked_image") is not None:
+            rid = ids.get(m.group("li_url"))
+            # `[![alt](src){attr}][id]`: the image stays inline as the link text,
+            # only the external target becomes a reference.
+            return m.group(0) if rid is None else f"[{m.group('li_text')}][{rid}]"
         if m.group("link") is None:
             return m.group(0)
         rid = ids.get(m.group("link_url"))
@@ -247,10 +264,22 @@ _TYPO_PROTECT_RE = re.compile(
     # line-bounded with [^\n] so DOTALL's `.` cannot run past the line. The
     # link/image destinations allow one level of balanced parens, mirroring
     # `_REF_LINK_TOKEN_RE`, so a URL like `Foo_(bar)` is captured whole (#171).
+    # The linked_image arm sits ahead of image/link so a click-through image
+    # `[![alt](src){attr}](target)` (#170) is protected whole, target URL
+    # included; otherwise the link arm captures only `[![alt](src)` and the
+    # transforms fold en/em-dash and quotes inside the click target URL.
     r"(?P<fence>^(?P<fence_marker>```|~~~)[^\n]*\n.*?^(?P=fence_marker)[^\n]*$)"
     r"|(?P<indented>^(?: {4}|\t)[^\n]*$)"
+    # A Pandoc grid table (#166) is protected whole: markdown-grids requires
+    # every line to be exactly equal length, so folding a `…`/en-dash inside a
+    # cell after the borders are sized would lengthen that line and make the
+    # renderer drop the table to plain text. Match the top border then the
+    # following border/content lines.
+    r"|(?P<gridtable>^\+[-=+]+\+\n(?:[|+][^\n]*\n?)+)"
     r"|(?P<refdef>^ {0,3}\[[^\]]+\]:[^\n]+$)"
     r"|(?P<code>`+[^`]*`+)"
+    r"|(?P<linked_image>\[!\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))+\)(?:\{[^}]*\})?\]"
+    r"\((?:[^()\s]|\([^()\s]*\))+\))"
     r"|(?P<image>!\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))+\))"
     r"|(?P<link>\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))+\))"
     r"|(?P<autolink><[^>\s]+>)",
@@ -710,13 +739,20 @@ class DocProfile:
     autolink_urls: bool = False  # opt-in: wrap bare http(s) URLs in body text as autolinks (#157)
     extract_highlights: bool = False  # opt-in: emit ==text== from PDF text-highlight annotations (#162)
     emit_figure_anchors: bool = False  # opt-in: emit {#fig-N .figure} on captioned figures (#165)
+    image_link_anchors: bool = False  # opt-in: wrap an extracted image in its click-action link (#170)
     figure_ids_used: set = field(default_factory=set)  # doc-level dedupe for fig-N ids (#165)
     autolink_emails: bool = False  # opt-in: wrap bare email addresses in body text as autolinks (#157)
     extract_abbreviations: bool = False  # opt-in: emit *[ABBR]: defs from a glossary section (#163)
     caption_alt_text: bool = False  # opt-in: use a caption line below an image as its alt text (#149)
+    image_width_hints: bool = False  # opt-in: emit image bbox width in an attr-list (#169)
     table_column_align: bool = False  # opt-in: detect cell alignment and emit GFM markers in separator row (#175)
     tight_loose_lists: bool = False  # opt-in: preserve list spacing as CommonMark tight/loose lists (#168)
     list_loose_threshold: float = 1.5
+    nested_ordered_lists: bool = False  # opt-in: per-level start + 4-space indent for nested ordered lists (#194)
+    multiline_table_format: str = "pipe"  # "grid" auto-promotes multi-line-cell tables to Pandoc grid tables (#166)
+    detect_definition_lists: bool = False  # opt-in: term + indented definition -> `Term\n: def` (#161)
+    definition_list_max_term_length: int = 80  # a def-list term must be at most this many chars (#161)
+    definition_list_min_indent_pt: float = 20.0  # the definition must be indented at least this far past the term (#161)
     detect_task_lists: bool = False  # opt-in (#172); read here so #168 spacing treats checkbox items as list items
     task_list_extended: bool = False  # opt-in: also recognize the todo-md [-] marker (#172)
     size_histogram: dict = field(default_factory=dict)  # rounded size -> char count, for clustering
@@ -899,10 +935,8 @@ def parse_block(raw_block: dict) -> Block | None:
     return Block(lines=lines, bbox=bbox)
 
 
-def annotate_spans_with_links(blocks: list[Block], page_links: list[dict]) -> None:
-    """Attach link URIs to spans whose bbox falls inside a link's bbox."""
-    if not page_links:
-        return
+def _link_targets(page_links: list[dict]) -> list[tuple[float, float, float, float, str]]:
+    """Normalize external and internal PDF links into target rectangles."""
     targets = []
     for link in page_links:
         rect = link.get("from")
@@ -924,6 +958,12 @@ def annotate_spans_with_links(blocks: list[Block], page_links: list[dict]) -> No
         if not uri:
             continue
         targets.append((tx0, ty0, tx1, ty1, uri))
+    return targets
+
+
+def annotate_spans_with_links(blocks: list[Block], page_links: list[dict]) -> None:
+    """Attach link URIs to spans whose bbox falls inside a link's bbox."""
+    targets = _link_targets(page_links)
     if not targets:
         return
     for block in blocks:
@@ -936,6 +976,28 @@ def annotate_spans_with_links(blocks: list[Block], page_links: list[dict]) -> No
                     if tx0 - 1 <= scx <= tx1 + 1 and ty0 - 1 <= scy <= ty1 + 1:
                         span.link = uri
                         break
+
+
+_IMAGE_LINK_EDGE_TOLERANCE = 1.0
+
+
+def image_link_uri(
+    image_bbox: tuple[float, float, float, float], page_links: list[dict]
+) -> str | None:
+    """Return a URI when one PDF link covers the extracted image."""
+    ix0, iy0, ix1, iy1 = image_bbox
+    if ix1 <= ix0 or iy1 <= iy0:
+        return None
+
+    for tx0, ty0, tx1, ty1, uri in _link_targets(page_links):
+        if (
+            tx0 <= ix0 + _IMAGE_LINK_EDGE_TOLERANCE
+            and ty0 <= iy0 + _IMAGE_LINK_EDGE_TOLERANCE
+            and tx1 >= ix1 - _IMAGE_LINK_EDGE_TOLERANCE
+            and ty1 >= iy1 - _IMAGE_LINK_EDGE_TOLERANCE
+        ):
+            return uri
+    return None
 
 
 # PyMuPDF's numeric type for a text-highlight annotation. getattr-gated so an
@@ -1568,12 +1630,99 @@ def _render_table_separators(alignment: list[str], column_count: int) -> str:
     return "| " + " | ".join(marker.get(alignment[i], "---") for i in range(column_count)) + " |"
 
 
+def _format_grid_table(raw_rows: list[list]) -> str:
+    """Render rows as a Pandoc grid table, keeping in-cell line breaks (#166).
+
+    A GFM pipe table cannot hold a cell that spans several lines, so a source
+    cell with a hard break collapses to one line (or breaks the row). A grid
+    table draws explicit `+---+` borders, so a multi-line cell survives; GitHub
+    and the shipped renderer (with the `grids` extension) render it the same as
+    a pipe table. markdown-grids reads column boundaries from the border `+`
+    positions, not from `|`, so a literal `|` inside a cell needs no escaping.
+    """
+    rows = [
+        ["\n".join(normalize_span_text(ln).rstrip() for ln in (c or "").split("\n")).strip("\n") for c in row]
+        for row in raw_rows
+    ]
+    width = max((len(r) for r in rows), default=0)
+    if not width:
+        return ""
+    rows = [r + [""] * (width - len(r)) for r in rows]
+    # Grid mode changes the SYNTAX, not the structural corrections: apply the
+    # same empty-column drop, duplicate-column merge, and continuation-row merge
+    # the pipe path runs, so a split column or wrapped row is fixed here too and
+    # grid mode does not emit bogus extra columns/rows (#166 review). Cells keep
+    # their in-cell newlines throughout; only these structural merges run.
+    keep_cols = [i for i in range(width) if any(r[i].strip() for r in rows)]
+    if not keep_cols:
+        return ""
+    rows = [[r[i] for i in keep_cols] for r in rows]
+    width = len(keep_cols)
+    merged_cols: list[list[str]] = [[r[0] for r in rows]]
+    for ci in range(1, width):
+        col = [r[ci] for r in rows]
+        prev = merged_cols[-1]
+        identical_or_subset = all(
+            (a == b) or (not a) or (not b) for a, b in zip(prev, col, strict=False)
+        )
+        if identical_or_subset and any(a == b and a for a, b in zip(prev, col, strict=False)):
+            merged_cols[-1] = [a or b for a, b in zip(prev, col, strict=False)]
+        else:
+            merged_cols.append(col)
+    rows = [list(t) for t in zip(*merged_cols, strict=False)]
+    if not rows:
+        return ""
+    cleaned: list[list[str]] = []
+    for r in rows:
+        if cleaned and not r[0].strip() and any(c.strip() for c in r):
+            for i, cell in enumerate(r):
+                if cell.strip():
+                    cleaned[-1][i] = (cleaned[-1][i] + " " + cell).strip()
+        else:
+            cleaned.append(list(r))
+    rows = cleaned
+    width = len(rows[0])
+    # Column width: the widest single line in any cell of that column (min 1),
+    # so every border `+` lands at the same column across the whole table.
+    col_w = [1] * width
+    for r in rows:
+        for i, cell in enumerate(r):
+            for line in cell.split("\n"):
+                col_w[i] = max(col_w[i], len(line))
+
+    def border(fill: str) -> str:
+        return "+" + "+".join(fill * (w + 2) for w in col_w) + "+"
+
+    def render_row(cells: list[str]) -> str:
+        split = [cell.split("\n") for cell in cells]
+        height = max(len(s) for s in split)
+        lines = []
+        for h in range(height):
+            fields = [
+                " " + (split[i][h] if h < len(split[i]) else "").ljust(col_w[i]) + " "
+                for i in range(width)
+            ]
+            lines.append("|" + "|".join(fields) + "|")
+        return "\n".join(lines)
+
+    out = [border("-"), render_row(rows[0]), border("=")]
+    for r in rows[1:]:
+        out.append(render_row(r))
+        out.append(border("-"))
+    return "\n".join(out)
+
+
 def render_table(table, profile: DocProfile | None = None, page_text: dict | None = None) -> str:
     """Render a PyMuPDF Table to a Markdown table.
 
     Drops columns that are empty across all rows, merges duplicate adjacent
     columns (PyMuPDF sometimes splits a single header cell into two), and
     merges rows that look like wrapped continuations of the previous row.
+
+    Under the opt-in `multiline_table_format="grid"`, a table that has any cell
+    spanning more than one line is emitted as a Pandoc grid table so the line
+    breaks survive (#166); a table whose cells are all single-line still emits a
+    GFM pipe table, so the common case (and the default) stays byte-identical.
     """
     try:
         rows = table.extract()
@@ -1581,6 +1730,15 @@ def render_table(table, profile: DocProfile | None = None, page_text: dict | Non
         return ""
     if not rows:
         return ""
+
+    if (
+        profile is not None
+        and getattr(profile, "multiline_table_format", "pipe") == "grid"
+        and any("\n" in (c or "") for row in rows for c in row)
+    ):
+        grid = _format_grid_table(rows)
+        if grid:
+            return grid
 
     rows = [[normalize_span_text((c or "").replace("\n", " ")).strip() for c in row] for row in rows]
     width = max(len(r) for r in rows)
@@ -2049,7 +2207,7 @@ def convert_page(
     except Exception:
         page_links = []
 
-    image_items: list[tuple[float, float, str]] = []
+    image_items: list[tuple[float, float, float, float, str]] = []
     if images_dir is not None or inline_images:
         image_items = extract_page_images(page, images_dir, pdf_stem, inline=inline_images)
 
@@ -2091,7 +2249,7 @@ def convert_page(
     anchor_claimed: set[int] = set()    # used for a figure anchor: still emitted as prose
     for top_y, bottom_y, left_x, right_x, rel in image_items:
         alt = ""
-        attr = ""
+        attr_tokens: list[str] = []
         # The caption line below the image feeds both the alt text (#149) and the
         # figure anchor id (#165), so find it once when either option is on.
         if profile.caption_alt_text or profile.emit_figure_anchors:
@@ -2121,7 +2279,7 @@ def convert_page(
                 if profile.emit_figure_anchors:
                     fid = _figure_anchor_id(best.text, profile.figure_ids_used)
                     if fid:
-                        attr = f"{{#{fid} .figure}}"
+                        attr_tokens.extend((f"#{fid}", ".figure"))
                         anchor_claimed.add(id(best))
                 # Alt text from the caption (#149) consumes the caption line so it
                 # is not also emitted as prose below the image.
@@ -2130,7 +2288,17 @@ def convert_page(
                     if candidate:
                         alt = candidate
                         caption_blocks.add(id(best))
-        items.append((top_y, "image", f"![{alt}]({rel}){attr}"))
+        if profile.image_width_hints:
+            width_hint = _image_width_attr(right_x - left_x)
+            if width_hint:
+                attr_tokens.append(width_hint)
+        attr = f"{{{' '.join(attr_tokens)}}}" if attr_tokens else ""
+        image_md = f"![{alt}]({rel}){attr}"
+        if profile.image_link_anchors:
+            uri = image_link_uri((left_x, top_y, right_x, bottom_y), page_links)
+            if uri:
+                image_md = f"[{image_md}]({uri})"
+        items.append((top_y, "image", image_md))
 
     for block in parsed_blocks:
         if id(block) in caption_blocks:
@@ -2220,6 +2388,114 @@ def render_paragraph(block: Block, profile: DocProfile) -> str:
     return "".join(parts).strip()
 
 
+# Definition lists (#161). The highest false-positive risk of the Phase 7
+# heuristics, so the detector is deliberately strict: it only fires on a run of
+# at least two consecutive term/definition pairs, where each term is a single
+# short line at the body font and size sitting at the body margin with no
+# trailing punctuation (so a heading, a styled label, a list item, or a
+# sentence never reads as a term), and each definition is a body paragraph
+# indented into a tight band past the term. Off by default so output stays
+# byte-identical; runs as a pre-pass over the assembled block items.
+_DEF_TERM_TRAILING_PUNCT = (".", ":", ";", ",", "?", "!")
+
+
+def _block_text_rendered(block: Block, profile: DocProfile) -> str:
+    """Rendered block text, matching the standalone-paragraph path exactly so a
+    definition honors `preserve_line_breaks` (hard breaks) rather than always
+    flattening its layout lines to a space (#161 review)."""
+    return HEADING_DOTS_RE.sub("", render_paragraph(block, profile))
+
+
+def _is_definition_term(block: Block, profile: DocProfile) -> bool:
+    """A short body-font paragraph line at the body margin, no trailing punctuation."""
+    if classify_block(block, profile) != "paragraph":
+        return False  # a heading, styled label, list item, or code never qualifies
+    if len(block.lines) != 1:
+        return False
+    text = block.text.strip()
+    if not text or len(text) > profile.definition_list_max_term_length:
+        return False
+    if text.endswith(_DEF_TERM_TRAILING_PUNCT):
+        return False
+    if round(block.dominant_size, 1) != round(profile.body_size, 1):
+        return False
+    if profile.body_font and dominant_font(block) != profile.body_font:
+        return False
+    # Near the body margin on BOTH sides: a label in a left sidebar/marginal
+    # column (x0 well left of body_x0) is not a term, even though its value sits
+    # a plausible indent to its right (#161 review).
+    return abs(block.bbox[0] - profile.body_x0) <= LIST_CONTINUATION_MIN_INDENT
+
+
+def _is_definition_body(block: Block, term: Block, profile: DocProfile) -> bool:
+    """A body paragraph indented into a tight band past the term (the definition)."""
+    # A definition indented past the blockquote threshold classifies as a
+    # blockquote when detect_blockquotes is also on; the stricter multi-pair
+    # definition-list run takes precedence, so accept that candidate too (#161
+    # review). The term is at the margin, so it is never a blockquote.
+    if classify_block(block, profile) not in ("paragraph", "blockquote"):
+        return False
+    if not block.text.strip():
+        return False
+    if round(block.dominant_size, 1) != round(profile.body_size, 1):
+        return False
+    if profile.body_font and dominant_font(block) != profile.body_font:
+        return False
+    indent = block.bbox[0] - term.bbox[0]
+    lo = profile.definition_list_min_indent_pt
+    return lo <= indent <= 2 * lo
+
+
+def _render_definition_list(run: list[tuple[Block, Block]], profile: DocProfile) -> str:
+    """Render term/definition pairs as `Term\\n: definition`, blank-separated."""
+    parts: list[str] = []
+    for term, body in run:
+        parts.append(escape_line_start_specials(_block_text_rendered(term, profile)))
+        parts.append(f": {_block_text_rendered(body, profile)}")
+        parts.append("")
+    return "\n".join(parts).rstrip()
+
+
+def _promote_definition_lists(
+    items: list[tuple[str, object]], profile: DocProfile
+) -> list[tuple[str, object]]:
+    """Replace runs of >= 2 consecutive term/definition block pairs with a
+    single pre-rendered `deflist` item (#161). Non-block items and blocks that
+    do not form a pair are passed through untouched.
+
+    Scope is per page: this runs inside `assemble_markdown`, which the converter
+    calls once per page, because the guards read block geometry (font, size,
+    margin) that only exists at the page level. A glossary run that straddles a
+    page boundary with fewer than two pairs on a side is therefore left as plain
+    paragraphs on that side. That is deliberate under-detection (the safe
+    direction for a conservative heuristic), not corruption (#161 review)."""
+    out: list[tuple[str, object]] = []
+    i, n = 0, len(items)
+    while i < n:
+        if items[i][0] != "block":
+            out.append(items[i])
+            i += 1
+            continue
+        run: list[tuple[Block, Block]] = []
+        j = i
+        while (
+            j + 1 < n
+            and items[j][0] == "block"
+            and items[j + 1][0] == "block"
+            and _is_definition_term(items[j][1], profile)
+            and _is_definition_body(items[j + 1][1], items[j][1], profile)
+        ):
+            run.append((items[j][1], items[j + 1][1]))
+            j += 2
+        if len(run) >= 2:
+            out.append(("deflist", _render_definition_list(run, profile)))
+            i = j
+        else:
+            out.append(items[i])
+            i += 1
+    return out
+
+
 def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> str:
     """Join page items (tables, images, text blocks) into Markdown.
 
@@ -2233,10 +2509,24 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
     contiguous list so an ordered list does not collapse into one single-item
     list per line (#144).
     """
+    if profile.detect_definition_lists:
+        items = _promote_definition_lists(items, profile)
     out_parts: list[str] = []
     numbered_run: list[str] = []
     numbered_loose = False
     numbered_last_bottom: float | None = None
+    # Nesting levels with an open ordered sublist in the current run (#194). An
+    # item is the start of its sublist when its level is not already open, so a
+    # nested sublist keeps its own first-item start; returning to a shallower
+    # level closes the deeper ones so a later re-entry starts fresh. Only read
+    # under nested_ordered_lists, so the default path is untouched.
+    numbered_levels_started: set[int] = set()
+    # Outermost margin of the current ordered context, so nesting depth is
+    # measured from the first (leftmost) list item, not the profile's
+    # most-common list margin (#194 review): when the children outnumber the
+    # parents, `list_base_x0` is a child margin and would clamp every item to
+    # level 0. Seeded from the outer list margin, min-tracked, reset on flush.
+    numbered_base_x0: float | None = None
     bullet_run: list[str] = []
     bullet_loose = False
     bullet_last_bottom: float | None = None
@@ -2253,12 +2543,38 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
 
     def flush_numbered() -> None:
         nonlocal numbered_loose_pending, numbered_loose, numbered_last_bottom
+        nonlocal numbered_base_x0
         if numbered_run:
             out_parts.append(("\n\n" if numbered_loose else "\n").join(numbered_run))
             numbered_run.clear()
+        numbered_levels_started.clear()
+        numbered_base_x0 = None
         numbered_loose_pending = False
         numbered_loose = False
         numbered_last_bottom = None
+
+    def ordered_nesting(x0: float, outer_x0: float | None) -> int:
+        """Nesting depth of an ordered item, measured from the run's outermost
+        margin (#194). Seeds the base from the first item (or the outer list
+        margin, for a sublist under a bullet), min-tracks it, and clamps to the
+        same 0..5 band as `DocProfile.nesting_level`."""
+        nonlocal numbered_base_x0
+        if numbered_base_x0 is None:
+            numbered_base_x0 = outer_x0 if outer_x0 is not None else x0
+        if x0 < numbered_base_x0:
+            numbered_base_x0 = x0
+        step = profile.indent_unit if profile.indent_unit > 0 else 18.0
+        return min(max(int(round((x0 - numbered_base_x0) / step)), 0), 5)
+
+    def ordered_marker_for(level: int, text: str) -> tuple[str, str]:
+        """Marker + content for an ordered item at `level`, tracking per-level
+        run state so a sublist keeps its own first-item start (#194)."""
+        first_item = level not in numbered_levels_started
+        numbered_levels_started.difference_update(
+            {n for n in numbered_levels_started if n > level}
+        )
+        numbered_levels_started.add(level)
+        return normalize_ordered_marker(text, first=first_item)
 
     def flush_bullets() -> None:
         nonlocal bullet_loose, bullet_last_bottom
@@ -2312,6 +2628,16 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             flush_heading()
             list_marker_x0 = None
             out_parts.append(payload)
+            continue
+        if kind == "deflist":
+            # A pre-rendered definition list (#161); it stands as its own block.
+            flush_numbered()
+            flush_bullets()
+            flush_blockquote()
+            flush_heading()
+            list_marker_x0 = None
+            if payload:
+                out_parts.append(payload)
             continue
 
         block: Block = payload
@@ -2424,23 +2750,49 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             profile.tight_loose_lists
             and cls in ("numbered", "bullet")
             and list_marker_x0 is not None
-            and block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
             and ((cls == "numbered" and bullet_run) or (cls == "bullet" and numbered_run))
+            and (
+                block.bbox[0] >= list_marker_x0 + LIST_CONTINUATION_MIN_INDENT
+                # A same-level ordered sibling sits at the child margin, not past
+                # the last marker, so match it against the run's outermost margin
+                # instead: without this it would fall through, flush the bullet
+                # run, and split one sublist into two runs at two indents (#194
+                # review). Gated on the opt-in so the default path is untouched.
+                or (
+                    profile.nested_ordered_lists
+                    and cls == "numbered"
+                    and numbered_base_x0 is not None
+                    and block.bbox[0] >= numbered_base_x0 + LIST_CONTINUATION_MIN_INDENT
+                )
+            )
         ):
-            nested = profile.nesting_level(block.bbox[0])
             run = bullet_run or numbered_run
             if cls == "bullet":
+                nested = profile.nesting_level(block.bbox[0])
                 sub = text_clean.lstrip()
                 for ch in BULLET_CHARS:
                     if sub.startswith(ch):
                         sub = sub[len(ch):].lstrip()
                         break
                 run.append(f"{'  ' * nested}- {sub}")
+                list_cont_indent = "  " * nested + "    "
+            elif profile.nested_ordered_lists:
+                # Ordered sublist under a bullet: measure depth from the bullet's
+                # outer margin, keep the sublist's own start, and use the
+                # renderer's 4-space nesting step, so every sibling renders at one
+                # consistent indent instead of the first taking this path at two
+                # spaces and the rest the top-level path at four (#194 review).
+                nested = ordered_nesting(block.bbox[0], list_marker_x0)
+                sub_marker, sub_content = ordered_marker_for(nested, text_clean)
+                indent = "    " * nested
+                run.append(f"{indent}{sub_marker} {sub_content}" if sub_marker else f"{indent}{text_clean}")
+                list_cont_indent = indent + "    "
             else:
+                nested = profile.nesting_level(block.bbox[0])
                 sub_marker, sub_content = normalize_ordered_marker(text_clean, first=True)
                 run.append(f"{'  ' * nested}{sub_marker} {sub_content}" if sub_marker else f"{'  ' * nested}{text_clean}")
+                list_cont_indent = "  " * nested + "    "
             list_marker_x0 = block.bbox[0]
-            list_cont_indent = "  " * nested + "    "
             continue
 
         # Checkbox / bracket task items classify as paragraphs, so without this
@@ -2510,19 +2862,31 @@ def assemble_markdown(items: list[tuple[str, object]], profile: DocProfile) -> s
             list_marker_x0 = block.bbox[0]
             list_cont_indent = "  " * nesting + "    "
         elif cls == "numbered":
-            nesting = profile.nesting_level(block.bbox[0])
-            marker, content = normalize_ordered_marker(text_clean, first=not numbered_run)
+            if profile.nested_ordered_lists:
+                # Depth is measured from the run's outermost margin, so a sublist
+                # that starts mid-run keeps its own first-item start and a level
+                # already open continues at `1.`. The shipped renderer
+                # (python-markdown, tab_length 4) nests an ordered sublist only at
+                # a 4-space step, then honors the child's own `start`; two spaces
+                # (the bullet convention) would flatten it into the parent (#194).
+                nesting = ordered_nesting(block.bbox[0], None)
+                marker, content = ordered_marker_for(nesting, text_clean)
+                indent = "    " * nesting
+            else:
+                nesting = profile.nesting_level(block.bbox[0])
+                marker, content = normalize_ordered_marker(text_clean, first=not numbered_run)
+                indent = "  " * nesting
             if numbered_loose_pending:
                 numbered_run.append("")
                 numbered_loose_pending = False
             if profile.tight_loose_lists and is_loose_gap(numbered_last_bottom, block.bbox[1]):
                 numbered_loose = True
             if marker:
-                numbered_run.append(f"{'  ' * nesting}{marker} {content}")
+                numbered_run.append(f"{indent}{marker} {content}")
             else:
                 # Classified numbered but no recognizable marker: keep as-is.
-                numbered_run.append(f"{'  ' * nesting}{text_clean}")
-            list_cont_indent = "  " * nesting + "    "
+                numbered_run.append(f"{indent}{text_clean}")
+            list_cont_indent = indent + "    "
             list_marker_x0 = block.bbox[0]
             numbered_last_bottom = block.bbox[3]
         elif cls == "blockquote":
@@ -2595,6 +2959,20 @@ def _figure_anchor_id(caption: str, used: set[str]) -> str | None:
         slug = f"{base}-{n}"
     used.add(slug)
     return slug
+
+
+def _image_width_attr(width: float) -> str | None:
+    """Return an attr-list width hint in CSS pixels for a positive bbox width.
+
+    The bbox width is in PDF points (1/72in); attr_list renders `width=N` as an
+    HTML pixel width (CSS px, 1/96in). Convert points to CSS px (x96/72) so a
+    hinted image round-trips at its source size instead of 25% narrower (#169
+    review): a 150pt image emits width=200, which renders back at 150pt.
+    """
+    if width <= 0:
+        return None
+    px = max(1, int(width * 96 / 72 + 0.5))
+    return f"width={px}"
 
 
 def extract_page_images(
@@ -2677,9 +3055,16 @@ def convert_document(
     detect_task_lists: bool = False,
     task_list_extended: bool = False,
     emit_figure_anchors: bool = False,
+    image_width_hints: bool = False,
+    image_link_anchors: bool = False,
     table_column_align: bool = False,
     tight_loose_lists: bool = False,
     list_loose_threshold: float = 1.5,
+    nested_ordered_lists: bool = False,
+    multiline_table_format: str = "pipe",
+    detect_definition_lists: bool = False,
+    definition_list_max_term_length: int = 80,
+    definition_list_min_indent_pt: float = 20.0,
 ) -> None:
     doc = fitz.open(pdf_path)
     profile = build_profile(doc)
@@ -2693,9 +3078,16 @@ def convert_document(
     profile.autolink_emails = autolink_emails
     profile.extract_highlights = extract_highlights
     profile.emit_figure_anchors = emit_figure_anchors
+    profile.image_width_hints = image_width_hints
+    profile.image_link_anchors = image_link_anchors
     profile.table_column_align = table_column_align
     profile.tight_loose_lists = tight_loose_lists
     profile.list_loose_threshold = list_loose_threshold
+    profile.nested_ordered_lists = nested_ordered_lists
+    profile.multiline_table_format = multiline_table_format
+    profile.detect_definition_lists = detect_definition_lists
+    profile.definition_list_max_term_length = definition_list_max_term_length
+    profile.definition_list_min_indent_pt = definition_list_min_indent_pt
     profile.detect_task_lists = detect_task_lists
     profile.task_list_extended = task_list_extended
     footnote_defs: dict[int, str] = {}
@@ -2984,6 +3376,10 @@ def is_block_paragraph(block: str) -> bool:
         return False
     if s.startswith(">"):
         return False  # blockquote (#147): structural, never fused into prose
+    if s.startswith(": ") or "\n: " in block:
+        return False  # definition list (#161): a `: ` line is structural, never
+        # merged, or the lowercase-continuation heuristic would fuse a later term
+        # onto the previous definition and drop a `<dt>`.
     if NUMBERED_RE.match(s):
         return False
     # A running header/footer is not prose; keep it out of the merge so it is
@@ -3200,12 +3596,27 @@ def main() -> int:
         help="Emit {#fig-N .figure} on numbered figures for cross-references (opt-in, needs --with-images, #165)",
     )
     parser.add_argument(
+        "--image-width-hints",
+        action="store_true",
+        help="Emit each extracted image bbox width as an attr-list hint (opt-in, needs --with-images or --inline-images, #169)",
+    )
+    parser.add_argument(
+        "--image-link-anchors",
+        action="store_true",
+        help="Wrap extracted images in source click-action links (opt-in, needs --with-images or --inline-images, #170)",
+    )
+    parser.add_argument(
         "--table-column-align",
         action="store_true",
         help="Detect table-cell alignment and emit GFM separator markers (opt-in, #175)",
     )
     parser.add_argument("--tight-loose-lists", action="store_true", help="Preserve PDF list spacing as CommonMark tight or loose lists (opt-in, #168)")
     parser.add_argument("--list-loose-threshold", type=_positive_finite_float, default=1.5, metavar="N", help="Gap in body line-heights that marks a list loose (positive finite, default: 1.5, #168)")
+    parser.add_argument("--nested-ordered-lists", action="store_true", help="Preserve each nested ordered sublist's own start and indent it to nest in the renderer (opt-in, #194)")
+    parser.add_argument("--multiline-table-format", choices=("pipe", "grid"), default="pipe", help="Table syntax when a cell spans multiple lines: 'grid' emits a Pandoc grid table so the line breaks survive; 'pipe' (default) flattens them (opt-in, #166)")
+    parser.add_argument("--detect-definition-lists", action="store_true", help="Emit `Term` + `: definition` for a run of term/indented-definition pairs (opt-in, conservative, #161)")
+    parser.add_argument("--definition-list-max-term-length", type=int, default=80, metavar="N", help="A definition-list term must be at most this many characters (default: 80, #161)")
+    parser.add_argument("--definition-list-min-indent-pt", type=float, default=20.0, metavar="PT", help="A definition must be indented at least this far past its term, in PDF points (default: 20, #161)")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
@@ -3241,9 +3652,16 @@ def main() -> int:
         task_list_extended=args.task_list_extended,
         extract_highlights=args.extract_highlights,
         emit_figure_anchors=args.emit_figure_anchors,
+        image_width_hints=args.image_width_hints,
+        image_link_anchors=args.image_link_anchors,
         table_column_align=args.table_column_align,
         tight_loose_lists=args.tight_loose_lists,
         list_loose_threshold=args.list_loose_threshold,
+        nested_ordered_lists=args.nested_ordered_lists,
+        multiline_table_format=args.multiline_table_format,
+        detect_definition_lists=args.detect_definition_lists,
+        definition_list_max_term_length=args.definition_list_max_term_length,
+        definition_list_min_indent_pt=args.definition_list_min_indent_pt,
     )
     return 0
 

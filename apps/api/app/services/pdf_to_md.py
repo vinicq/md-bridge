@@ -38,6 +38,18 @@ FRONT_MATTER_LINE = re.compile(r'^(\w[\w-]*):\s*(.*)$')
 HEADING_RE = re.compile(r"^(#{1,6})\s+\S", re.MULTILINE)
 TABLE_ROW_RE = re.compile(r"^\|.*\|\s*$", re.MULTILINE)
 BULLET_RE = re.compile(r"^\s*[-*+]\s+\S", re.MULTILINE)
+# A Pandoc grid table's header separator (`+===+===+`), one per grid table (#166).
+GRID_TABLE_HEADER_RE = re.compile(r"^\+=[=+]*\+\s*$", re.MULTILINE)
+# A click-through image `[![alt](src){attr}](target)` (#170): neither the image
+# source nor the click target is extractable prose, so the whole wrapper is
+# dropped before the text-density count. Stripped ahead of the plain-image regex
+# so the inner image is not peeled off first, which would leave `[{attr}](target)`
+# and count the target URL as text.
+LINKED_IMAGE_RE = re.compile(r"\[!\[[^\]]*\]\([^)]*\)(?:\{[^}]*\})?\]\([^)]*\)")
+IMAGE_RE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+# A reference-definition line (`[id]: url`) is the `[id]: url` block that a
+# repeated URL collapses to (#158/#170). A bare URL is never readable text.
+REF_DEF_LINE_RE = re.compile(r"^ {0,3}\[[^\]]+\]:[^\n]+$", re.MULTILINE)
 
 
 def _parse_front_matter(md: str) -> tuple[FrontMatter, str]:
@@ -69,13 +81,16 @@ def _parse_front_matter(md: str) -> tuple[FrontMatter, str]:
 def _compute_stats(md_body: str) -> ConvertStats:
     headings = len(HEADING_RE.findall(md_body))
     table_lines = TABLE_ROW_RE.findall(md_body)
-    # A table opens with header + separator + body rows; count the separators
-    # (`| --- | --- |`) which appear once per table.
+    # A pipe table opens with header + separator + body rows; count the
+    # separators (`| --- | --- |`) which appear once per table.
     table_count = sum(
         1
         for line in table_lines
         if re.fullmatch(r"\|\s*(:?-{2,}:?\s*\|\s*)+", line.strip())
     )
+    # A Pandoc grid table (#166) has one `+===+` header separator per table, so
+    # count those too or a grid-promoted table would be missing from the count.
+    table_count += len(GRID_TABLE_HEADER_RE.findall(md_body))
     bullets = len(BULLET_RE.findall(md_body))
     return ConvertStats(headings=headings, tables=table_count, bullets=bullets)
 
@@ -98,7 +113,12 @@ def _build_warnings(md_body: str, options: PdfToMdOptions, pages: int) -> list[s
     # Drop image markdown before counting: an inline base64 data URI (#372) adds
     # thousands of non-whitespace characters that are not extractable text, and
     # would otherwise mask a sparse-text scan and suppress the needs_ocr warning.
-    text_only = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", md_body)
+    # A click-through image (#170) also carries a target URL (a long tracking
+    # link) that is not prose, so strip the whole wrapper first, then any plain
+    # image, then the reference-definition lines a repeated URL collapses to.
+    text_only = LINKED_IMAGE_RE.sub("", md_body)
+    text_only = IMAGE_RE.sub("", text_only)
+    text_only = REF_DEF_LINE_RE.sub("", text_only)
     plain_chars = len(re.sub(r"\s+", "", text_only))
     if plain_chars < max(80, pages * 40):
         warnings.append("needs_ocr")
@@ -219,9 +239,16 @@ def convert_pdf_bytes(
                 task_list_extended=opts.task_list_extended,
                 extract_highlights=opts.extract_highlights,
                 emit_figure_anchors=opts.emit_figure_anchors,
+                image_width_hints=opts.image_width_hints,
+                image_link_anchors=opts.image_link_anchors,
                 table_column_align=opts.table_column_align,
                 tight_loose_lists=opts.tight_loose_lists,
                 list_loose_threshold=opts.list_loose_threshold,
+                nested_ordered_lists=opts.nested_ordered_lists,
+                multiline_table_format=opts.multiline_table_format,
+                detect_definition_lists=opts.detect_definition_lists,
+                definition_list_max_term_length=opts.definition_list_max_term_length,
+                definition_list_min_indent_pt=opts.definition_list_min_indent_pt,
             )
 
         md_text = md_path.read_text(encoding="utf-8")

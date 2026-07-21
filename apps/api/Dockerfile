@@ -57,7 +57,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-por tesseract-ocr-spa \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install -e "/app/apps/api[dev,ocr]"
+RUN pip install -e "/app/apps/api[dev,ocr,grid-tables]"
 
 COPY apps/api/tests /app/apps/api/tests
 COPY tests /app/tests

@@ -192,3 +192,39 @@ def test_reference_links_skip_indented_code_block():
     u = "https://x.io/s"
     md = f"intro\n\n    [a]({u}) [b]({u}) [c]({u})\n\noutro"
     assert mod._collapse_reference_links(md, 3) == md
+
+
+# Click-through images `[![alt](src)](target)` (#170). The collapse pass must
+# treat the external target as the link and never the image source.
+
+
+def test_reference_links_collapse_linked_image_target_not_source():
+    mod = pdf_to_md_module()
+    img = "https://cdn.example.com/logo.png"
+    target = "https://track.example.com/x"
+    md = f"[![l]({img})]({target}) [![l]({img})]({target}) [![l]({img})]({target})"
+    out = mod._collapse_reference_links(md, 1)
+    # The click target collapses to a single definition...
+    assert out.rstrip().endswith(f"[1]: {target}")
+    assert f"[1]: {img}" not in out  # ...and the image source never does
+    # every image source stays inline (images are skipped, not referenced)
+    assert out.count(f"![l]({img})") == 3
+
+
+def test_reference_links_keep_linked_image_with_attr_list():
+    # A figure-anchored click image `[![alt](src){#fig-1 .figure}](target)`
+    # collapses on the target while the attr-list rides along in the link text.
+    mod = pdf_to_md_module()
+    img = "cdn/logo.png"
+    target = "https://track.example.com/x"
+    single = f"[![l]({img}){{#fig-1 .figure}}]({target})"
+    md = f"{single} {single} {single}"
+    out = mod._collapse_reference_links(md, 1)
+    assert f"[![l]({img}){{#fig-1 .figure}}][1]" in out
+    assert out.rstrip().endswith(f"[1]: {target}")
+
+
+def test_reference_links_linked_image_threshold_zero_is_noop():
+    mod = pdf_to_md_module()
+    md = "[![l](cdn/a.png)](https://track.example.com/x)"
+    assert mod._collapse_reference_links(md, 0) == md
