@@ -110,6 +110,14 @@ stays byte-identical:
   `definition_list_min_indent_pt`): emit `Term` / `: definition` for a glossary
   layout (#161).
 
+The 0.11.0 line adds one more:
+
+- `ocr_images` (`off` or `all`, default `off`): with `all`, each embedded image
+  is run through OCR and its recognized text is inlined alongside the image, so a
+  PDF whose content lives inside figures is recovered. It is orthogonal to the
+  full-page `needs_ocr` pre-pass that flags a scanned page. OCR is opt-in and not
+  in the default install; `all` needs the optional OCR extra (Tesseract) (#140).
+
 See `packages/pdf-to-markdown/scripts/convert.py --help` for the full CLI surface.
 
 ### Example: minimal

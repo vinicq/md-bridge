@@ -88,10 +88,15 @@ others are natural fits behind the same heuristic-pipeline pattern.
   it live on realistic samples, and download its `.css`.
 - **Batch mode**: drop one file or a whole folder. The UI lists every file,
   converts them in sequence, and lets you download each result as it lands.
+- **Preferences, history, and presets**, all browser-local: a `/preferences`
+  page for defaults and appearance, a recent-conversions list on the pdf-to-md
+  page, and saved theme + CSS presets on the md-to-pdf page. Each lives in
+  `localStorage`, never on the server.
 - **`/api/inspect-pdf`** returns diagnostics (fonts, sizes, tagged-PDF flag,
   OCR hint) so the UI can warn before conversion.
-- **No persistence**, no third-party calls. Every request runs in a
-  temporary directory that is removed before the response goes out.
+- **No server-side persistence**, no third-party calls. Every request runs in a
+  temporary directory that is removed before the response goes out; the optional
+  UI conveniences above stay in your browser only.
 - **Multilingual UI** (English by default, Portuguese and Spanish optional) with a header
   toggle that persists the choice in `localStorage`.
 - **Interactive API docs** at `/docs` (Swagger UI) and `/redoc`, plus a

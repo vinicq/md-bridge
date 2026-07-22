@@ -15,6 +15,35 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-07-22
+
+The web app grows a settings home, a local history, and reusable presets, and
+the converter learns to read text trapped inside images. Conversion defaults are
+unchanged: the new converter option is opt-in and off by default, and the web
+features are additive and browser-local.
+
+### Added
+
+- **Per-image OCR.** With `ocr_images` set to `all`, the converter runs OCR on
+  each embedded image and inlines the recognized text alongside it, recovering
+  content that lives inside figures. It is orthogonal to the full-page
+  `needs_ocr` pre-pass. OCR is opt-in and not in the default install; `all` needs
+  the optional OCR extra (Tesseract). (#140)
+- **Preferences page.** A single `/preferences` page groups the settings that had
+  no home: default language, default PDF theme, default page size,
+  open-preview-in-new-tab, dark mode, accent color, and reduce-motion. They
+  persist in a namespaced `md-bridge:prefs` key, and Reset clears the whole
+  `md-bridge:*` namespace. No server, no accounts. (#64)
+- **Local conversion history.** The pdf-to-md page keeps a browser-local list of
+  recent conversions (name, size, options, outcome, timestamp), capped at 20
+  newest-first. Re-download a result while its blob is alive in the tab, or
+  re-run from the source file. Nothing is stored server-side and no file or
+  result blob leaves the browser. (#63)
+- **Conversion presets.** The md-to-pdf page can save the current theme and
+  custom CSS as a named preset under `md-bridge:presets:md-to-pdf` and re-apply
+  it in one click, with JSON import and export to share a set. Capped at 12 per
+  format pair. (#62)
+
 ## [0.10.0] — 2026-07-21
 
 Seven converter heuristics, each opt-in and off by default, so a document
