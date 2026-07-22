@@ -694,7 +694,11 @@ test.describe('conversion history panel a11y (#63)', () => {
       await expect(page.locator('.recent-row--done')).toHaveCount(1)
       await expect(page.locator('.recent-row--warn')).toHaveCount(1)
 
+      // Scope to the recent panel: converting the fixtures also leaves batch rows
+      // on screen, whose dark-mode "done" text is a separate pre-existing contrast
+      // bug (tracked in #452), out of scope for this panel's audit.
       const results = await new AxeBuilder({ page })
+        .include('.recent')
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
         .analyze()
       const criticalSerious = results.violations.filter(
