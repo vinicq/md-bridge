@@ -237,6 +237,22 @@ interface Dictionary {
     ageHours: (n: number) => string
     privacy: string
   }
+  presets: {
+    title: string
+    count: (n: number) => string
+    save: string
+    saveConfirm: string
+    namePlaceholder: string
+    applyLabel: (name: string) => string
+    deleteLabel: (name: string) => string
+    import: string
+    export: string
+    importInvalid: string
+    readError: string
+    imported: (n: number, ignored: number) => string
+    atCap: string
+    empty: string
+  }
   workshop: {
     title: string
     subtitle: string
@@ -530,6 +546,23 @@ const en: Dictionary = {
     ageHours: (n) => `${n} h ago`,
     privacy:
       'History lives in this browser, not on the server. Results are kept while the tab is open; after 24h or a reload, re-run to regenerate.',
+  },
+  presets: {
+    title: 'Presets',
+    count: (n) => `${n} saved · max 12`,
+    save: 'Save current',
+    saveConfirm: 'Save',
+    namePlaceholder: 'Preset name',
+    applyLabel: (name) => `Apply preset ${name}`,
+    deleteLabel: (name) => `Delete preset ${name}`,
+    import: 'Import',
+    export: 'Export JSON',
+    importInvalid: 'No valid md-bridge presets in that file.',
+    readError: 'Could not read the file.',
+    imported: (n, ignored) =>
+      ignored > 0 ? `${n} imported, ${ignored} ignored (max 12)` : `${n} presets imported`,
+    atCap: 'Preset limit reached (12). Delete one to add another.',
+    empty: 'No presets yet. Save the current theme and CSS to reuse it.',
   },
   workshop: {
     title: 'Language Workshop',
@@ -826,6 +859,23 @@ const pt: Dictionary = {
     privacy:
       'O histórico fica neste navegador, não no servidor. Os resultados são mantidos enquanto a aba está aberta; após 24h ou um recarregamento, refaça para gerar de novo.',
   },
+  presets: {
+    title: 'Presets',
+    count: (n) => `${n} salvos · máx. 12`,
+    save: 'Salvar atual',
+    saveConfirm: 'Salvar',
+    namePlaceholder: 'Nome do preset',
+    applyLabel: (name) => `Aplicar preset ${name}`,
+    deleteLabel: (name) => `Excluir preset ${name}`,
+    import: 'Importar',
+    export: 'Exportar JSON',
+    importInvalid: 'Nenhum preset válido do md-bridge nesse arquivo.',
+    readError: 'Não foi possível ler o arquivo.',
+    imported: (n, ignored) =>
+      ignored > 0 ? `${n} importados, ${ignored} ignorados (máx. 12)` : `${n} presets importados`,
+    atCap: 'Limite de presets atingido (12). Exclua um para adicionar outro.',
+    empty: 'Nenhum preset ainda. Salve o tema e o CSS atuais para reutilizar.',
+  },
   workshop: {
     title: 'Oficina de Idiomas',
     subtitle:
@@ -1120,6 +1170,23 @@ const es: Dictionary = {
     ageHours: (n) => `hace ${n} h`,
     privacy:
       'El historial vive en este navegador, no en el servidor. Los resultados se guardan mientras la pestaña está abierta; tras 24h o una recarga, rehaz para regenerar.',
+  },
+  presets: {
+    title: 'Presets',
+    count: (n) => `${n} guardados · máx. 12`,
+    save: 'Guardar actual',
+    saveConfirm: 'Guardar',
+    namePlaceholder: 'Nombre del preset',
+    applyLabel: (name) => `Aplicar preset ${name}`,
+    deleteLabel: (name) => `Eliminar preset ${name}`,
+    import: 'Importar',
+    export: 'Exportar JSON',
+    importInvalid: 'Ningún preset válido de md-bridge en ese archivo.',
+    readError: 'No se pudo leer el archivo.',
+    imported: (n, ignored) =>
+      ignored > 0 ? `${n} importados, ${ignored} ignorados (máx. 12)` : `${n} presets importados`,
+    atCap: 'Límite de presets alcanzado (12). Elimina uno para añadir otro.',
+    empty: 'Aún no hay presets. Guarda el tema y el CSS actuales para reutilizarlos.',
   },
   workshop: {
     title: 'Taller de Idiomas',

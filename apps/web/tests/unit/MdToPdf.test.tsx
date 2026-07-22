@@ -201,4 +201,30 @@ describe('MdToPdf', () => {
       custom_css: 'body { color: red }',
     })
   })
+
+  it('saves the current theme as a preset and re-applies it on the conversion (#62)', async () => {
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+    await screen.findByRole('option', { name: 'Academic' })
+    const select = screen.getByRole('combobox')
+    await user.selectOptions(select, 'academic')
+
+    // Save the current setup (theme=academic) as a named preset.
+    await user.click(screen.getByRole('button', { name: 'Save current' }))
+    fireEvent.change(screen.getByRole('textbox', { name: /Preset name/i }), {
+      target: { value: 'Briefs' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(screen.getByRole('button', { name: /Apply preset Briefs/i })).toBeInTheDocument()
+
+    // Switch away, then apply the preset to restore academic.
+    await user.selectOptions(select, 'default')
+    await user.click(screen.getByRole('button', { name: /Apply preset Briefs/i }))
+
+    // The conversion posts the preset's theme, proving apply re-wired the form.
+    fireEvent.change(screen.getByLabelText('Pasted markdown'), { target: { value: '# Hi' } })
+    await user.click(screen.getByRole('button', { name: 'Convert' }))
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalled(), { timeout: 5000 })
+    expect(vi.mocked(convertMdToPdf).mock.calls.at(-1)![1]).toMatchObject({ theme: 'academic' })
+  }, 10000)
 })

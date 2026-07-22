@@ -1,0 +1,132 @@
+.presets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.presets__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.presets__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-soft);
+  font-weight: 500;
+}
+
+.presets__count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--c-ink-soft);
+}
+
+.presets__io {
+  margin-left: auto;
+  display: flex;
+  gap: var(--s-2);
+}
+
+.presets__io-btn {
+  font-size: 11px;
+  padding: var(--s-1) var(--s-2);
+}
+
+/* Chips wrap into more rows, never overflow the panel width. */
+.preset-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: center;
+}
+
+.preset-item {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.preset-chip {
+  font-size: 12px;
+  padding: var(--s-1) var(--s-3);
+  border: 1px solid var(--c-rule);
+  border-radius: var(--r-md);
+  background: var(--c-bg);
+  color: var(--c-ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Selected preset: inverted fill (not colour alone) so it reads without hue. */
+.preset-chip.is-active {
+  background: var(--c-ink);
+  color: var(--c-bg);
+  border-color: var(--c-ink);
+}
+
+.preset-chip.is-add {
+  border-style: dashed;
+  color: var(--c-ink-soft);
+}
+
+.preset-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Delete sits flush against the apply chip, forming one pill; it is a sibling
+   button (never nested in the chip) and always visible (no hover reveal). */
+.preset-item:has(.preset-chip__del) > .preset-chip {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.preset-chip__del {
+  border: 1px solid var(--c-rule);
+  border-left: 0;
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  background: var(--c-bg);
+  color: var(--c-ink-soft);
+  padding: 0 var(--s-2);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.preset-chip__del:hover,
+.preset-chip__del:focus-visible {
+  color: var(--c-accent);
+}
+
+.preset-name-form {
+  display: inline-flex;
+  gap: var(--s-1);
+  align-items: center;
+}
+
+.preset-name-input {
+  font-size: 12px;
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid var(--c-accent);
+  border-radius: var(--r-md);
+  background: var(--c-bg);
+  color: var(--c-ink);
+  width: 14ch;
+}
+
+.presets__warn {
+  font-size: 11px;
+  color: var(--c-warn-strong);
+  margin: 0;
+}
+
+.presets__empty {
+  font-size: 11px;
+  color: var(--c-ink-soft);
+  margin: 0;
+}
