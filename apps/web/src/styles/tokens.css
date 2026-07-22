@@ -25,6 +25,8 @@
   --c-ok-soft: var(--theme-ok-soft); /* privacy-badge fill (#64) */
   --c-ok-strong: var(--theme-ok-strong); /* ok-text on the ok-soft tint (#64) */
   --c-warn: var(--theme-warn);
+  --c-warn-soft: var(--theme-warn-soft); /* warn-badge fill (#63) */
+  --c-warn-strong: var(--theme-warn-strong); /* warn-text on the warn-soft tint (#63) */
   --c-error: var(--theme-error);
   --c-focus-ring: var(--theme-accent);
 

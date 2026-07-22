@@ -22,6 +22,9 @@ export function About() {
           ))}
         </ul>
 
+        <h2>{t.about.privacy.title}</h2>
+        <p>{t.about.privacy.body}</p>
+
         <h2>{t.about.more.title}</h2>
         <p>{t.about.more.body}</p>
       </section>

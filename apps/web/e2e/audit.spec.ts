@@ -654,3 +654,62 @@ test.describe('theme library a11y (#392)', () => {
     })
   }
 })
+
+test.describe('conversion history panel a11y (#63)', () => {
+  // The recent-history panel only shows rows after a conversion finishes, so the
+  // static route audit sees just the empty state. Convert two files (mocked) so
+  // the panel carries both a `done` row (ok badge) and a `needs_ocr` row (warn
+  // badge), then run axe. Both themes run because the badge tints are per-theme
+  // tokens, so the badge text-on-tint contrast is only exercised with a row on
+  // screen (done reuses the ok pair, warn uses the new warn-soft/strong pair).
+  for (const theme of ['light', 'dark'] as const) {
+    test(`no critical/serious axe violations with history rows [${theme}]`, async ({ page }) => {
+      await page.addInitScript((t) => {
+        window.localStorage.setItem('md-bridge:locale', 'en')
+        window.localStorage.setItem('md-bridge:theme', t)
+      }, theme)
+      // Second conversion in the queue comes back needs_ocr -> warn badge.
+      let calls = 0
+      await page.route('**/api/pdf-to-md', (route) => {
+        calls += 1
+        const warnings = calls === 2 ? ['needs_ocr'] : []
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            md: '# hello\n\ncontent',
+            front_matter: {},
+            warnings,
+            stats: { headings: 1, tables: 0, bullets: 0 },
+          }),
+        })
+      })
+
+      await page.goto('/convert/pdf-to-md')
+      await page.locator('input[type="file"]').setInputFiles([ISTQB, CODE_SAMPLE])
+      await page.getByRole('button', { name: /convert all/i }).click()
+
+      // One done row (offers Re-download) and one warn row (does not).
+      await expect(page.locator('.recent-row')).toHaveCount(2, { timeout: 30_000 })
+      await expect(page.locator('.recent-row--done')).toHaveCount(1)
+      await expect(page.locator('.recent-row--warn')).toHaveCount(1)
+
+      // Scope to the recent panel: converting the fixtures also leaves batch rows
+      // on screen, whose dark-mode "done" text is a separate pre-existing contrast
+      // bug (tracked in #452), out of scope for this panel's audit.
+      const results = await new AxeBuilder({ page })
+        .include('.recent')
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze()
+      const criticalSerious = results.violations.filter(
+        (v) => v.impact === 'critical' || v.impact === 'serious',
+      )
+      expect(
+        criticalSerious,
+        `critical/serious with history rows [${theme}]: ${criticalSerious
+          .map((v) => v.id)
+          .join(', ')}`,
+      ).toHaveLength(0)
+    })
+  }
+})

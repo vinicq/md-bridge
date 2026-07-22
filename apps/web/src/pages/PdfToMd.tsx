@@ -4,19 +4,21 @@ import { DiagnosticPanel } from '../components/DiagnosticPanel'
 import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
 import { Toast } from '../components/Toast'
+import { RecentPanel } from '../components/RecentPanel'
 import { useBatchConvert, type BatchItem } from '../hooks/useBatchConvert'
 import { useBatchZip } from '../hooks/useBatchZip'
+import { useHistory } from '../hooks/useHistory'
 import { useInspect } from '../hooks/useInspect'
 import { useTranslation } from '../i18n'
 import { convertPdfToMd, type PdfToMdResponse } from '../lib/api'
+import type { HistoryEntry } from '../lib/history'
 import { stripFrontmatter } from '../lib/stripFrontmatter'
 import './PdfToMd.css'
 
 const OCR_DOCS_URL =
   'https://vinicq.github.io/md-bridge/getting-started/#limits-worth-knowing-about'
 
-function downloadText(filename: string, text: string) {
-  const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' })
+function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -25,6 +27,10 @@ function downloadText(filename: string, text: string) {
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
+}
+
+function downloadText(filename: string, text: string) {
+  downloadBlob(filename, new Blob([text], { type: 'text/markdown;charset=utf-8' }))
 }
 
 export function PdfToMd() {
@@ -47,6 +53,10 @@ export function PdfToMd() {
       data: new TextEncoder().encode(it.result?.md ?? ''),
     }),
   })
+  const history = useHistory()
+  // One history row per batch item, keyed by the batch id. Re-run adds a fresh
+  // item (new id) so it re-records; re-clicking Convert keeps the id and does not.
+  const recordedRef = useRef<Set<string>>(new Set())
 
   const lastDoneId = [...batch.items].reverse().find((it) => it.status === 'done')?.id ?? null
   const previewFallbackId = lastDoneId ?? batch.items[0]?.id ?? null
@@ -70,9 +80,66 @@ export function PdfToMd() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ocrRequiredItem?.id])
 
+  // Record finished items into the local history once each. Runs on the render
+  // after the batch hook patches item state (onConvertAll's closure sees a stale
+  // items array, so recording there would capture queued rows with no result).
+  useEffect(() => {
+    for (const it of batch.items) {
+      if (recordedRef.current.has(it.id)) continue
+      const isOcr = it.status === 'error' && it.error?.code === 'ocr_required'
+      if (it.status !== 'done' && !isOcr) continue
+      recordedRef.current.add(it.id)
+      const needsOcr = it.result?.warnings.includes('needs_ocr') ?? false
+      // Always keep the source file so Re-run works, even for an ocr_required
+      // error that produced no result blob; the blob is set only when there is a
+      // genuinely downloadable result.
+      const live = {
+        filename: it.file.name.replace(/\.pdf$/i, '.md'),
+        file: it.file,
+        blob: it.result
+          ? new Blob([it.result.md], { type: 'text/markdown;charset=utf-8' })
+          : undefined,
+      }
+      history.record(
+        {
+          id: it.id,
+          name: it.file.name,
+          pair: 'pdf-to-md',
+          size: it.file.size,
+          options: {},
+          outcome: isOcr || needsOcr ? 'needs_ocr' : 'done',
+          createdAt: Date.now(),
+        },
+        live,
+      )
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [batch.items])
+
   const selectedWarnings = selected?.result?.warnings ?? []
 
   const handleFiles = (files: File[]) => batch.add(files)
+
+  const onRedownload = (entry: HistoryEntry) => {
+    const live = history.getLive(entry.id)
+    if (live?.blob) downloadBlob(live.filename, live.blob)
+  }
+
+  const onRerun = (entry: HistoryEntry) => {
+    // runAll() no-ops while a batch is already running, so Re-run would silently
+    // just queue. The button is disabled in that state; guard here too.
+    if (batch.running) return
+    const live = history.getLive(entry.id)
+    // The source file only lives in this session. After a reload or a Clear it is
+    // gone, so re-running is impossible without the user re-adding it. Say so
+    // rather than fake a run.
+    if (!live?.file) {
+      setToast({ kind: 'warn', message: t.history.rerunUnavailable(entry.name), id: (toastSeq.current += 1) })
+      return
+    }
+    batch.add([live.file])
+    void batch.runAll()
+  }
 
   const onConvertAll = async () => {
     const summary = await batch.runAll()
@@ -119,6 +186,14 @@ export function PdfToMd() {
             downloadLabel={t.pdfToMd.download}
             downloadBlocked={(it) => !!it.result?.warnings.includes('needs_ocr')}
             downloadAnywayLabel={t.pdfToMd.warnings.downloadAnyway}
+          />
+          <RecentPanel
+            entries={history.entries.filter((e) => e.pair === 'pdf-to-md')}
+            isLive={history.isLive}
+            onRedownload={onRedownload}
+            onRerun={onRerun}
+            onClear={history.clear}
+            busy={batch.running}
           />
         </div>
 
