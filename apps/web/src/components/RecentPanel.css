@@ -2,6 +2,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
+  /* Query against the panel's own width, not the viewport: on desktop this
+     lives in the ~360px controls column, so the row must stack there even
+     though the window is wide. */
+  container-type: inline-size;
 }
 
 .recent__head {
@@ -124,7 +128,9 @@
   border: 1px solid var(--c-rule);
 }
 
-@media (max-width: 400px) {
+/* Below ~460px of panel width the badge + two actions crowd the filename, so
+   drop the actions onto their own row and give the name the full width. */
+@container (max-width: 460px) {
   .recent-row {
     grid-template-columns: 1fr;
     gap: var(--s-2);

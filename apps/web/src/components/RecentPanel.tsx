@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from '../i18n'
 import { formatSize } from '../lib/formatSize'
 import type { HistoryEntry } from '../lib/history'
@@ -11,6 +11,8 @@ interface RecentPanelProps {
   onRedownload: (entry: HistoryEntry) => void
   onRerun: (entry: HistoryEntry) => void
   onClear: () => void
+  /** A batch is running: Re-run would only queue silently, so it is disabled. */
+  busy?: boolean
 }
 
 type RowStatus = 'done' | 'warn' | 'expired'
@@ -26,15 +28,21 @@ export function RecentPanel({
   onRedownload,
   onRerun,
   onClear,
+  busy = false,
 }: RecentPanelProps) {
   const { t } = useTranslation()
   const h = t.history
-  // Snapshot "now" once at mount: ages are coarse (m/h ago), so a per-render
-  // clock read is both needless and impure during render.
-  const [now] = useState(() => Date.now())
+  // A clock in state, refreshed each minute: reading Date.now() during render is
+  // impure, and a mount-time snapshot both goes stale and can read slightly
+  // behind a just-recorded entry's timestamp (clamped to 0 below).
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   function ageOf(createdAt: number): string {
-    const minutes = Math.floor((now - createdAt) / 60_000)
+    const minutes = Math.max(0, Math.floor((now - createdAt) / 60_000))
     return minutes < 60 ? h.ageMinutes(minutes) : h.ageHours(Math.floor(minutes / 60))
   }
 
@@ -97,6 +105,7 @@ export function RecentPanel({
                     variant="ghost"
                     className="recent-row__btn"
                     aria-label={h.rerunLabel(entry.name)}
+                    disabled={busy}
                     onClick={() => onRerun(entry)}
                   >
                     {h.rerun}

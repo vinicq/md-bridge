@@ -73,6 +73,15 @@ describe('RecentPanel (#63)', () => {
     expect(screen.getByRole('button', { name: /Re-run the conversion of/ })).toBeTruthy()
   })
 
+  it('disables Re-run while a batch is busy so it cannot silently queue', () => {
+    const onRerun = vi.fn()
+    renderPanel({ busy: true, onRerun })
+    const rerun = screen.getByRole('button', { name: /Re-run the conversion of/ })
+    expect(rerun.hasAttribute('disabled')).toBe(true)
+    fireEvent.click(rerun)
+    expect(onRerun).not.toHaveBeenCalled()
+  })
+
   it('fires the row handlers', () => {
     const onRerun = vi.fn()
     const onClear = vi.fn()

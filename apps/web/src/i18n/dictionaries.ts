@@ -130,6 +130,7 @@ interface Dictionary {
     intro: string
     how: { title: string; p1: string; p2: string }
     limits: { title: string; items: string[] }
+    privacy: { title: string; body: string }
     more: { title: string; body: string }
   }
   dropzone: {
@@ -399,6 +400,11 @@ const en: Dictionary = {
         'Tables with cells merged across rows or columns may come out flattened in the output.',
         'Headers and footers that repeat on every page are stripped automatically.',
       ],
+    },
+    privacy: {
+      title: 'Your data',
+      body:
+        'Files you convert never leave your browser and nothing is stored on the server. The converter page keeps an optional local history in this browser (file names, sizes and timestamps only, capped at 20 entries) so you can re-download or re-run a recent conversion. Clearing your browser data clears it.',
     },
     more: {
       title: 'Open source',
@@ -690,6 +696,11 @@ const pt: Dictionary = {
         'Cabeçalhos e rodapés que se repetem em todas as páginas são removidos automaticamente.',
       ],
     },
+    privacy: {
+      title: 'Seus dados',
+      body:
+        'Os arquivos que você converte nunca saem do seu navegador e nada é guardado no servidor. A página de conversão mantém um histórico local opcional neste navegador (só nomes de arquivo, tamanhos e horários, no máximo 20 entradas) para você baixar de novo ou refazer uma conversão recente. Limpar os dados do navegador apaga esse histórico.',
+    },
     more: {
       title: 'Open source',
       body:
@@ -979,6 +990,11 @@ const es: Dictionary = {
         'Las tablas con celdas combinadas entre filas o columnas pueden salir aplanadas en la salida.',
         'Los encabezados y pies de página que se repiten en todas las páginas se eliminan automáticamente.',
       ],
+    },
+    privacy: {
+      title: 'Tus datos',
+      body:
+        'Los archivos que conviertes nunca salen de tu navegador y nada se guarda en el servidor. La página de conversión mantiene un historial local opcional en este navegador (solo nombres de archivo, tamaños y marcas de tiempo, con un máximo de 20 entradas) para que puedas volver a descargar o rehacer una conversión reciente. Borrar los datos del navegador lo elimina.',
     },
     more: {
       title: 'Open source',

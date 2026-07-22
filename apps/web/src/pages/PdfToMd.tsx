@@ -90,13 +90,16 @@ export function PdfToMd() {
       if (it.status !== 'done' && !isOcr) continue
       recordedRef.current.add(it.id)
       const needsOcr = it.result?.warnings.includes('needs_ocr') ?? false
-      const live = it.result
-        ? {
-            blob: new Blob([it.result.md], { type: 'text/markdown;charset=utf-8' }),
-            filename: it.file.name.replace(/\.pdf$/i, '.md'),
-            file: it.file,
-          }
-        : undefined
+      // Always keep the source file so Re-run works, even for an ocr_required
+      // error that produced no result blob; the blob is set only when there is a
+      // genuinely downloadable result.
+      const live = {
+        filename: it.file.name.replace(/\.pdf$/i, '.md'),
+        file: it.file,
+        blob: it.result
+          ? new Blob([it.result.md], { type: 'text/markdown;charset=utf-8' })
+          : undefined,
+      }
       history.record(
         {
           id: it.id,
@@ -119,10 +122,13 @@ export function PdfToMd() {
 
   const onRedownload = (entry: HistoryEntry) => {
     const live = history.getLive(entry.id)
-    if (live) downloadBlob(live.filename, live.blob)
+    if (live?.blob) downloadBlob(live.filename, live.blob)
   }
 
   const onRerun = (entry: HistoryEntry) => {
+    // runAll() no-ops while a batch is already running, so Re-run would silently
+    // just queue. The button is disabled in that state; guard here too.
+    if (batch.running) return
     const live = history.getLive(entry.id)
     // The source file only lives in this session. After a reload or a Clear it is
     // gone, so re-running is impossible without the user re-adding it. Say so
@@ -187,6 +193,7 @@ export function PdfToMd() {
             onRedownload={onRedownload}
             onRerun={onRerun}
             onClear={history.clear}
+            busy={batch.running}
           />
         </div>
 
