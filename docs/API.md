@@ -110,6 +110,19 @@ stays byte-identical:
   `definition_list_min_indent_pt`): emit `Term` / `: definition` for a glossary
   layout (#161).
 
+The 0.11.0 line adds one more:
+
+- `ocr_images` (`off` or `all`, default `off`): with `all`, eligible embedded
+  images are run through OCR and the recognized text is inlined next to each
+  image. Candidates are bounded: an image must be at least 200x100 px and cover at
+  least 0.5% of the page, must not be CMYK, and only the 50 largest per document
+  are processed. It is skipped when the full-page `needs_ocr` pre-pass fires, so a
+  scanned page takes the page-OCR path instead (the two do not both run). Enabling
+  `all` needs the optional OCR extra AND the `MD_BRIDGE_OCR_ENABLED` environment
+  variable set to a truthy value; without both, the request returns
+  `422 ocr_not_available`. `all` also forces inline base64 images (as if
+  `with_images` were on), which grows the response (#140).
+
 See `packages/pdf-to-markdown/scripts/convert.py --help` for the full CLI surface.
 
 ### Example: minimal
