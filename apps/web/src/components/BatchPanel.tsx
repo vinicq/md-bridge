@@ -1,6 +1,7 @@
 import { useId, useState, type DragEvent, type KeyboardEvent } from 'react'
 import { useTranslation } from '../i18n'
 import type { BatchItem } from '../hooks/useBatchConvert'
+import { formatSize } from '../lib/formatSize'
 import { Button } from './Button'
 import { Spinner } from './Spinner'
 import './BatchPanel.css'
@@ -29,12 +30,6 @@ interface BatchPanelProps<TResult> {
   downloadBlocked?: (item: BatchItem<TResult>) => boolean
   /** Label used in place of downloadLabel when downloadBlocked returns true. */
   downloadAnywayLabel?: string
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 }
 
 export function BatchPanel<TResult>({

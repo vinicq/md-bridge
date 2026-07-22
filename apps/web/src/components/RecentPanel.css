@@ -1,0 +1,137 @@
+.recent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.recent__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.recent__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-soft);
+  margin: 0;
+  font-weight: 500;
+}
+
+.recent__head-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.recent__count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--c-ink-soft);
+}
+
+.recent__clear {
+  font-size: 11px;
+  padding: var(--s-1) var(--s-2);
+}
+
+.recent__empty,
+.recent__privacy {
+  font-size: 11px;
+  color: var(--c-ink-soft);
+  margin: 0;
+}
+
+.recent__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+/* Row chrome mirrors the batch panel, minus the drag-handle column. */
+.recent-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--c-rule);
+  border-radius: var(--r-md);
+  background: var(--c-bg);
+}
+
+.recent-row__name {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-row__name b {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-row__name small {
+  font-size: 11px;
+  color: var(--c-ink-soft);
+}
+
+.recent-row__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  justify-self: end;
+}
+
+.recent-row__btn {
+  font-size: 11px;
+  padding: var(--s-1) var(--s-3);
+}
+
+/* Status badges: tinted pill (soft fill + strong text), AA in both themes.
+   Never colour text with --c-ok/--c-warn directly on the row bg - that fails
+   AA in dark (#390). done/warn reuse the -soft/-strong token pairs. */
+.recent-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.recent-badge--done {
+  background: var(--c-ok-soft);
+  color: var(--c-ok-strong);
+}
+
+.recent-badge--warn {
+  background: var(--c-warn-soft);
+  color: var(--c-warn-strong);
+}
+
+.recent-badge--expired {
+  background: transparent;
+  color: var(--c-ink-soft);
+  border: 1px solid var(--c-rule);
+}
+
+@media (max-width: 400px) {
+  .recent-row {
+    grid-template-columns: 1fr;
+    gap: var(--s-2);
+  }
+
+  .recent-row__actions {
+    justify-self: start;
+    flex-wrap: wrap;
+  }
+}

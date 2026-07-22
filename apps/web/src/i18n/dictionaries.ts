@@ -218,6 +218,24 @@ interface Dictionary {
     on: string
     off: string
   }
+  history: {
+    title: string
+    count: (n: number) => string
+    clearAll: string
+    empty: string
+    statusDone: string
+    statusWarn: string
+    statusExpired: string
+    redownload: (ext: string) => string
+    redownloadLabel: (name: string) => string
+    rerun: string
+    rerunLabel: (name: string) => string
+    rerunUnavailable: (name: string) => string
+    pages: (n: number) => string
+    ageMinutes: (n: number) => string
+    ageHours: (n: number) => string
+    privacy: string
+  }
   workshop: {
     title: string
     subtitle: string
@@ -487,6 +505,25 @@ const en: Dictionary = {
     reset: 'Reset all preferences',
     on: 'On',
     off: 'Off',
+  },
+  history: {
+    title: '// recent · this browser only · 24h',
+    count: (n) => `${n} of ${n}`,
+    clearAll: 'Clear all',
+    empty: 'No recent conversions yet.',
+    statusDone: 'done',
+    statusWarn: 'warn',
+    statusExpired: 'expired',
+    redownload: (ext) => `Re-download ${ext}`,
+    redownloadLabel: (name) => `Re-download the result of ${name}`,
+    rerun: 'Re-run',
+    rerunLabel: (name) => `Re-run the conversion of ${name}`,
+    rerunUnavailable: (name) => `Add ${name} again to re-run the conversion.`,
+    pages: (n) => `${n} pages`,
+    ageMinutes: (n) => `${n} m ago`,
+    ageHours: (n) => `${n} h ago`,
+    privacy:
+      'History lives in this browser, not on the server. Results are kept while the tab is open; after 24h or a reload, re-run to regenerate.',
   },
   workshop: {
     title: 'Language Workshop',
@@ -759,6 +796,25 @@ const pt: Dictionary = {
     on: 'Ligado',
     off: 'Desligado',
   },
+  history: {
+    title: '// recentes · só neste navegador · 24h',
+    count: (n) => `${n} de ${n}`,
+    clearAll: 'Limpar tudo',
+    empty: 'Nenhuma conversão recente ainda.',
+    statusDone: 'ok',
+    statusWarn: 'atenção',
+    statusExpired: 'expirado',
+    redownload: (ext) => `Baixar ${ext} de novo`,
+    redownloadLabel: (name) => `Baixar de novo o resultado de ${name}`,
+    rerun: 'Refazer',
+    rerunLabel: (name) => `Refazer a conversão de ${name}`,
+    rerunUnavailable: (name) => `Envie ${name} de novo para refazer a conversão.`,
+    pages: (n) => `${n} páginas`,
+    ageMinutes: (n) => `há ${n} min`,
+    ageHours: (n) => `há ${n} h`,
+    privacy:
+      'O histórico fica neste navegador, não no servidor. Os resultados são mantidos enquanto a aba está aberta; após 24h ou um recarregamento, refaça para gerar de novo.',
+  },
   workshop: {
     title: 'Oficina de Idiomas',
     subtitle:
@@ -1029,6 +1085,25 @@ const es: Dictionary = {
     reset: 'Restablecer todas las preferencias',
     on: 'Activado',
     off: 'Desactivado',
+  },
+  history: {
+    title: '// recientes · solo en este navegador · 24h',
+    count: (n) => `${n} de ${n}`,
+    clearAll: 'Borrar todo',
+    empty: 'Aún no hay conversiones recientes.',
+    statusDone: 'ok',
+    statusWarn: 'aviso',
+    statusExpired: 'expirado',
+    redownload: (ext) => `Volver a descargar ${ext}`,
+    redownloadLabel: (name) => `Volver a descargar el resultado de ${name}`,
+    rerun: 'Rehacer',
+    rerunLabel: (name) => `Rehacer la conversión de ${name}`,
+    rerunUnavailable: (name) => `Vuelve a añadir ${name} para rehacer la conversión.`,
+    pages: (n) => `${n} páginas`,
+    ageMinutes: (n) => `hace ${n} min`,
+    ageHours: (n) => `hace ${n} h`,
+    privacy:
+      'El historial vive en este navegador, no en el servidor. Los resultados se guardan mientras la pestaña está abierta; tras 24h o una recarga, rehaz para regenerar.',
   },
   workshop: {
     title: 'Taller de Idiomas',

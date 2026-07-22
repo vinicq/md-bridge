@@ -18,6 +18,10 @@ html {
   --theme-ok-soft:   #eaf2ec;
   --theme-ok-strong: #1e6b3a;
   --theme-warn:  #b8860b;
+  /* Warn badge tint + its text. warn-strong (#7a5606) clears AA (5.6:1) on the
+     warn-soft fill; the base --theme-warn gold is only 2.73:1 there. */
+  --theme-warn-soft:   #f7ecd0;
+  --theme-warn-strong: #7a5606;
   --theme-error: #b41c18;
 
   --theme-accent:       #c8362f;
@@ -62,6 +66,10 @@ html[data-theme="dark"] {
   /* Dark badge: a deep green fill with a light-green text that clears AA on it. */
   --theme-ok-soft:   #16281c;
   --theme-ok-strong: #7cc99a;
+
+  /* Dark warn badge: a deep amber fill with a light-amber text clearing AA. */
+  --theme-warn-soft:   #2e2410;
+  --theme-warn-strong: #e0b64d;
 
   --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
   --theme-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.4);

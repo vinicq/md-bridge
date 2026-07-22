@@ -3,15 +3,9 @@ import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-const ISTQB = path.resolve(
-  here,
-  '..',
-  '..',
-  'api',
-  'tests',
-  'fixtures',
-  'istqb-ctal-ta-syllabus-en.pdf',
-)
+const FIXTURES = path.resolve(here, '..', '..', 'api', 'tests', 'fixtures')
+const ISTQB = path.resolve(FIXTURES, 'istqb-ctal-ta-syllabus-en.pdf')
+const CODE_SAMPLE = path.resolve(FIXTURES, 'code-sample.pdf')
 
 /**
  * Visual regression baselines for the public surface (#16).
@@ -176,6 +170,54 @@ for (const theme of THEMES) {
       fullPage: true,
       animations: 'disabled',
       mask: [page.locator('.theme-lib__frame')],
+    })
+  })
+}
+
+// #63: the recent-history panel only renders rows after a conversion, so the
+// static pdf-to-md baseline above never exercises the status badges or the new
+// warn-soft/strong tokens. Convert two files (mocked) so the panel carries a
+// `done` row and a `needs_ocr` `warn` row, then snapshot just the panel in both
+// themes. The age label ("m ago") is masked so the clock never flakes the diff.
+for (const theme of THEMES) {
+  test(`recent history panel — ${theme}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.addInitScript(
+      (t) => {
+        window.localStorage.setItem('md-bridge:theme', t)
+        window.localStorage.setItem('md-bridge:locale', 'en')
+      },
+      theme,
+    )
+    let calls = 0
+    await page.route('**/api/pdf-to-md', (route) => {
+      calls += 1
+      const warnings = calls === 2 ? ['needs_ocr'] : []
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          md: '# hello\n\ncontent',
+          front_matter: {},
+          warnings,
+          stats: { headings: 1, tables: 0, bullets: 0 },
+        }),
+      })
+    })
+    await page.goto('/convert/pdf-to-md')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+    await page.addStyleTag({ content: FREEZE_CSS })
+
+    await page.locator('input[type="file"]').setInputFiles([ISTQB, CODE_SAMPLE])
+    await page.getByRole('button', { name: /convert all/i }).click()
+
+    const recent = page.locator('.recent')
+    await expect(recent.locator('.recent-row')).toHaveCount(2, { timeout: 30_000 })
+    await page.waitForLoadState('networkidle')
+
+    await expect(recent).toHaveScreenshot(`recent-history-${theme}.png`, {
+      animations: 'disabled',
+      mask: [recent.locator('.recent-row__name small')],
     })
   })
 }
