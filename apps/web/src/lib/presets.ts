@@ -33,11 +33,24 @@ function isPreset(value: unknown): value is Preset {
     typeof p.name === 'string' &&
     p.name.length > 0 &&
     (p.pair === 'pdf-to-md' || p.pair === 'md-to-pdf') &&
-    typeof p.options === 'object' &&
-    p.options !== null &&
+    isValidOptions(p.options) &&
     typeof p.createdAt === 'number' &&
     Number.isFinite(p.createdAt)
   )
+}
+
+// Validate the option field types, not just "is an object": an imported file
+// with `options: { custom_css: 42 }` would otherwise be accepted and later post
+// an invalid payload to /api/md-to-pdf. Only the fields we actually save today
+// are checked; each is optional but, when present, must have the right type.
+function isValidOptions(value: unknown): value is MdToPdfOptions {
+  if (typeof value !== 'object' || value === null) return false
+  const o = value as Record<string, unknown>
+  if ('theme' in o && typeof o.theme !== 'string') return false
+  if ('custom_css' in o && typeof o.custom_css !== 'string') return false
+  if ('lang' in o && typeof o.lang !== 'string') return false
+  if ('page_setup' in o && o.page_setup !== null && typeof o.page_setup !== 'object') return false
+  return true
 }
 
 function persist(pair: ConversionPair, presets: Preset[]): void {
@@ -59,10 +72,19 @@ export function readPresets(pair: ConversionPair): Preset[] {
   }
 }
 
-/** Append a preset. Returns the new list, or null when the cap is already hit:
- *  presets are named data, so the caller must ask the user to delete one first. */
+/** Save a preset. A name already in use is replaced in place (names are unique
+ *  identities, the same way import treats them, so every UI state round-trips
+ *  through export/import). Returns the new list, or null when the name is new
+ *  and the cap is already hit - the caller then asks the user to delete one. */
 export function addPreset(pair: ConversionPair, preset: Preset): Preset[] | null {
   const current = readPresets(pair)
+  const existing = current.findIndex((p) => p.name === preset.name)
+  if (existing >= 0) {
+    const next = [...current]
+    next[existing] = preset
+    persist(pair, next)
+    return next
+  }
   if (current.length >= PRESET_CAP) return null
   const next = [...current, preset]
   persist(pair, next)

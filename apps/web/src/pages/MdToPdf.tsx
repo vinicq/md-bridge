@@ -46,11 +46,17 @@ export function MdToPdf() {
   const [theme, setTheme] = useState<string>(() => searchParams.get('theme') || initialTheme())
   const presets = usePresets('md-to-pdf')
   const [activePresetId, setActivePresetId] = useState<string | null>(null)
+  // Bumped on each preset apply so the re-run effect fires even when the preset
+  // changes only the custom CSS (theme unchanged), keeping preview and download
+  // in sync with the active preset.
+  const [applyTick, setApplyTick] = useState(0)
 
   // Picking a theme in the UI takes over from the arrival `?theme=` param: drop
   // it so a later refresh honors the persisted pick, not the stale query.
   function pickTheme(slug: string): void {
     setTheme(slug)
+    // A manual theme change diverges from any applied preset, so drop the marker.
+    setActivePresetId(null)
     if (searchParams.has('theme')) {
       setSearchParams(
         (prev) => {
@@ -121,9 +127,12 @@ export function MdToPdf() {
       await Promise.resolve()
       await batch.runAll()
     })()
-    // Only the effective theme drives this re-run; batch helpers are stable refs.
+    // Re-run on an effective-theme change or a preset apply (applyTick), so a
+    // CSS-only preset does not leave a stale PDF. One effect keyed on both, so a
+    // preset that also changes the theme still re-runs exactly once. Batch
+    // helpers are stable refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTheme])
+  }, [activeTheme, applyTick])
 
   // Pick up the latest completed item so the preview follows the run. Derived
   // during render so the user's explicit selection wins when it is still
@@ -167,9 +176,12 @@ export function MdToPdf() {
   // Presets bundle the editable md-to-pdf options (today: theme + custom CSS).
   // Applying one re-uses the existing theme re-run effect; no new wiring.
   const applyPreset = (preset: Preset) => {
-    setTheme(preset.options.theme ?? 'default')
+    // Route through pickTheme so the theme is set and the stale ?theme= arrival
+    // query is cleared; it also clears the marker, which we re-set below.
+    pickTheme(preset.options.theme ?? 'default')
     setCustomCss(preset.options.custom_css ?? '')
     setActivePresetId(preset.id)
+    setApplyTick((t) => t + 1)
   }
 
   const savePreset = (name: string) => {
@@ -239,6 +251,7 @@ export function MdToPdf() {
         onSave={savePreset}
         onImport={importPresetsFile}
         onExport={exportPresets}
+        busy={batch.running}
       />
 
       <ThemePicker
@@ -275,7 +288,11 @@ export function MdToPdf() {
               className="md-input md-input--css"
               value={customCss}
               spellCheck={false}
-              onChange={(e) => setCustomCss(e.target.value)}
+              onChange={(e) => {
+                setCustomCss(e.target.value)
+                // Editing the CSS diverges from any applied preset.
+                setActivePresetId(null)
+              }}
               aria-label={t.themeLib.custom}
             />
           </details>

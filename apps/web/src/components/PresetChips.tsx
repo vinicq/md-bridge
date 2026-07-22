@@ -13,6 +13,9 @@ interface PresetChipsProps {
   onSave: (name: string) => void
   onImport: (file: File) => void
   onExport: () => void
+  /** A conversion is running: applying a preset would change options mid-run, so
+   *  the apply chips are disabled (mirrors the disabled theme picker). */
+  busy?: boolean
 }
 
 export function PresetChips({
@@ -24,6 +27,7 @@ export function PresetChips({
   onSave,
   onImport,
   onExport,
+  busy = false,
 }: PresetChipsProps) {
   const { t } = useTranslation()
   const h = t.presets
@@ -83,6 +87,7 @@ export function PresetChips({
               className={`preset-chip${preset.id === activeId ? ' is-active' : ''}`}
               aria-current={preset.id === activeId ? 'true' : undefined}
               aria-label={h.applyLabel(preset.name)}
+              disabled={busy}
               onClick={() => onApply(preset)}
             >
               {preset.name}

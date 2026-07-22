@@ -76,6 +76,15 @@ describe('PresetChips (#62)', () => {
     expect(onSave).toHaveBeenCalledWith('Reports')
   })
 
+  it('disables the apply chips while a conversion is running', () => {
+    const onApply = vi.fn()
+    renderChips({ presets: [preset({ id: 'a', name: 'Briefs' })], busy: true, onApply })
+    const chip = screen.getByRole('button', { name: /Apply preset Briefs/i })
+    expect(chip.hasAttribute('disabled')).toBe(true)
+    fireEvent.click(chip)
+    expect(onApply).not.toHaveBeenCalled()
+  })
+
   it('fires import and export', () => {
     const onExport = vi.fn()
     renderChips({ presets: [preset()], onExport })

@@ -45,6 +45,23 @@ describe('presets store (#62)', () => {
     expect(readPresets('md-to-pdf').some((p) => p.name === 'over')).toBe(false)
   })
 
+  it('replaces a preset saved under an existing name (so it round-trips)', () => {
+    addPreset('md-to-pdf', preset({ id: 'a', name: 'Briefs', options: { theme: 'academic' } }))
+    // Saving again under the same name updates in place, never a second chip.
+    addPreset('md-to-pdf', preset({ id: 'b', name: 'Briefs', options: { theme: 'default' } }))
+    const list = readPresets('md-to-pdf')
+    expect(list).toHaveLength(1)
+    expect(list[0].options.theme).toBe('default')
+  })
+
+  it('rejects imported options whose field types are wrong', () => {
+    // A non-string custom_css would post an invalid payload to the API.
+    expect(parseImport(JSON.stringify([preset({ options: { custom_css: 42 } as never })]))).toBeNull()
+    expect(parseImport(JSON.stringify([preset({ options: { theme: 5 } as never })]))).toBeNull()
+    // A well-typed options object is accepted.
+    expect(parseImport(JSON.stringify([preset({ options: { theme: 'default', custom_css: '' } })]))).not.toBeNull()
+  })
+
   it('removes and clears', () => {
     addPreset('md-to-pdf', preset({ id: 'a', name: 'A' }))
     addPreset('md-to-pdf', preset({ id: 'b', name: 'B' }))
