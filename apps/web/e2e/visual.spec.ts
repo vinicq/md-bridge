@@ -221,3 +221,35 @@ for (const theme of THEMES) {
     })
   })
 }
+
+// #62: the preset chips only render with saved presets, so seed two and activate
+// one, then snapshot just the chip row in both themes. The active chip uses an
+// inverted fill, so its pixels are only exercised here.
+const PRESET_SEED = JSON.stringify([
+  { id: 'a', name: 'Briefs', pair: 'md-to-pdf', options: { theme: 'academic' }, createdAt: 1 },
+  { id: 'b', name: 'Reports', pair: 'md-to-pdf', options: { theme: 'default' }, createdAt: 2 },
+])
+for (const theme of THEMES) {
+  test(`preset chips — ${theme}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.addInitScript(
+      ([t, seed]) => {
+        window.localStorage.setItem('md-bridge:theme', t)
+        window.localStorage.setItem('md-bridge:locale', 'en')
+        window.localStorage.setItem('md-bridge:presets:md-to-pdf', seed)
+      },
+      [theme, PRESET_SEED] as const,
+    )
+    await page.goto('/convert/md-to-pdf')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+    await page.addStyleTag({ content: FREEZE_CSS })
+    await page.getByRole('button', { name: /Apply preset Briefs/i }).click()
+
+    const presets = page.locator('.presets')
+    await expect(presets.locator('.preset-chip.is-active')).toHaveCount(1)
+
+    await expect(presets).toHaveScreenshot(`preset-chips-${theme}.png`, {
+      animations: 'disabled',
+    })
+  })
+}

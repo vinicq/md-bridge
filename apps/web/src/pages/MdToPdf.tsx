@@ -5,15 +5,18 @@ import { Button } from '../components/Button'
 import { ConvertButton } from '../components/ConvertButton'
 import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
+import { PresetChips } from '../components/PresetChips'
 import { ThemedPreview } from '../components/ThemedPreview'
 import { DEFAULT_PAGE_SETUP } from '../components/pageSetup'
 import { ThemePicker } from '../components/ThemePicker'
 import { Toast } from '../components/Toast'
 import { useBatchConvert, type BatchItem } from '../hooks/useBatchConvert'
 import { useBatchZip } from '../hooks/useBatchZip'
+import { usePresets } from '../hooks/usePresets'
 import { useThemes } from '../hooks/useThemes'
 import { useTranslation } from '../i18n'
 import { convertMdToPdf } from '../lib/api'
+import { parseImport, serializePresets, type Preset } from '../lib/presets'
 import { readPrefs, writePrefs } from '../lib/prefs'
 
 function initialTheme(): string {
@@ -41,6 +44,8 @@ export function MdToPdf() {
   // mount over the persisted slug; the picker still owns it from there on.
   const [searchParams, setSearchParams] = useSearchParams()
   const [theme, setTheme] = useState<string>(() => searchParams.get('theme') || initialTheme())
+  const presets = usePresets('md-to-pdf')
+  const [activePresetId, setActivePresetId] = useState<string | null>(null)
 
   // Picking a theme in the UI takes over from the arrival `?theme=` param: drop
   // it so a later refresh honors the persisted pick, not the stale query.
@@ -159,6 +164,62 @@ export function MdToPdf() {
     a.remove()
   }
 
+  // Presets bundle the editable md-to-pdf options (today: theme + custom CSS).
+  // Applying one re-uses the existing theme re-run effect; no new wiring.
+  const applyPreset = (preset: Preset) => {
+    setTheme(preset.options.theme ?? 'default')
+    setCustomCss(preset.options.custom_css ?? '')
+    setActivePresetId(preset.id)
+  }
+
+  const savePreset = (name: string) => {
+    const preset: Preset = {
+      id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      name,
+      pair: 'md-to-pdf',
+      options: { theme: activeTheme, custom_css: customCss },
+      createdAt: Date.now(),
+    }
+    if (presets.save(preset)) setActivePresetId(preset.id)
+  }
+
+  const deletePreset = (id: string) => {
+    presets.remove(id)
+    if (activePresetId === id) setActivePresetId(null)
+  }
+
+  const importPresetsFile = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const parsed = parseImport(String(reader.result))
+      if (!parsed) {
+        setToast({ kind: 'warn', message: t.presets.importInvalid, id: (toastSeq.current += 1) })
+        return
+      }
+      const result = presets.importFrom(parsed)
+      setToast({
+        kind: 'ok',
+        message: t.presets.imported(result.imported, result.ignored),
+        id: (toastSeq.current += 1),
+      })
+    }
+    reader.onerror = () =>
+      setToast({ kind: 'warn', message: t.presets.readError, id: (toastSeq.current += 1) })
+    reader.readAsText(file)
+  }
+
+  const exportPresets = () => {
+    const blob = new Blob([serializePresets('md-to-pdf')], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'md-bridge-presets.json'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
   const previewMarkdown = pasted.trim()
   const previewUrl = selected?.blobUrl ?? null
 
@@ -168,6 +229,17 @@ export function MdToPdf() {
         <h1>{t.mdToPdf.title}</h1>
         <p>{t.mdToPdf.subtitle}</p>
       </header>
+
+      <PresetChips
+        presets={presets.presets}
+        activeId={activePresetId}
+        atCap={presets.atCap}
+        onApply={applyPreset}
+        onDelete={deletePreset}
+        onSave={savePreset}
+        onImport={importPresetsFile}
+        onExport={exportPresets}
+      />
 
       <ThemePicker
         themes={themes}

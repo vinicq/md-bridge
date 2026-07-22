@@ -713,3 +713,42 @@ test.describe('conversion history panel a11y (#63)', () => {
     })
   }
 })
+
+test.describe('conversion presets a11y (#62)', () => {
+  // The preset chips only render with saved presets, so seed two into
+  // localStorage and activate one. Both themes because the active chip uses an
+  // inverted fill (--c-ink on --c-bg) that the static sweep never renders.
+  const SEED = JSON.stringify([
+    { id: 'a', name: 'Briefs', pair: 'md-to-pdf', options: { theme: 'academic' }, createdAt: 1 },
+    { id: 'b', name: 'Reports', pair: 'md-to-pdf', options: { theme: 'default' }, createdAt: 2 },
+  ])
+  for (const theme of ['light', 'dark'] as const) {
+    test(`no critical/serious axe violations with preset chips [${theme}]`, async ({ page }) => {
+      await page.addInitScript(
+        ([t, seed]) => {
+          window.localStorage.setItem('md-bridge:locale', 'en')
+          window.localStorage.setItem('md-bridge:theme', t)
+          window.localStorage.setItem('md-bridge:presets:md-to-pdf', seed)
+        },
+        [theme, SEED] as const,
+      )
+      await page.goto('/convert/md-to-pdf')
+      // Activate a chip so the inverted-fill contrast is on screen.
+      await page.getByRole('button', { name: /Apply preset Briefs/i }).click()
+
+      const results = await new AxeBuilder({ page })
+        .include('.presets')
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze()
+      const criticalSerious = results.violations.filter(
+        (v) => v.impact === 'critical' || v.impact === 'serious',
+      )
+      expect(
+        criticalSerious,
+        `critical/serious with preset chips [${theme}]: ${criticalSerious
+          .map((v) => v.id)
+          .join(', ')}`,
+      ).toHaveLength(0)
+    })
+  }
+})
