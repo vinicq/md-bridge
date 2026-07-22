@@ -24,21 +24,25 @@ features are additive and browser-local.
 
 ### Added
 
-- **Per-image OCR.** With `ocr_images` set to `all`, the converter runs OCR on
-  each embedded image and inlines the recognized text alongside it, recovering
-  content that lives inside figures. It is orthogonal to the full-page
-  `needs_ocr` pre-pass. OCR is opt-in and not in the default install; `all` needs
-  the optional OCR extra (Tesseract). (#140)
-- **Preferences page.** A single `/preferences` page groups the settings that had
-  no home: default language, default PDF theme, default page size,
-  open-preview-in-new-tab, dark mode, accent color, and reduce-motion. They
-  persist in a namespaced `md-bridge:prefs` key, and Reset clears the whole
-  `md-bridge:*` namespace. No server, no accounts. (#64)
+- **Per-image OCR.** With `ocr_images` set to `all`, eligible embedded images are
+  run through OCR and the recognized text is inlined next to each image. Only the
+  50 largest candidates per document that clear a size and page-area floor and are
+  not CMYK are processed, and the mode is skipped when the full-page `needs_ocr`
+  pre-pass already fires (page OCR takes precedence). OCR is opt-in and not in the
+  default install: `all` needs the optional OCR extra plus the
+  `MD_BRIDGE_OCR_ENABLED` environment variable, and it forces inline base64 images.
+  See `docs/API.md`. (#140)
+- **Preferences page.** A single `/preferences` page groups four settings: default
+  language, default PDF theme, dark mode, and reduce-motion. The theme and
+  reduce-motion defaults persist under `md-bridge:prefs`; language and dark mode
+  keep their existing `md-bridge:locale` and `md-bridge:theme` keys. Reset clears
+  the whole `md-bridge:*` namespace. No server, no accounts. (#64)
 - **Local conversion history.** The pdf-to-md page keeps a browser-local list of
   recent conversions (name, size, options, outcome, timestamp), capped at 20
-  newest-first. Re-download a result while its blob is alive in the tab, or
-  re-run from the source file. Nothing is stored server-side and no file or
-  result blob leaves the browser. (#63)
+  newest-first. Re-download a result while its blob is alive in the tab, or re-run
+  from the source file. The list is metadata only: the source file and result blob
+  are never written to `localStorage` or any server-side store, and the file a
+  conversion uploads is processed in a temporary directory and then discarded. (#63)
 - **Conversion presets.** The md-to-pdf page can save the current theme and
   custom CSS as a named preset under `md-bridge:presets:md-to-pdf` and re-apply
   it in one click, with JSON import and export to share a set. Capped at 12 per
@@ -734,7 +738,8 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/vinicq/md-bridge/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/vinicq/md-bridge/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/vinicq/md-bridge/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/vinicq/md-bridge/compare/v0.7.0...v0.8.0
