@@ -18,6 +18,7 @@ from app.errors import (
 )
 from app.logging_filters import install_health_access_filter
 from app.routes import convert, health, inspect
+from app.settings import load_settings
 
 API_DESCRIPTION = """
 **md-bridge** is a small, opinionated HTTP service that converts between PDF
@@ -90,6 +91,11 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
     )
+
+    # Read env-driven settings once per app instance (not at import), so a test
+    # can build a fresh app with different env and every route sees it via
+    # request.app.state.settings.
+    app.state.settings = load_settings()
 
     app.add_middleware(
         CORSMiddleware,

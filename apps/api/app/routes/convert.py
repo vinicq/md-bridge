@@ -8,12 +8,11 @@ import re
 import time
 from urllib.parse import quote
 
-from fastapi import APIRouter, File, Form, Query, UploadFile
+from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response
 from pydantic import ValidationError
 
-from app.config import MAX_UPLOAD_BYTES
 from app.errors import ApiError
 from app.schemas.convert import (
     FormatInfo,
@@ -145,7 +144,9 @@ def _read_options(raw: str | None, model):
         ) from exc
 
 
-async def _read_upload(upload: UploadFile, expected_suffix: str, expected_label: str) -> bytes:
+async def _read_upload(
+    upload: UploadFile, expected_suffix: str, expected_label: str, max_bytes: int
+) -> bytes:
     name = upload.filename or ""
     if not name.lower().endswith(expected_suffix):
         raise ApiError(
@@ -158,15 +159,15 @@ async def _read_upload(upload: UploadFile, expected_suffix: str, expected_label:
     # to a temp file past its own threshold), so read it once into the final
     # bytes instead of growing a bytearray and copying it into bytes (the old 2x
     # peak, #365) or mirroring it into a second temp file. Bounding the read at
-    # cap+1 enforces MAX_UPLOAD_BYTES without pulling an over-cap upload fully
+    # cap+1 enforces the upload limit without pulling an over-cap upload fully
     # into memory: a file at or under the cap comes back whole, a larger one
     # yields cap+1 bytes and trips the 413.
-    data = await upload.read(MAX_UPLOAD_BYTES + 1)
-    if len(data) > MAX_UPLOAD_BYTES:
+    data = await upload.read(max_bytes + 1)
+    if len(data) > max_bytes:
         raise ApiError(
             413,
             "payload_too_large",
-            f"Upload exceeds {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
+            f"Upload exceeds {max_bytes // (1024 * 1024)} MB limit.",
         )
     return data
 
@@ -251,6 +252,7 @@ def _download_headers(source_name: str | None, ext: str) -> dict[str, str]:
     },
 )
 async def pdf_to_md(
+    request: Request,
     file: UploadFile = File(..., description="The PDF to convert."),
     options: str | None = Form(
         default=None,
@@ -266,7 +268,9 @@ async def pdf_to_md(
     ),
 ) -> PdfToMdResponse:
     opts = _read_options(options, PdfToMdOptions)
-    pdf_bytes = await _read_upload(file, ".pdf", "PDF")
+    pdf_bytes = await _read_upload(
+        file, ".pdf", "PDF", request.app.state.settings.max_upload_bytes
+    )
     started = time.perf_counter()
     result = await asyncio.to_thread(
         convert_pdf_bytes,
@@ -317,6 +321,7 @@ async def pdf_to_md(
     },
 )
 async def md_to_pdf(
+    request: Request,
     file: UploadFile = File(..., description="The Markdown file to render."),
     options: str | None = Form(
         default=None,
@@ -324,7 +329,9 @@ async def md_to_pdf(
     ),
 ) -> Response:
     opts = _read_options(options, MdToPdfOptions)
-    md_bytes = await _read_upload(file, ".md", "Markdown")
+    md_bytes = await _read_upload(
+        file, ".md", "Markdown", request.app.state.settings.max_upload_bytes
+    )
     started = time.perf_counter()
     pdf_bytes = await asyncio.to_thread(
         render_md_bytes, md_bytes, filename=file.filename or "document.md", options=opts
@@ -404,6 +411,7 @@ async def get_theme_css(slug: str) -> Response:
     },
 )
 async def md_to_docx(
+    request: Request,
     file: UploadFile = File(..., description="The Markdown file to convert."),
     options: str | None = Form(
         default=None,
@@ -411,7 +419,9 @@ async def md_to_docx(
     ),
 ) -> Response:
     opts = _read_options(options, MdToDocxOptions)
-    md_bytes = await _read_upload(file, ".md", "Markdown")
+    md_bytes = await _read_upload(
+        file, ".md", "Markdown", request.app.state.settings.max_upload_bytes
+    )
     started = time.perf_counter()
     docx_bytes = await asyncio.to_thread(
         render_md_to_docx_bytes, md_bytes, filename=file.filename or "document.md", options=opts

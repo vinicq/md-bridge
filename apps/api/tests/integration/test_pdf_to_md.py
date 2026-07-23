@@ -76,14 +76,13 @@ def test_pdf_to_md_rejects_invalid_options(client, istqb_pdf: Path):
     assert resp.json()["error"]["code"] == "invalid_options"
 
 
-def test_pdf_to_md_rejects_oversize(client):
-    # Real payload above the 500 MB cap so the route returns 413 the same way
-    # it would in production. No patching of internal constants. The test is
-    # slow on purpose: short of patching the constant, this is the only way
-    # to drive the actual limit check inside `_read_upload`.
-    from app.config import MAX_UPLOAD_BYTES
-
-    payload = b"%PDF-1.4\n" + b"0" * (MAX_UPLOAD_BYTES + 1)
+def test_pdf_to_md_rejects_oversize(client_factory):
+    # Drive the real 413 in `_read_upload` with a small cap so the test does not
+    # allocate 500 MB. The limit is read from settings at request time, so a
+    # capped client exercises the exact production path.
+    cap = 64 * 1024
+    client = client_factory(max_upload_bytes=cap)
+    payload = b"%PDF-1.4\n" + b"0" * (cap + 1)
     resp = client.post(
         "/api/pdf-to-md",
         files={"file": ("big.pdf", payload, "application/pdf")},
