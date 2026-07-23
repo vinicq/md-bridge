@@ -66,21 +66,35 @@ class ConcurrencyGate:
             # can take the permit between the check above and here.
             await self._sem.acquire()
 
-        # Release only when the thread truly finishes (done callback), never on
-        # the success path: a timed-out thread keeps running and must free its
-        # slot when it completes, not when wait_for gives up.
         task = asyncio.ensure_future(asyncio.to_thread(fn, *args, **kwargs))
-        task.add_done_callback(lambda _: self._sem.release())
-        try:
-            # shield in both branches so cancelling the awaiting coroutine (a
-            # wait_for timeout, or an ASGI host cancelling on client disconnect)
-            # does not cancel the underlying task. The worker thread keeps
-            # running regardless, and the slot must be released by the done
-            # callback when the thread actually finishes, never early.
-            if self._timeout > 0:
-                return await asyncio.wait_for(asyncio.shield(task), timeout=self._timeout)
+
+        def _on_done(finished: asyncio.Future) -> None:
+            # Release only when the thread truly finishes, never on the success
+            # path: a timed-out thread keeps running and must free its slot when
+            # it completes, not when wait_for gives up.
+            self._sem.release()
+            # Retrieve the outcome so a detached (timed-out or cancelled) task
+            # does not surface "Task exception was never retrieved" on the loop.
+            if not finished.cancelled():
+                finished.exception()
+
+        task.add_done_callback(_on_done)
+
+        # shield so cancelling the awaiting coroutine (a wait_for timeout, or an
+        # ASGI host cancelling on client disconnect) does not cancel the task:
+        # the thread keeps running regardless, and the slot must be released by
+        # the done callback, never early.
+        if self._timeout <= 0:
+            # No gate deadline; worker exceptions (including a TimeoutError the
+            # converter itself raises) propagate unchanged.
             return await asyncio.shield(task)
+        try:
+            return await asyncio.wait_for(asyncio.shield(task), timeout=self._timeout)
         except TimeoutError:
+            if task.done():
+                # The worker itself raised TimeoutError before the deadline;
+                # propagate it rather than relabel it as the gate timeout.
+                raise
             raise ApiError(
                 504, "conversion_timeout", "The conversion took too long and was abandoned."
             ) from None

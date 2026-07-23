@@ -594,11 +594,31 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Invalid options or a rejected input (e.g. too many pages)."
           },
           "429": {
             "content": {
@@ -777,7 +797,34 @@
             "description": "Upload exceeds the configured cap."
           },
           "422": {
-            "description": "Malformed `options` payload."
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Invalid options or a rejected input (e.g. too many pages)."
           },
           "429": {
             "content": {
@@ -969,7 +1016,34 @@
             "description": "Upload exceeds the configured cap."
           },
           "422": {
-            "description": "Malformed `options` payload."
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Invalid options or a rejected input (e.g. too many pages)."
           },
           "429": {
             "content": {
@@ -1199,23 +1273,32 @@
           "422": {
             "content": {
               "application/json": {
-                "example": {
-                  "error": {
-                    "code": "invalid_options",
-                    "detail": [
-                      {
-                        "loc": [
-                          "page_break"
-                        ],
-                        "msg": "Input should be a valid boolean"
-                      }
-                    ],
-                    "message": "options payload failed validation"
-                  }
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
                 }
               }
             },
-            "description": "Malformed `options` payload."
+            "description": "Invalid options or a rejected input (e.g. too many pages)."
           },
           "429": {
             "content": {

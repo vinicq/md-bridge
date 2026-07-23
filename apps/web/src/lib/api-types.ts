@@ -565,13 +565,18 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Validation Error */
+            /** @description Invalid options or a rejected input (e.g. too many pages). */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
                 };
             };
             /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
@@ -671,12 +676,19 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Malformed `options` payload. */
+            /** @description Invalid options or a rejected input (e.g. too many pages). */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
             429: {
@@ -792,12 +804,19 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Malformed `options` payload. */
+            /** @description Invalid options or a rejected input (e.g. too many pages). */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
             429: {
@@ -943,29 +962,18 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description Malformed `options` payload. */
+            /** @description Invalid options or a rejected input (e.g. too many pages). */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    /**
-                     * @example {
-                     *       "error": {
-                     *         "code": "invalid_options",
-                     *         "detail": [
-                     *           {
-                     *             "loc": [
-                     *               "page_break"
-                     *             ],
-                     *             "msg": "Input should be a valid boolean"
-                     *           }
-                     *         ],
-                     *         "message": "options payload failed validation"
-                     *       }
-                     *     }
-                     */
-                    "application/json": unknown;
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
                 };
             };
             /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */

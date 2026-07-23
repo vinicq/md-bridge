@@ -164,6 +164,8 @@ def create_app() -> FastAPI:
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["*"],
+        # So a cross-origin browser client can read Retry-After on a 503.
+        expose_headers=["Retry-After"],
     )
 
     app.add_exception_handler(ApiError, api_error_handler)
@@ -250,6 +252,13 @@ def create_app() -> FastAPI:
                 responses = operation.setdefault("responses", {})
                 for status, body in guarded_responses.items():
                     responses.setdefault(status, body)
+                # The app's 422 handler returns the same error envelope, not
+                # FastAPI's default HTTPValidationError, so override it to match
+                # (covers invalid options and rejected input like too_many_pages).
+                responses["422"] = {
+                    "description": "Invalid options or a rejected input (e.g. too many pages).",
+                    "content": error_content,
+                }
         app.openapi_schema = schema
         return schema
 
