@@ -422,13 +422,6 @@
         "title": "ValidationError",
         "type": "object"
       }
-    },
-    "securitySchemes": {
-      "APIKeyHeader": {
-        "in": "header",
-        "name": "X-API-Key",
-        "type": "apiKey"
-      }
     }
   },
   "info": {
@@ -570,11 +563,6 @@
             "description": "Validation Error"
           }
         },
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ],
         "summary": "Inspect a PDF (fonts, sizes, tagged, OCR hint)",
         "tags": [
           "inspect"
@@ -623,11 +611,6 @@
             "description": "Conversion failed."
           }
         },
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ],
         "summary": "Render a Markdown file into a Word document (.docx)",
         "tags": [
           "convert"
@@ -686,11 +669,6 @@
             "description": "Renderer failed (Chromium crashed, missing template, etc)."
           }
         },
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ],
         "summary": "Render a Markdown file into a PDF",
         "tags": [
           "convert"
@@ -800,11 +778,6 @@
             "description": "Malformed `options` payload."
           }
         },
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ],
         "summary": "Convert a PDF to structured Markdown",
         "tags": [
           "convert"

@@ -1,33 +1,18 @@
-"""Optional API-key access control.
+"""API-key check.
 
-Off by default: with no MD_BRIDGE_API_TOKEN set, `require_api_key` is a no-op
-and the service behaves exactly as before. Set the token and the expensive
-conversion routes require a matching `X-API-Key` header.
-
-This guards programmatic clients (curl, CI). It does NOT gate the bundled
-same-origin web UI, since an anonymous browser has no token to send: to lock
-the whole surface including the HTML, put basic-auth or SSO at the Caddy edge
-(documented in the deploy guide), not here.
+Enforced in the access-control middleware (app.main), not as a route
+dependency: FastAPI parses and spools the multipart body before route
+dependencies run, so a dependency-based check would let an unauthenticated
+upload be ingested before the 401. The middleware runs before body parsing.
 """
 from __future__ import annotations
 
 import hmac
 
-from fastapi import Request, Security
-from fastapi.security import APIKeyHeader
 
-from app.errors import ApiError
-
-_api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-
-
-async def require_api_key(
-    request: Request, key: str | None = Security(_api_key_header)
-) -> None:
-    settings = request.app.state.settings
-    if not settings.auth_enabled:
-        return
-    # compare_digest is constant-time; guard the empty-header case first so we
-    # never call it with None.
-    if not key or not hmac.compare_digest(key, settings.api_token):
-        raise ApiError(401, "unauthorized", "Missing or invalid API key.")
+def api_key_ok(expected: str, provided: str | None) -> bool:
+    if not provided:
+        return False
+    # Compare as bytes: hmac.compare_digest's str form is ASCII-only and raises
+    # TypeError on a non-ASCII key or header, which would surface as a 500.
+    return hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))

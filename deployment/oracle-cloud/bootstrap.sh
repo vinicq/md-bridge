@@ -32,6 +32,19 @@ REF="${MD_BRIDGE_REF:-main}"
 PUBLIC_UPLOAD_MB="${MD_BRIDGE_MAX_UPLOAD_MB:-50}"
 PUBLIC_RATE_LIMIT="${MD_BRIDGE_RATE_LIMIT:-60}"
 PUBLIC_RATE_WINDOW="${MD_BRIDGE_RATE_WINDOW_SECONDS:-60}"
+
+# These land in a compose file and (the upload cap) in an arithmetic expansion,
+# so reject anything but digits first. A value like x[$(cmd)] would otherwise
+# execute during $(( )) while this runs as root.
+for _var in PUBLIC_UPLOAD_MB PUBLIC_RATE_LIMIT PUBLIC_RATE_WINDOW; do
+  case "${!_var}" in
+    '' | *[!0-9]*)
+      echo "error: $_var must be a non-negative integer, got '${!_var}'" >&2
+      exit 1
+      ;;
+  esac
+done
+
 # Caddy rejects an oversized body at the edge before FastAPI spools it. Track
 # the app upload cap plus a little multipart overhead.
 CADDY_MAX_BODY_MB="$((PUBLIC_UPLOAD_MB + 2))"
@@ -88,13 +101,13 @@ services:
       PYTHONUNBUFFERED: "1"
       # Public-deploy defenses (see the README "Securing a public deployment").
       # Lower upload cap than the 500 MB local default, and a per-instance
-      # request rate limit. MD_BRIDGE_API_TOKEN is passed through from the
-      # operator env: set it before running bootstrap to require X-API-Key on
-      # the conversion routes; leave it unset for an open demo.
+      # request rate limit. The API token lives in api.env (below), not here,
+      # so a token with quotes/backslashes needs no YAML escaping.
       MD_BRIDGE_MAX_UPLOAD_MB: "${PUBLIC_UPLOAD_MB}"
       MD_BRIDGE_RATE_LIMIT: "${PUBLIC_RATE_LIMIT}"
       MD_BRIDGE_RATE_WINDOW_SECONDS: "${PUBLIC_RATE_WINDOW}"
-      MD_BRIDGE_API_TOKEN: "${MD_BRIDGE_API_TOKEN:-}"
+    env_file:
+      - api.env
     expose:
       - "8000"
     healthcheck:
@@ -132,9 +145,12 @@ volumes:
   caddy_config:
 COMPOSE
 
-# compose.yml can carry MD_BRIDGE_API_TOKEN, so keep it root-only rather than
-# the umask default (0644, world-readable).
-chmod 600 "$INSTALL_DIR/compose.yml"
+# The API token goes in a root-only env file, referenced by compose env_file.
+# Written literally (KEY=VALUE), so a token with quotes or backslashes needs no
+# escaping, and 0600 keeps it off the umask-default world-readable path. Empty
+# when no token was supplied, which leaves auth off.
+printf 'MD_BRIDGE_API_TOKEN=%s\n' "${MD_BRIDGE_API_TOKEN:-}" > "$INSTALL_DIR/api.env"
+chmod 600 "$INSTALL_DIR/api.env"
 
 echo "==> Writing $INSTALL_DIR/Caddyfile"
 if [[ "$INSECURE" == "1" ]]; then

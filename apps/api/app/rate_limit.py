@@ -11,15 +11,16 @@ Client IP comes from `request.client.host`. Behind a reverse proxy, run uvicorn
 with `--forwarded-allow-ips` so that resolves to the real client rather than the
 proxy; the app does not parse X-Forwarded-For itself (spoofable when the app is
 exposed directly).
+
+The limiter is enforced in the access-control middleware (app.main) so an
+over-quota request is rejected before its body is parsed and spooled.
 """
 from __future__ import annotations
 
 import time
 from collections.abc import Callable
 
-from fastapi import Request
-
-from app.errors import ApiError
+from fastapi import FastAPI
 
 
 class FixedWindowLimiter:
@@ -61,20 +62,10 @@ class FixedWindowLimiter:
             del self._hits[k]
 
 
-def _get_limiter(request: Request) -> FixedWindowLimiter:
-    limiter = getattr(request.app.state, "rate_limiter", None)
+def get_limiter(app: FastAPI) -> FixedWindowLimiter:
+    limiter = getattr(app.state, "rate_limiter", None)
     if limiter is None:
-        settings = request.app.state.settings
+        settings = app.state.settings
         limiter = FixedWindowLimiter(settings.rate_limit, settings.rate_window_seconds)
-        request.app.state.rate_limiter = limiter
+        app.state.rate_limiter = limiter
     return limiter
-
-
-async def enforce_rate_limit(request: Request) -> None:
-    settings = request.app.state.settings
-    if not settings.rate_limit_enabled:
-        return
-    limiter = _get_limiter(request)
-    client_ip = request.client.host if request.client else "unknown"
-    if not limiter.allow(client_ip):
-        raise ApiError(429, "rate_limited", "Too many requests. Try again later.")

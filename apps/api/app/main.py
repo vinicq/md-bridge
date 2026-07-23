@@ -7,6 +7,7 @@ import pymupdf
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app import __version__
 from app.config import CORS_ORIGINS
@@ -17,8 +18,20 @@ from app.errors import (
     validation_exception_handler,
 )
 from app.logging_filters import install_health_access_filter
+from app.rate_limit import get_limiter
 from app.routes import convert, health, inspect
+from app.security import api_key_ok
 from app.settings import load_settings
+
+# Expensive routes that spool an upload and drive Chromium/PyMuPDF. Auth and
+# rate limiting guard these; health, themes, and formats stay open.
+_GUARDED_POST_PATHS = frozenset(
+    {"/api/pdf-to-md", "/api/md-to-pdf", "/api/md-to-docx", "/api/inspect-pdf"}
+)
+
+
+def _error_response(status: int, code: str, message: str) -> JSONResponse:
+    return JSONResponse(status_code=status, content={"error": {"code": code, "message": message}})
 
 API_DESCRIPTION = """
 **md-bridge** is a small, opinionated HTTP service that converts between PDF
@@ -115,6 +128,28 @@ def create_app() -> FastAPI:
         response.headers.setdefault("Referrer-Policy", "no-referrer")
         response.headers.setdefault("X-Frame-Options", "DENY")
         return response
+
+    # Access control BEFORE the route runs, so a missing key or an over-quota
+    # client is rejected before FastAPI parses and spools the multipart body.
+    # A route dependency would run after body parsing and let the upload in.
+    # Auth is checked before the rate limit so rejected traffic does not consume
+    # the (per-instance, shared behind a proxy) quota.
+    @app.middleware("http")
+    async def _access_control(request, call_next):
+        if request.method == "POST" and request.url.path in _GUARDED_POST_PATHS:
+            settings = request.app.state.settings
+            if settings.auth_enabled and not api_key_ok(
+                settings.api_token, request.headers.get("X-API-Key")
+            ):
+                return _error_response(401, "unauthorized", "Missing or invalid API key.")
+            if settings.rate_limit_enabled:
+                limiter = get_limiter(request.app)
+                client_ip = request.client.host if request.client else "unknown"
+                if not limiter.allow(client_ip):
+                    return _error_response(
+                        429, "rate_limited", "Too many requests. Try again later."
+                    )
+        return await call_next(request)
 
     app.add_exception_handler(ApiError, api_error_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)

@@ -167,7 +167,7 @@ local run:
 
 | Env var | Bootstrap default | Effect |
 |---|---|---|
-| `MD_BRIDGE_MAX_UPLOAD_MB` | `50` | Public upload cap, below the 500 MB code default. Caddy also rejects bodies over 501 MiB at the edge. |
+| `MD_BRIDGE_MAX_UPLOAD_MB` | `50` | Public upload cap, below the 500 MB code default. Caddy rejects bodies over this plus ~2 MiB (52 MiB at the default) at the edge before they spool. |
 | `MD_BRIDGE_RATE_LIMIT` | `60` | Requests per window before the conversion routes answer `429`. `0` disables it. |
 | `MD_BRIDGE_RATE_WINDOW_SECONDS` | `60` | Length of that window. |
 | `MD_BRIDGE_API_TOKEN` | unset | If set, the conversion routes require a matching `X-API-Key` header. |
