@@ -158,6 +158,103 @@ The compose file pins `:latest`, so any release published by the
 `docker-publish.yml` workflow on GitHub becomes available within
 minutes.
 
+`docker compose pull && up -d` keeps your existing `/opt/md-bridge/compose.yml`;
+it does not import changes the current bootstrap makes to that file. If your
+install predates the on-disk log-rotation limits (the `x-logging` block), add
+them by hand from the shipped `bootstrap.sh`. Do not re-run the bootstrap on a
+customized install to get them: it regenerates `compose.yml`, `Caddyfile`, and
+`api.env` from scratch and would drop any manual Caddy directives (Basic
+Auth/SSO), which are not env-driven and cannot be passed back in.
+
+After updating, re-run the smoke test to confirm the new images serve. Use your
+public URL (`http://<PUBLIC_IP>` if you deployed with `MD_BRIDGE_INSECURE=1`,
+`https://<your.domain>` otherwise). If you set `MD_BRIDGE_API_TOKEN`, put
+`SMOKE_API_KEY=<token>` on the command so the guarded md-to-pdf check is
+authorized (otherwise it returns 401):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vinicq/md-bridge/main/scripts/smoke.py -o smoke.py
+SMOKE_BASE_URL="https://<your.domain>" SMOKE_API_KEY="<token-if-set>" python3 smoke.py
+```
+
+## Rolling back
+
+`:latest` always pulls the newest image, so to pin a known-good version (or
+undo a bad update) set an explicit tag and bring the stack up on it. Every
+release is tagged by semver and by commit SHA
+(`ghcr.io/vinicq/md-bridge-api:0.11.0`, `...:sha-<7hex>`).
+
+Edit `/opt/md-bridge/compose.yml`, replace the two `:latest` image tags with
+the version you want, then:
+
+```bash
+cd /opt/md-bridge
+sudo docker compose pull && sudo docker compose up -d
+```
+
+Edit the tags rather than re-running `bootstrap.sh`: the bootstrap regenerates
+`compose.yml`, `Caddyfile`, and `api.env` from scratch, so re-running it for a
+rollback would drop any customization you made (a token, Basic Auth or SSO you
+added to the Caddyfile). The compose-edit path above changes only the image
+tags and leaves everything else intact.
+
+GHCR tags are mutable: a workflow rerun can move a tag to a new digest. The
+`sha-<commit>` tag is the most stable handle; for a guaranteed-identical
+rollback, pin BOTH images by digest (the api and web images are built
+separately, so each has its own):
+
+```bash
+docker buildx imagetools inspect ghcr.io/vinicq/md-bridge-api:0.11.0   # api digest
+docker buildx imagetools inspect ghcr.io/vinicq/md-bridge-web:0.11.0   # web digest
+# then pin ghcr.io/vinicq/md-bridge-api@sha256:... and -web@sha256:... in compose.yml
+```
+
+## Diagnosing a problem
+
+Everything an operator needs is on the box, no external service:
+
+```bash
+cd /opt/md-bridge
+sudo docker compose ps                     # up / restarting / unhealthy
+sudo docker compose logs --tail=200 api    # api access log: method, path, status, duration
+sudo docker compose logs --tail=200 caddy web
+# Liveness. Use the public URL (Caddy routes by domain, so http://localhost
+# does not match the site): https://<your.domain>/api/health, or
+# http://<PUBLIC_IP>/api/health if you deployed with MD_BRIDGE_INSECURE=1.
+# Or hit the api container directly, which needs neither Caddy nor DNS:
+sudo docker compose exec api \
+  python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/api/health').read())"
+```
+
+The API logs one line per `/api` request (method, path, status, duration),
+including failures and timeouts, and never the document content. Status codes
+worth knowing: `422 too_many_pages` (PDF over `MD_BRIDGE_MAX_PDF_PAGES`),
+`503 service_busy` (at capacity or the wait queue is full), and
+`504 conversion_timeout` (hit `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS`).
+
+## Backing up the configuration
+
+The only per-host state lives under `/opt/md-bridge` (there is no database
+and no stored documents). Back up:
+
+- `compose.yml` (the stack definition and env values)
+- `Caddyfile` (the proxy config and domain)
+- `api.env` (the API token, mode 0600)
+
+The archive contains the token, so create it root-only from the start (no
+window where it is world-readable), and write to a temp file first so a failed
+run cannot destroy the previous good backup. `install` sets mode 0600, `tar`
+keeps it (truncate preserves the mode), and `mv` is atomic:
+
+```bash
+sudo install -m 600 /dev/null md-bridge-config.tgz.tmp
+sudo tar czf md-bridge-config.tgz.tmp -C /opt md-bridge/compose.yml md-bridge/Caddyfile md-bridge/api.env
+sudo mv md-bridge-config.tgz.tmp md-bridge-config.tgz
+```
+
+Caddy's `caddy_data` volume holds the Let's Encrypt certificates; it is
+re-fetched automatically on a fresh host, so it is optional to back up.
+
 ## Securing a public deployment
 
 A public instance accepts uploads and drives Chromium and PyMuPDF, so it
@@ -194,13 +291,6 @@ Two limits worth knowing:
       `oauth2-proxy` container in front). That gates the HTML and the API with
       one credential the browser actually sends. Set the app token too only if
       you also want a separate key for programmatic clients.
-- **The rate limit is per instance by default.** Counters live in the API
-  process, and behind Caddy every request arrives from Caddy's address, so
-  the limit throttles total load on the box rather than per client IP. That
-  protects the instance, which is the goal. For true per-IP limiting, run
-  uvicorn with `--forwarded-allow-ips` and have Caddy set `X-Forwarded-For`
-  to the real client; a shared store for multi-instance counters is out of
-  scope (self-hosted, no external state).
 - **The rate limit is per instance by default.** Counters live in the API
   process, and behind Caddy every request arrives from Caddy's address, so
   the limit throttles total load on the box rather than per client IP. That
