@@ -8,6 +8,7 @@ from fastapi import APIRouter, File, Request, UploadFile
 
 from app.concurrency import run_bounded
 from app.errors import ApiError
+from app.limits import enforce_pdf_page_cap
 from app.schemas.convert import InspectPdfResponse
 from app.services.inspect import inspect_pdf_bytes
 
@@ -97,6 +98,8 @@ async def inspect_pdf(
                 "payload_too_large",
                 f"Upload exceeds {max_upload_bytes // (1024 * 1024)} MB limit.",
             )
+
+    enforce_pdf_page_cap(bytes(data), request.app.state.settings.max_pdf_pages)
 
     started = time.perf_counter()
     result = await run_bounded(request.app, inspect_pdf_bytes, bytes(data), name)

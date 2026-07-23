@@ -29,6 +29,24 @@ def test_pdf_to_md_ok_through_the_gate(client, istqb_pdf: Path):
     assert resp.status_code == 200, resp.text
 
 
+def test_pdf_to_md_rejects_too_many_pages(client_factory, istqb_pdf: Path):
+    client = client_factory(max_pdf_pages=1)  # syllabus has many pages
+    with istqb_pdf.open("rb") as fh:
+        resp = client.post(
+            "/api/pdf-to-md", files={"file": ("s.pdf", fh.read(), "application/pdf")}
+        )
+    assert resp.status_code == 422, resp.text
+    assert resp.json()["error"]["code"] == "too_many_pages"
+
+
+def test_page_cap_off_by_default(client, istqb_pdf: Path):
+    with istqb_pdf.open("rb") as fh:
+        resp = client.post(
+            "/api/pdf-to-md", files={"file": ("s.pdf", fh.read(), "application/pdf")}
+        )
+    assert resp.status_code == 200, resp.text
+
+
 def test_concurrent_requests_over_cap_get_503(istqb_pdf: Path):
     # One slot, no queue: two concurrent real conversions -> one runs, one is
     # busy. The istqb syllabus is large enough that the first holds the slot
