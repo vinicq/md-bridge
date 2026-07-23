@@ -163,24 +163,41 @@ After updating, re-run the smoke test to confirm the new images serve:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vinicq/md-bridge/main/scripts/smoke.py -o smoke.py
 SMOKE_BASE_URL="https://<your.domain>" python3 smoke.py
+# If you set MD_BRIDGE_API_TOKEN, also export SMOKE_API_KEY=<token> so the
+# guarded md-to-pdf check is authorized (otherwise it returns 401).
 ```
 
 ## Rolling back
 
-`:latest` always pulls the newest image, so to pin a known-good version
-(or undo a bad update) set an explicit tag and bring the stack up on it.
-Every release is tagged by semver and by commit SHA
-(`ghcr.io/vinicq/md-bridge-api:0.11.0`, `...:sha-<7hex>`), so:
+`:latest` always pulls the newest image, so to pin a known-good version (or
+undo a bad update) set an explicit tag and bring the stack up on it. Every
+release is tagged by semver and by commit SHA
+(`ghcr.io/vinicq/md-bridge-api:0.11.0`, `...:sha-<7hex>`).
+
+Edit `/opt/md-bridge/compose.yml`, replace the two `:latest` image tags with
+the version you want, then:
 
 ```bash
 cd /opt/md-bridge
-sudo MD_BRIDGE_IMAGE_TAG=0.11.0 ./bootstrap.sh   # re-pin both images
-# or edit compose.yml, replace :latest with the tag, then:
 sudo docker compose pull && sudo docker compose up -d
 ```
 
-The tags are immutable, so the rollback is reproducible. Roll forward the
-same way once a fix ships.
+Or re-run the bootstrap with the tag pinned. It is not left on the box, so
+download it again, and it needs your domain:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vinicq/md-bridge/main/deployment/oracle-cloud/bootstrap.sh -o bootstrap.sh
+sudo MD_BRIDGE_DOMAIN="<your.domain>" MD_BRIDGE_IMAGE_TAG=0.11.0 ./bootstrap.sh
+```
+
+GHCR tags are mutable: a workflow rerun can move a tag to a new digest. The
+`sha-<commit>` tag is the most stable handle; for a guaranteed-identical
+rollback, pin by digest instead:
+
+```bash
+docker buildx imagetools inspect ghcr.io/vinicq/md-bridge-api:0.11.0   # find the sha256
+# then use ghcr.io/vinicq/md-bridge-api@sha256:... in compose.yml
+```
 
 ## Diagnosing a problem
 
@@ -188,16 +205,22 @@ Everything an operator needs is on the box, no external service:
 
 ```bash
 cd /opt/md-bridge
-sudo docker compose ps                 # which container is up / restarting / unhealthy
-sudo docker compose logs --tail=200 api   # api access log: method, path, status, duration
+sudo docker compose ps                     # up / restarting / unhealthy
+sudo docker compose logs --tail=200 api    # api access log: method, path, status, duration
 sudo docker compose logs --tail=200 caddy web
-curl -fsS http://localhost/api/health  # liveness (or https://<domain>/api/health)
+# Liveness. Use the public URL (Caddy routes by domain, so http://localhost
+# does not match the site), or hit the api container directly, which needs
+# neither Caddy nor DNS:
+curl -fsS https://<your.domain>/api/health
+sudo docker compose exec api \
+  python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/api/health').read())"
 ```
 
 The API logs one line per `/api` request (method, path, status, duration),
-including failures and timeouts, and never the document content. A `503`
-means the work limits kicked in (busy or over the page cap); a `504` means a
-conversion hit `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS`.
+including failures and timeouts, and never the document content. Status codes
+worth knowing: `422 too_many_pages` (PDF over `MD_BRIDGE_MAX_PDF_PAGES`),
+`503 service_busy` (at capacity or the wait queue is full), and
+`504 conversion_timeout` (hit `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS`).
 
 ## Backing up the configuration
 
@@ -208,8 +231,11 @@ and no stored documents). Back up:
 - `Caddyfile` (the proxy config and domain)
 - `api.env` (the API token, mode 0600)
 
+The archive contains the token, so lock it down to root-only:
+
 ```bash
-sudo tar czf md-bridge-config-$(date +%Y%m%d).tgz -C /opt md-bridge/compose.yml md-bridge/Caddyfile md-bridge/api.env
+sudo tar czf md-bridge-config.tgz -C /opt md-bridge/compose.yml md-bridge/Caddyfile md-bridge/api.env
+sudo chmod 600 md-bridge-config.tgz
 ```
 
 Caddy's `caddy_data` volume holds the Let's Encrypt certificates; it is

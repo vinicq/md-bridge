@@ -183,8 +183,15 @@ def create_app() -> FastAPI:
     @app.middleware("http")
     async def _access_log(request, call_next):
         path = request.url.path
+        root = request.scope.get("root_path", "")
+        if root and path.startswith(root):
+            path = path[len(root):] or "/"
         if not path.startswith("/api/") or path == "/api/health":
             return await call_next(request)
+        # Escape control chars: the path is client-controlled, and a raw
+        # terminal escape sequence in it could manipulate the operator's
+        # display when they read `docker compose logs`.
+        safe_path = path.encode("unicode_escape").decode("ascii", "replace")
         started = time.perf_counter()
         try:
             response = await call_next(request)
@@ -193,7 +200,7 @@ def create_app() -> FastAPI:
             log.exception(
                 "request method=%s path=%s status=500 duration_ms=%d",
                 request.method,
-                path,
+                safe_path,
                 elapsed_ms,
             )
             raise
@@ -201,7 +208,7 @@ def create_app() -> FastAPI:
         log.info(
             "request method=%s path=%s status=%d duration_ms=%d",
             request.method,
-            path,
+            safe_path,
             response.status_code,
             elapsed_ms,
         )
