@@ -38,11 +38,14 @@ steps:
 4. Point a domain at the VM and let Caddy fetch a certificate.
 
 `bootstrap.sh` targets Ubuntu: it uses `apt-get`, Docker's Ubuntu package
-repository, `iptables-persistent`, and systemd. On another Ubuntu (or
-Debian-family) VM it runs as-is; on a provider whose firewall lives in a
-cloud console, open 80/443 there and drop the iptables lines. On a
-non-Debian distro, install Docker yourself and run the compose stack behind
-Caddy by hand, following the same same-origin pattern the script sets up.
+repository (pinned to `download.docker.com/linux/ubuntu` with the release
+from `lsb_release -cs`), `iptables-persistent`, and systemd. On another
+Ubuntu VM it runs as-is; on a provider whose firewall lives in a cloud
+console, open 80/443 there and drop the iptables lines. On Debian or any
+other non-Ubuntu distro it will not run unchanged (the Docker repo URL
+would resolve to a release that does not exist): install Docker yourself
+and run the compose stack behind Caddy by hand, following the same
+same-origin pattern the script sets up.
 
 ## Managed container platforms (Cloud Run, App Runner, Container Apps)
 
