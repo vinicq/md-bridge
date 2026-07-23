@@ -158,6 +158,63 @@ The compose file pins `:latest`, so any release published by the
 `docker-publish.yml` workflow on GitHub becomes available within
 minutes.
 
+After updating, re-run the smoke test to confirm the new images serve:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vinicq/md-bridge/main/scripts/smoke.py -o smoke.py
+SMOKE_BASE_URL="https://<your.domain>" python3 smoke.py
+```
+
+## Rolling back
+
+`:latest` always pulls the newest image, so to pin a known-good version
+(or undo a bad update) set an explicit tag and bring the stack up on it.
+Every release is tagged by semver and by commit SHA
+(`ghcr.io/vinicq/md-bridge-api:0.11.0`, `...:sha-<7hex>`), so:
+
+```bash
+cd /opt/md-bridge
+sudo MD_BRIDGE_IMAGE_TAG=0.11.0 ./bootstrap.sh   # re-pin both images
+# or edit compose.yml, replace :latest with the tag, then:
+sudo docker compose pull && sudo docker compose up -d
+```
+
+The tags are immutable, so the rollback is reproducible. Roll forward the
+same way once a fix ships.
+
+## Diagnosing a problem
+
+Everything an operator needs is on the box, no external service:
+
+```bash
+cd /opt/md-bridge
+sudo docker compose ps                 # which container is up / restarting / unhealthy
+sudo docker compose logs --tail=200 api   # api access log: method, path, status, duration
+sudo docker compose logs --tail=200 caddy web
+curl -fsS http://localhost/api/health  # liveness (or https://<domain>/api/health)
+```
+
+The API logs one line per `/api` request (method, path, status, duration),
+including failures and timeouts, and never the document content. A `503`
+means the work limits kicked in (busy or over the page cap); a `504` means a
+conversion hit `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS`.
+
+## Backing up the configuration
+
+The only per-host state lives under `/opt/md-bridge` (there is no database
+and no stored documents). Back up:
+
+- `compose.yml` (the stack definition and env values)
+- `Caddyfile` (the proxy config and domain)
+- `api.env` (the API token, mode 0600)
+
+```bash
+sudo tar czf md-bridge-config-$(date +%Y%m%d).tgz -C /opt md-bridge/compose.yml md-bridge/Caddyfile md-bridge/api.env
+```
+
+Caddy's `caddy_data` volume holds the Let's Encrypt certificates; it is
+re-fetched automatically on a fresh host, so it is optional to back up.
+
 ## Securing a public deployment
 
 A public instance accepts uploads and drives Chromium and PyMuPDF, so it
@@ -194,13 +251,6 @@ Two limits worth knowing:
       `oauth2-proxy` container in front). That gates the HTML and the API with
       one credential the browser actually sends. Set the app token too only if
       you also want a separate key for programmatic clients.
-- **The rate limit is per instance by default.** Counters live in the API
-  process, and behind Caddy every request arrives from Caddy's address, so
-  the limit throttles total load on the box rather than per client IP. That
-  protects the instance, which is the goal. For true per-IP limiting, run
-  uvicorn with `--forwarded-allow-ips` and have Caddy set `X-Forwarded-For`
-  to the real client; a shared store for multi-instance counters is out of
-  scope (self-hosted, no external state).
 - **The rate limit is per instance by default.** Counters live in the API
   process, and behind Caddy every request arrives from Caddy's address, so
   the limit throttles total load on the box rather than per client IP. That
