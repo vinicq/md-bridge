@@ -47,18 +47,24 @@ class ConcurrencyGate:
         )
 
     async def run[T](self, fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
-        # The check below and the counter update run without an await between
-        # them, so on the single-threaded event loop they are atomic.
-        if self._sem.locked() and self._waiters >= self._queue_max:
-            raise self._busy_error()
-
-        self._waiters += 1
-        try:
-            await asyncio.wait_for(self._sem.acquire(), timeout=self._queue_wait)
-        except TimeoutError:
-            raise self._busy_error() from None
-        finally:
-            self._waiters -= 1
+        if self._sem.locked():
+            # No slot free. Reject if the wait queue is full, else wait a bound.
+            # The checks and counter update run without an await between them, so
+            # on the single-threaded event loop they are atomic.
+            if self._waiters >= self._queue_max:
+                raise self._busy_error()
+            self._waiters += 1
+            try:
+                await asyncio.wait_for(self._sem.acquire(), timeout=self._queue_wait)
+            except TimeoutError:
+                raise self._busy_error() from None
+            finally:
+                self._waiters -= 1
+        else:
+            # A slot is free: acquire it directly. On a semaphore with a free
+            # permit, acquire() returns without suspending, so no other request
+            # can take the permit between the check above and here.
+            await self._sem.acquire()
 
         # Release only when the thread truly finishes (done callback), never on
         # the success path: a timed-out thread keeps running and must free its

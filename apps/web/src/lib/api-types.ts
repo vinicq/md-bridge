@@ -574,6 +574,20 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Service at capacity; a Retry-After header is included. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     md_to_docx_api_md_to_docx_post: {
@@ -636,6 +650,20 @@ export interface operations {
             };
             /** @description Conversion failed. */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Service at capacity; a Retry-After header is included. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -713,6 +741,20 @@ export interface operations {
             };
             /** @description Renderer failed (Chromium crashed, missing template, etc). */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Service at capacity; a Retry-After header is included. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -831,6 +873,20 @@ export interface operations {
             };
             /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Service at capacity; a Retry-After header is included. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };

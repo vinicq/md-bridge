@@ -214,6 +214,14 @@ def create_app() -> FastAPI:
                     "429",
                     {"description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."},
                 )
+                responses.setdefault(
+                    "503",
+                    {"description": "Service at capacity; a Retry-After header is included."},
+                )
+                responses.setdefault(
+                    "504",
+                    {"description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS."},
+                )
         app.openapi_schema = schema
         return schema
 

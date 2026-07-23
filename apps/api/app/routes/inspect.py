@@ -1,12 +1,12 @@
 """PDF diagnostics route."""
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 
 from fastapi import APIRouter, File, Request, UploadFile
 
+from app.concurrency import run_bounded
 from app.errors import ApiError
 from app.schemas.convert import InspectPdfResponse
 from app.services.inspect import inspect_pdf_bytes
@@ -99,7 +99,7 @@ async def inspect_pdf(
             )
 
     started = time.perf_counter()
-    result = await asyncio.to_thread(inspect_pdf_bytes, bytes(data), name)
+    result = await run_bounded(request.app, inspect_pdf_bytes, bytes(data), name)
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     log.info(
         "inspect-pdf filename=%s bytes=%d duration_ms=%d pages=%d tagged=%s",

@@ -575,6 +575,12 @@
           },
           "429": {
             "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
+          },
+          "503": {
+            "description": "Service at capacity; a Retry-After header is included."
+          },
+          "504": {
+            "description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS."
           }
         },
         "security": [
@@ -635,6 +641,12 @@
           },
           "500": {
             "description": "Conversion failed."
+          },
+          "503": {
+            "description": "Service at capacity; a Retry-After header is included."
+          },
+          "504": {
+            "description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS."
           }
         },
         "security": [
@@ -705,6 +717,12 @@
           },
           "500": {
             "description": "Renderer failed (Chromium crashed, missing template, etc)."
+          },
+          "503": {
+            "description": "Service at capacity; a Retry-After header is included."
+          },
+          "504": {
+            "description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS."
           }
         },
         "security": [
@@ -826,6 +844,12 @@
           },
           "429": {
             "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
+          },
+          "503": {
+            "description": "Service at capacity; a Retry-After header is included."
+          },
+          "504": {
+            "description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS."
           }
         },
         "security": [
