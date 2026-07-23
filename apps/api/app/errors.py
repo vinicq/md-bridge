@@ -17,8 +17,9 @@ class ApiError(HTTPException):
         code: str,
         message: str,
         detail: Any | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
-        super().__init__(status_code=status_code, detail=message)
+        super().__init__(status_code=status_code, detail=message, headers=headers)
         self.code = code
         self.message = message
         self.extra_detail = detail
@@ -35,6 +36,7 @@ async def api_error_handler(_: Request, exc: ApiError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
         content=_envelope(exc.code, exc.message, exc.extra_detail),
+        headers=exc.headers,
     )
 
 

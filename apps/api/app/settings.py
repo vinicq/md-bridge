@@ -42,6 +42,15 @@ class Settings:
     api_token: str | None
     rate_limit: int  # requests per window per client IP; 0 disables the limiter
     rate_window_seconds: int
+    # Work limits (#437). Unlike the auth/rate-limit knobs above, concurrency
+    # and the convert timeout default to a safe-for-production value rather than
+    # off: unbounded concurrency is a resource footgun (two Chromium renders
+    # already compete), not a feature, and #437's AC asks for a safe default.
+    max_concurrency: int  # simultaneous heavy conversions; >= 1
+    queue_max: int  # requests allowed to wait for a slot; 0 = reject when full
+    queue_wait_seconds: int  # how long a request waits for a slot before 503
+    convert_timeout_seconds: int  # wall-clock per request; 0 disables
+    max_pdf_pages: int  # reject PDFs above this page count; 0 = unlimited
 
     @property
     def auth_enabled(self) -> bool:
@@ -68,4 +77,9 @@ def load_settings() -> Settings:
         # its own window).
         rate_limit=_int_env("MD_BRIDGE_RATE_LIMIT", 0, minimum=0),
         rate_window_seconds=_int_env("MD_BRIDGE_RATE_WINDOW_SECONDS", 60, minimum=1),
+        max_concurrency=_int_env("MD_BRIDGE_MAX_CONCURRENCY", 2, minimum=1),
+        queue_max=_int_env("MD_BRIDGE_QUEUE_MAX", 8, minimum=0),
+        queue_wait_seconds=_int_env("MD_BRIDGE_QUEUE_WAIT_SECONDS", 10, minimum=0),
+        convert_timeout_seconds=_int_env("MD_BRIDGE_CONVERT_TIMEOUT_SECONDS", 300, minimum=0),
+        max_pdf_pages=_int_env("MD_BRIDGE_MAX_PDF_PAGES", 0, minimum=0),
     )
