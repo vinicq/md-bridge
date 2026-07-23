@@ -52,6 +52,19 @@ if [[ "$PUBLIC_UPLOAD_MB" -lt 1 || "$PUBLIC_RATE_WINDOW" -lt 1 ]]; then
   exit 1
 fi
 
+# The token goes into a Compose env_file, where a `$` would be interpolated
+# (turning e.g. `$UNSET` into an empty token and silently disabling auth) and
+# quotes/backslashes have their own meaning. Restrict it to a charset that is
+# literal there. hex/base64/url-safe tokens already fit; reject anything else
+# rather than risk a fail-open. Empty (no token) passes and leaves auth off.
+case "${MD_BRIDGE_API_TOKEN:-}" in
+  *[!A-Za-z0-9._~=+/-]*)
+    echo "error: MD_BRIDGE_API_TOKEN may contain only [A-Za-z0-9._~=+/-]" >&2
+    echo "       (e.g. openssl rand -hex 24). Regenerate it without other characters." >&2
+    exit 1
+    ;;
+esac
+
 # Caddy rejects an oversized body at the edge before FastAPI spools it. Track
 # the app upload cap plus a little multipart overhead. Force base 10 (10#) so a
 # value with a leading zero like 050 is not read as octal.
