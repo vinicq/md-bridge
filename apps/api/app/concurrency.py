@@ -47,6 +47,10 @@ class ConcurrencyGate:
         )
 
     async def run[T](self, fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+        loop = asyncio.get_running_loop()
+        # Deadline set at entry so the timeout is a true per-request wall clock:
+        # time spent waiting for a slot counts against it, not on top of it.
+        deadline = loop.time() + self._timeout if self._timeout > 0 else None
         if self._sem.locked():
             # No slot free. Reject if the wait queue is full, else wait a bound.
             # The checks and counter update run without an await between them, so
@@ -84,17 +88,23 @@ class ConcurrencyGate:
         # ASGI host cancelling on client disconnect) does not cancel the task:
         # the thread keeps running regardless, and the slot must be released by
         # the done callback, never early.
-        if self._timeout <= 0:
+        if deadline is None:
             # No gate deadline; worker exceptions (including a TimeoutError the
             # converter itself raises) propagate unchanged.
             return await asyncio.shield(task)
         try:
-            return await asyncio.wait_for(asyncio.shield(task), timeout=self._timeout)
+            remaining = max(0.0, deadline - loop.time())
+            return await asyncio.wait_for(asyncio.shield(task), timeout=remaining)
         except TimeoutError:
-            if task.done():
-                # The worker itself raised TimeoutError before the deadline;
-                # propagate it rather than relabel it as the gate timeout.
-                raise
+            # If the task actually finished (it can win a race with the
+            # deadline), return its result or propagate its real exception;
+            # do not relabel a completed worker as the gate timeout. Only a
+            # still-running task is a genuine deadline hit.
+            if task.done() and not task.cancelled():
+                exc = task.exception()
+                if exc is not None:
+                    raise exc from None
+                return task.result()
             raise ApiError(
                 504, "conversion_timeout", "The conversion took too long and was abandoned."
             ) from None
