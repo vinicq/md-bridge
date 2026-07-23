@@ -5,10 +5,11 @@ import asyncio
 import logging
 import time
 
-from fastapi import APIRouter, File, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Request, UploadFile
 
 from app.errors import ApiError
 from app.schemas.convert import InspectPdfResponse
+from app.security import require_api_key
 from app.services.inspect import inspect_pdf_bytes
 
 router = APIRouter(tags=["inspect"])
@@ -63,6 +64,7 @@ _INSPECT_EXAMPLE = {
 @router.post(
     "/api/inspect-pdf",
     response_model=InspectPdfResponse,
+    dependencies=[Depends(require_api_key)],
     summary="Inspect a PDF (fonts, sizes, tagged, OCR hint)",
     description=INSPECT_DESCRIPTION,
     response_description="Diagnostics about the uploaded PDF.",
