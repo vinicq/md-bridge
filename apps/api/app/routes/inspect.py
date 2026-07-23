@@ -5,9 +5,8 @@ import asyncio
 import logging
 import time
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, Request, UploadFile
 
-from app.config import MAX_UPLOAD_BYTES
 from app.errors import ApiError
 from app.schemas.convert import InspectPdfResponse
 from app.services.inspect import inspect_pdf_bytes
@@ -70,12 +69,14 @@ _INSPECT_EXAMPLE = {
     responses={
         200: {"content": {"application/json": {"example": _INSPECT_EXAMPLE}}},
         400: {"description": "Upload is not a PDF."},
-        413: {"description": "Upload exceeds the 500 MB cap."},
+        413: {"description": "Upload exceeds the configured cap."},
     },
 )
 async def inspect_pdf(
+    request: Request,
     file: UploadFile = File(..., description="The PDF to inspect."),
 ) -> InspectPdfResponse:
+    max_upload_bytes = request.app.state.settings.max_upload_bytes
     name = file.filename or ""
     if not name.lower().endswith(".pdf"):
         raise ApiError(
@@ -90,11 +91,11 @@ async def inspect_pdf(
         if not chunk:
             break
         data.extend(chunk)
-        if len(data) > MAX_UPLOAD_BYTES:
+        if len(data) > max_upload_bytes:
             raise ApiError(
                 413,
                 "payload_too_large",
-                f"Upload exceeds {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
+                f"Upload exceeds {max_upload_bytes // (1024 * 1024)} MB limit.",
             )
 
     started = time.perf_counter()

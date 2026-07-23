@@ -158,6 +158,77 @@ The compose file pins `:latest`, so any release published by the
 `docker-publish.yml` workflow on GitHub becomes available within
 minutes.
 
+## Securing a public deployment
+
+A public instance accepts uploads and drives Chromium and PyMuPDF, so it
+spends CPU and disk on behalf of anyone who can reach it. The bootstrap
+compose already ships three defenses, all env-driven, all off in a bare
+local run:
+
+| Env var | Bootstrap default | Effect |
+|---|---|---|
+| `MD_BRIDGE_MAX_UPLOAD_MB` | `50` | Public upload cap, below the 500 MB code default. Caddy rejects bodies over this plus ~2 MiB (52 MiB at the default) at the edge before they spool. |
+| `MD_BRIDGE_RATE_LIMIT` | `60` | Requests per window before the conversion routes answer `429`. `0` disables it. |
+| `MD_BRIDGE_RATE_WINDOW_SECONDS` | `60` | Length of that window. |
+| `MD_BRIDGE_API_TOKEN` | unset | If set, the conversion routes require a matching `X-API-Key` header. |
+
+Set a token before bootstrapping to require a key on every conversion:
+
+```bash
+sudo MD_BRIDGE_DOMAIN="mdbridge.example.com" \
+     MD_BRIDGE_API_TOKEN="$(openssl rand -hex 24)" ./bootstrap.sh
+```
+
+Two limits worth knowing:
+
+- **Setting a token disables the bundled UI, on purpose.** The web UI sends
+  its conversion requests without an `X-API-Key` (an anonymous browser has no
+  key), so once `MD_BRIDGE_API_TOKEN` is set, every conversion from the
+  bundled pages returns 401. The token is for an **API-only** deployment
+  (curl, scripts, CI). Choose one of two modes:
+    - **Public UI + abuse protection**: leave `MD_BRIDGE_API_TOKEN` unset and
+      rely on the rate limit and upload cap. The pages work for anyone; the
+      limits keep the box safe.
+    - **Locked surface (UI included)**: leave the app token unset and put
+      basic-auth or SSO at Caddy (`basic_auth` in the Caddyfile, or an
+      `oauth2-proxy` container in front). That gates the HTML and the API with
+      one credential the browser actually sends. Set the app token too only if
+      you also want a separate key for programmatic clients.
+- **The rate limit is per instance by default.** Counters live in the API
+  process, and behind Caddy every request arrives from Caddy's address, so
+  the limit throttles total load on the box rather than per client IP. That
+  protects the instance, which is the goal. For true per-IP limiting, run
+  uvicorn with `--forwarded-allow-ips` and have Caddy set `X-Forwarded-For`
+  to the real client; a shared store for multi-instance counters is out of
+  scope (self-hosted, no external state).
+- **The rate limit is per instance by default.** Counters live in the API
+  process, and behind Caddy every request arrives from Caddy's address, so
+  the limit throttles total load on the box rather than per client IP. That
+  protects the instance, which is the goal. For true per-IP limiting, run
+  uvicorn with `--forwarded-allow-ips` and have Caddy set `X-Forwarded-For`
+  to the real client; a shared store for multi-instance counters is out of
+  scope (self-hosted, no external state).
+
+### Manual test (denied access and rate-limit exceeded)
+
+With a token set and `MD_BRIDGE_RATE_LIMIT=60`:
+
+```bash
+# Denied: no key -> 401
+curl -s -o /dev/null -w "%{http_code}\n" \
+  -F "file=@notes.md" https://mdbridge.example.com/api/md-to-pdf   # 401
+
+# Allowed: correct key -> 200
+curl -s -o /dev/null -w "%{http_code}\n" -H "X-API-Key: <token>" \
+  -F "file=@notes.md" https://mdbridge.example.com/api/md-to-pdf   # 200
+
+# Rate limit: hammer past the window cap -> a 429 appears
+for i in $(seq 1 70); do
+  curl -s -o /dev/null -w "%{http_code} " -H "X-API-Key: <token>" \
+    -F "file=@notes.md" https://mdbridge.example.com/api/md-to-pdf
+done; echo   # trailing codes turn to 429
+```
+
 ## Tearing it down
 
 - Console → Compute → Instances → click `md-bridge` → **More

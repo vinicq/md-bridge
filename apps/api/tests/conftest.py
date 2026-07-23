@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import io
+from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 
 import pymupdf
@@ -13,6 +15,26 @@ from fastapi.testclient import TestClient
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(create_app())
+
+
+@pytest.fixture
+def client_factory() -> Callable[..., TestClient]:
+    """Build a TestClient whose settings carry the given overrides.
+
+    Settings are read at create_app() time, so overriding app.state.settings
+    right after creation lets a test drive byte-level upload caps, an API
+    token, or a rate limit without touching the process environment. Example:
+    `client_factory(max_upload_bytes=64 * 1024)` or
+    `client_factory(api_token="secret", rate_limit=2)`.
+    """
+
+    def _make(**overrides) -> TestClient:
+        app = create_app()
+        if overrides:
+            app.state.settings = replace(app.state.settings, **overrides)
+        return TestClient(app)
+
+    return _make
 
 
 @pytest.fixture

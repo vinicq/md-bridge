@@ -422,6 +422,14 @@
         "title": "ValidationError",
         "type": "object"
       }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "description": "Required only when the server sets MD_BRIDGE_API_TOKEN. Omit it on an open deployment.",
+        "in": "header",
+        "name": "X-API-Key",
+        "type": "apiKey"
+      }
     }
   },
   "info": {
@@ -429,7 +437,7 @@
       "name": "md-bridge",
       "url": "https://github.com/vinicq/md-bridge"
     },
-    "description": "\n**md-bridge** is a small, opinionated HTTP service that converts between PDF\nand Markdown using hand-written heuristics. No external calls, deterministic\noutput: same input, same output, every run.\n\n## What it does\n\n- **`POST /api/pdf-to-md`**: extract structured Markdown from a PDF.\n- **`POST /api/md-to-pdf`**: render a Markdown file to PDF through Chromium.\n- **`POST /api/inspect-pdf`**: return diagnostics about a PDF (fonts, sizes, tagged-PDF check).\n- **`GET  /api/health`**: liveness probe.\n\n## Try it out\n\nThe interactive docs you are reading right now (powered by Swagger UI) let\nyou call any endpoint with a real file. Click **Try it out**, attach a file,\npress **Execute**.\n\nA walkthrough with `curl` examples lives in\n[docs/API.md](https://github.com/vinicq/md-bridge/blob/main/docs/API.md).\n\n## Limits\n\n- Upload cap: **500 MB** per request.\n- No persistence: every file is processed in a temporary directory and removed\n  before the response is returned.\n- No OCR (v1): scanned PDFs need Tesseract before being submitted.\n",
+    "description": "\n**md-bridge** is a small, opinionated HTTP service that converts between PDF\nand Markdown using hand-written heuristics. No external calls, deterministic\noutput: same input, same output, every run.\n\n## What it does\n\n- **`POST /api/pdf-to-md`**: extract structured Markdown from a PDF.\n- **`POST /api/md-to-pdf`**: render a Markdown file to PDF through Chromium.\n- **`POST /api/inspect-pdf`**: return diagnostics about a PDF (fonts, sizes, tagged-PDF check).\n- **`GET  /api/health`**: liveness probe.\n\n## Try it out\n\nThe interactive docs you are reading right now (powered by Swagger UI) let\nyou call any endpoint with a real file. Click **Try it out**, attach a file,\npress **Execute**.\n\nA walkthrough with `curl` examples lives in\n[docs/API.md](https://github.com/vinicq/md-bridge/blob/main/docs/API.md).\n\n## Limits\n\n- Upload cap: deployment-configurable via `MD_BRIDGE_MAX_UPLOAD_MB` (default 500 MB).\n- No persistence: every file is processed in a temporary directory and removed\n  before the response is returned.\n- No OCR (v1): scanned PDFs need Tesseract before being submitted.\n",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/licenses/MIT"
@@ -549,8 +557,11 @@
           "400": {
             "description": "Upload is not a PDF."
           },
+          "401": {
+            "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
+          },
           "413": {
-            "description": "Upload exceeds the 500 MB cap."
+            "description": "Upload exceeds the configured cap."
           },
           "422": {
             "content": {
@@ -561,8 +572,17 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
           }
         },
+        "security": [
+          {},
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "summary": "Inspect a PDF (fonts, sizes, tagged, OCR hint)",
         "tags": [
           "inspect"
@@ -601,16 +621,28 @@
           "400": {
             "description": "Wrong file type or non-UTF-8 markdown."
           },
+          "401": {
+            "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
+          },
           "413": {
-            "description": "Upload exceeds the 500 MB cap."
+            "description": "Upload exceeds the configured cap."
           },
           "422": {
             "description": "Malformed `options` payload."
+          },
+          "429": {
+            "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
           },
           "500": {
             "description": "Conversion failed."
           }
         },
+        "security": [
+          {},
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "summary": "Render a Markdown file into a Word document (.docx)",
         "tags": [
           "convert"
@@ -619,7 +651,7 @@
     },
     "/api/md-to-pdf": {
       "post": {
-        "description": "Render a Markdown file (UTF-8) into a PDF through headless Chromium.\n\nThe rendering uses a bundled A4 CSS theme\n(`packages/markdown-to-pdf/templates/default.css`).\n\n### Request\n\n`multipart/form-data`:\n\n| field | required | description |\n|---|---|---|\n| `file` | yes | A `.md` file (max 500 MB), UTF-8. |\n| `options` | no | JSON: `{ \"lang\": \"en\" }`. |\n\n### Response\n\nBinary `application/pdf`. The `Content-Disposition` header carries a\n`attachment; filename=\"<name>.pdf\"` hint.\n\n### Quick curl example\n\n```bash\ncurl -X POST http://localhost:8000/api/md-to-pdf \\\n  -F \"file=@notes.md\" \\\n  --output notes.pdf\n```",
+        "description": "Render a Markdown file (UTF-8) into a PDF through headless Chromium.\n\nThe rendering uses a bundled A4 CSS theme\n(`packages/markdown-to-pdf/templates/default.css`).\n\n### Request\n\n`multipart/form-data`:\n\n| field | required | description |\n|---|---|---|\n| `file` | yes | A `.md` file up to the configured cap (default 500 MB), UTF-8. |\n| `options` | no | JSON: `{ \"lang\": \"en\" }`. |\n\n### Response\n\nBinary `application/pdf`. The `Content-Disposition` header carries a\n`attachment; filename=\"<name>.pdf\"` hint.\n\n### Quick curl example\n\n```bash\ncurl -X POST http://localhost:8000/api/md-to-pdf \\\n  -F \"file=@notes.md\" \\\n  --output notes.pdf\n```",
         "operationId": "md_to_pdf_api_md_to_pdf_post",
         "requestBody": {
           "content": {
@@ -659,16 +691,28 @@
             },
             "description": "Wrong file type."
           },
+          "401": {
+            "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
+          },
           "413": {
-            "description": "Upload exceeds the 500 MB cap."
+            "description": "Upload exceeds the configured cap."
           },
           "422": {
             "description": "Malformed `options` payload."
+          },
+          "429": {
+            "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
           },
           "500": {
             "description": "Renderer failed (Chromium crashed, missing template, etc)."
           }
         },
+        "security": [
+          {},
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "summary": "Render a Markdown file into a PDF",
         "tags": [
           "convert"
@@ -677,7 +721,7 @@
     },
     "/api/pdf-to-md": {
       "post": {
-        "description": "Extract a structured Markdown document from a PDF.\n\nThe conversion is deterministic and heuristic. Headings are detected from\nfont size and the PDF outline, lists from bullet glyphs, tables from\nPyMuPDF's table finder.\n\n### Request\n\n`multipart/form-data` with two fields:\n\n| field | required | description |\n|---|---|---|\n| `file` | yes | A `.pdf` file (max 500 MB). |\n| `options` | no | JSON string with the keys below. |\n\n```json\n{\n  \"page_break\": false,\n  \"with_images\": false,\n  \"front_matter\": true,\n  \"lang\": \"en\"\n}\n```\n\n### Quick curl example\n\n```bash\ncurl -X POST http://localhost:8000/api/pdf-to-md \\\n  -F \"file=@whitepaper.pdf\" \\\n  -F 'options={\"front_matter\": true}'\n```\n\n### Error envelope\n\nEvery failure returns:\n\n```json\n{ \"error\": { \"code\": \"<machine_readable>\", \"message\": \"<human>\", \"detail\": <optional> } }\n```",
+        "description": "Extract a structured Markdown document from a PDF.\n\nThe conversion is deterministic and heuristic. Headings are detected from\nfont size and the PDF outline, lists from bullet glyphs, tables from\nPyMuPDF's table finder.\n\n### Request\n\n`multipart/form-data` with two fields:\n\n| field | required | description |\n|---|---|---|\n| `file` | yes | A `.pdf` file, up to the configured cap (default 500 MB). |\n| `options` | no | JSON string with the keys below. |\n\n```json\n{\n  \"page_break\": false,\n  \"with_images\": false,\n  \"front_matter\": true,\n  \"lang\": \"en\"\n}\n```\n\n### Quick curl example\n\n```bash\ncurl -X POST http://localhost:8000/api/pdf-to-md \\\n  -F \"file=@whitepaper.pdf\" \\\n  -F 'options={\"front_matter\": true}'\n```\n\n### Error envelope\n\nEvery failure returns:\n\n```json\n{ \"error\": { \"code\": \"<machine_readable>\", \"message\": \"<human>\", \"detail\": <optional> } }\n```",
         "operationId": "pdf_to_md_api_pdf_to_md_post",
         "parameters": [
           {
@@ -743,18 +787,21 @@
             },
             "description": "Upload is not a PDF."
           },
+          "401": {
+            "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
+          },
           "413": {
             "content": {
               "application/json": {
                 "example": {
                   "error": {
                     "code": "payload_too_large",
-                    "message": "Upload exceeds 500 MB limit."
+                    "message": "Upload exceeds the configured limit."
                   }
                 }
               }
             },
-            "description": "Upload exceeds the 500 MB cap."
+            "description": "Upload exceeds the configured cap."
           },
           "422": {
             "content": {
@@ -776,8 +823,17 @@
               }
             },
             "description": "Malformed `options` payload."
+          },
+          "429": {
+            "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
           }
         },
+        "security": [
+          {},
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "summary": "Convert a PDF to structured Markdown",
         "tags": [
           "convert"

@@ -63,10 +63,16 @@ def _check_md_to_pdf(base: str) -> None:
         'Content-Disposition: form-data; name="file"; filename="smoke.md"\r\n'
         "Content-Type: text/markdown\r\n\r\n"
     ).encode() + SAMPLE_MD + f"\r\n--{boundary}--\r\n".encode()
+    headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
+    # md-to-pdf is an auth-guarded route. Send the key when the deploy sets one
+    # (SMOKE_API_KEY), so the smoke passes against a token-protected instance.
+    api_key = os.environ.get("SMOKE_API_KEY", "").strip()
+    if api_key:
+        headers["X-API-Key"] = api_key
     req = urllib.request.Request(
         f"{base}/api/md-to-pdf",
         data=body,
-        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        headers=headers,
         method="POST",
     )
     try:
