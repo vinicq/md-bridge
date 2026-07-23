@@ -207,24 +207,47 @@ docker pull ghcr.io/vinicq/md-bridge-web:latest
 
 Each release also gets pinned tags (`0.1.1`, `0.1`, etc.).
 
-### Deploying to a free cloud VM
+### Deploying to production
 
-`deployment/oracle-cloud/` ships a complete recipe for running md-bridge
-on the **Oracle Cloud Always Free** tier (4 OCPU ARM + 24 GB RAM, US$0
+The official production topology is the Docker Compose stack behind
+[Caddy](https://caddyserver.com/) on a single host. Web and API share one
+origin: Caddy terminates TLS and proxies `/api/*` to the API container, so
+there is no CORS to configure and no build-time API URL to bake into the
+frontend.
+
+`deployment/oracle-cloud/` ships a complete, copy-paste recipe for it on
+the **Oracle Cloud Always Free** tier (4 OCPU ARM + 24 GB RAM, US$0
 forever). One bootstrap script installs Docker, Caddy, and the stack;
 HTTPS is automatic via Let's Encrypt. See the
 [walkthrough](deployment/oracle-cloud/README.md) or the
 [docs site](https://vinicq.github.io/md-bridge/deployment/oracle-cloud/).
 
-For a no-VM, click-and-deploy option, see
-[Deploy to Render (free tier)](https://vinicq.github.io/md-bridge/deployment/render/).
-Render reads the existing `render.yaml` blueprint at the repo root and
-maps it to two services from the public GHCR images.
+The same image and the same same-origin pattern run on any VPS or managed
+container platform;
+[other hosts](https://vinicq.github.io/md-bridge/deployment-other/) covers
+the variations.
 
 The API listens on `http://localhost:8000` and the web UI on
 `http://localhost:5173`. The web container waits for the API healthcheck
 before starting, so the first call from the browser already has a live
 backend behind it.
+
+### Post-deploy smoke test
+
+`scripts/smoke.py` checks a running instance over real HTTP: `GET
+/api/health` plus a small `POST /api/md-to-pdf` that has to come back as a
+PDF. Point it at any origin:
+
+```bash
+SMOKE_BASE_URL="http://localhost:5173" python3 scripts/smoke.py   # local compose
+SMOKE_BASE_URL="https://your.domain"   python3 scripts/smoke.py   # live deploy
+```
+
+The Oracle Cloud `bootstrap.sh` runs it automatically in insecure (HTTP)
+mode; for an HTTPS domain it prints the command to run once DNS points at
+the VM (the domain is not reachable during bootstrap). CI runs it against
+the compose stack on every pull request. Exit 0 means the deploy serves the
+app end to end; exit 1 means the proxy, API, or renderer is broken.
 
 The compose stack runs the application, not the test suite by default.
 The healthchecks on each container only confirm that the service is

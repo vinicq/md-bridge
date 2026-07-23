@@ -1,0 +1,18 @@
+# Caddyfile used by the CI deploy-smoke job to exercise the production
+# same-origin routing (the `edge` profile in docker-compose.yml). It mirrors
+# the `:80` block that bootstrap.sh writes on an insecure VM: handle, not
+# handle_path, so the `/api` prefix reaches the FastAPI upstream intact. If
+# this ever regresses to handle_path, the smoke test against Caddy returns
+# 404 and the job fails.
+:80 {
+    encode gzip
+    handle /api/* {
+        request_body {
+            max_size 501MiB
+        }
+        reverse_proxy api:8000
+    }
+    handle {
+        reverse_proxy web:80
+    }
+}

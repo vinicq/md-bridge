@@ -9,6 +9,10 @@
 #   MD_BRIDGE_INSECURE Set to 1 to serve over plain HTTP only (when you do
 #                      not have a real domain and only want a proof of life
 #                      via the public IP).
+#   MD_BRIDGE_IMAGE_TAG  Image tag to pull (default: latest).
+#   MD_BRIDGE_REF      Git ref the smoke test script is fetched from and run
+#                      as root in insecure mode (default: main). Pin it to the
+#                      same tag as the images for a reproducible bootstrap.
 #
 # Exit codes:
 #   0  success
@@ -21,6 +25,7 @@ DOMAIN="${MD_BRIDGE_DOMAIN:-}"
 INSECURE="${MD_BRIDGE_INSECURE:-0}"
 INSTALL_DIR="/opt/md-bridge"
 IMAGE_TAG="${MD_BRIDGE_IMAGE_TAG:-latest}"
+REF="${MD_BRIDGE_REF:-main}"
 
 if [[ -z "$DOMAIN" ]]; then
   echo "error: MD_BRIDGE_DOMAIN is not set" >&2
@@ -114,7 +119,16 @@ if [[ "$INSECURE" == "1" ]]; then
   cat > "$INSTALL_DIR/Caddyfile" <<CADDY
 :80 {
     encode gzip
-    handle_path /api/* {
+    # handle, not handle_path: the API serves routes under /api (e.g.
+    # /api/health), so the prefix must be preserved. handle_path would strip
+    # /api and the upstream would 404.
+    handle /api/* {
+        # Cap the request body at the edge (matches nginx client_max_body_size
+        # and the API 500 MB upload limit) so an oversized upload is rejected
+        # before it spools to disk on the VM.
+        request_body {
+            max_size 501MiB
+        }
         reverse_proxy api:8000
     }
     handle {
@@ -126,7 +140,16 @@ else
   cat > "$INSTALL_DIR/Caddyfile" <<CADDY
 $DOMAIN {
     encode gzip
-    handle_path /api/* {
+    # handle, not handle_path: the API serves routes under /api (e.g.
+    # /api/health), so the prefix must be preserved. handle_path would strip
+    # /api and the upstream would 404.
+    handle /api/* {
+        # Cap the request body at the edge (matches nginx client_max_body_size
+        # and the API 500 MB upload limit) so an oversized upload is rejected
+        # before it spools to disk on the VM.
+        request_body {
+            max_size 501MiB
+        }
         reverse_proxy api:8000
     }
     handle {
@@ -162,22 +185,51 @@ UNIT
 systemctl daemon-reload
 systemctl enable md-bridge.service
 
-# Smoke test: wait up to 60 s for the API to answer.
-echo "==> Waiting for the stack to come up"
-for i in $(seq 1 30); do
-  if curl -fsS "http://localhost:80/api/health" >/dev/null 2>&1; then
-    break
-  fi
-  sleep 2
-done
-
 scheme="https"
 if [[ "$INSECURE" == "1" ]]; then
   scheme="http"
+fi
+
+SMOKE_URL="https://raw.githubusercontent.com/vinicq/md-bridge/${REF}/scripts/smoke.py"
+
+# Post-deploy smoke test.
+#
+# Insecure mode: the stack answers at http://localhost (Caddy's `:80` block
+# serves any Host), so run the smoke now and FAIL the bootstrap if it does
+# not pass. Nothing about DNS or TLS can explain a failure in this mode, so
+# swallowing it would report a broken deploy as a success.
+#
+# Secure mode: the domain only answers once DNS points at this VM and Caddy
+# has a certificate (step 5 in the README). Aiming the check at $DOMAIN now
+# could hit a stale host that still holds the DNS record and print a false
+# pass, so do not auto-run; print the command for the operator to run once
+# DNS has propagated.
+if [[ "$INSECURE" == "1" ]]; then
+  echo "==> Running post-deploy smoke test against http://localhost"
+  smoke_py="$(mktemp)"
+  if ! curl -fsSL "$SMOKE_URL" -o "$smoke_py"; then
+    rm -f "$smoke_py"
+    echo "error: could not download the smoke test script" >&2
+    exit 2
+  fi
+  if SMOKE_BASE_URL="http://localhost" python3 "$smoke_py"; then
+    echo "==> Smoke test passed"
+    rm -f "$smoke_py"
+  else
+    rm -f "$smoke_py"
+    echo "error: smoke test failed against the local stack" >&2
+    exit 2
+  fi
 fi
 
 echo
 echo "==================================================================="
 echo "md-bridge is up at $scheme://$DOMAIN"
 echo "Caddy will fetch a Let's Encrypt cert on the first browser visit."
+if [[ "$INSECURE" != "1" ]]; then
+  echo
+  echo "Once DNS points $DOMAIN at this VM, verify the deploy end to end:"
+  echo "  curl -fsSL $SMOKE_URL -o smoke.py"
+  echo "  SMOKE_BASE_URL=https://$DOMAIN python3 smoke.py"
+fi
 echo "==================================================================="
