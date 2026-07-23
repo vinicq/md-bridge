@@ -28,6 +28,13 @@ INSECURE="${MD_BRIDGE_INSECURE:-0}"
 INSTALL_DIR="/opt/md-bridge"
 IMAGE_TAG="${MD_BRIDGE_IMAGE_TAG:-latest}"
 REF="${MD_BRIDGE_REF:-main}"
+# Public-deploy defenses. Overridable via the same env names the app reads.
+PUBLIC_UPLOAD_MB="${MD_BRIDGE_MAX_UPLOAD_MB:-50}"
+PUBLIC_RATE_LIMIT="${MD_BRIDGE_RATE_LIMIT:-60}"
+PUBLIC_RATE_WINDOW="${MD_BRIDGE_RATE_WINDOW_SECONDS:-60}"
+# Caddy rejects an oversized body at the edge before FastAPI spools it. Track
+# the app upload cap plus a little multipart overhead.
+CADDY_MAX_BODY_MB="$((PUBLIC_UPLOAD_MB + 2))"
 
 if [[ -z "$DOMAIN" ]]; then
   echo "error: MD_BRIDGE_DOMAIN is not set" >&2
@@ -84,9 +91,9 @@ services:
       # request rate limit. MD_BRIDGE_API_TOKEN is passed through from the
       # operator env: set it before running bootstrap to require X-API-Key on
       # the conversion routes; leave it unset for an open demo.
-      MD_BRIDGE_MAX_UPLOAD_MB: "50"
-      MD_BRIDGE_RATE_LIMIT: "60"
-      MD_BRIDGE_RATE_WINDOW_SECONDS: "60"
+      MD_BRIDGE_MAX_UPLOAD_MB: "${PUBLIC_UPLOAD_MB}"
+      MD_BRIDGE_RATE_LIMIT: "${PUBLIC_RATE_LIMIT}"
+      MD_BRIDGE_RATE_WINDOW_SECONDS: "${PUBLIC_RATE_WINDOW}"
       MD_BRIDGE_API_TOKEN: "${MD_BRIDGE_API_TOKEN:-}"
     expose:
       - "8000"
@@ -125,6 +132,10 @@ volumes:
   caddy_config:
 COMPOSE
 
+# compose.yml can carry MD_BRIDGE_API_TOKEN, so keep it root-only rather than
+# the umask default (0644, world-readable).
+chmod 600 "$INSTALL_DIR/compose.yml"
+
 echo "==> Writing $INSTALL_DIR/Caddyfile"
 if [[ "$INSECURE" == "1" ]]; then
   cat > "$INSTALL_DIR/Caddyfile" <<CADDY
@@ -138,7 +149,7 @@ if [[ "$INSECURE" == "1" ]]; then
         # and the API 500 MB upload limit) so an oversized upload is rejected
         # before it spools to disk on the VM.
         request_body {
-            max_size 501MiB
+            max_size ${CADDY_MAX_BODY_MB}MiB
         }
         reverse_proxy api:8000
     }
@@ -159,7 +170,7 @@ $DOMAIN {
         # and the API 500 MB upload limit) so an oversized upload is rejected
         # before it spools to disk on the VM.
         request_body {
-            max_size 501MiB
+            max_size ${CADDY_MAX_BODY_MB}MiB
         }
         reverse_proxy api:8000
     }
@@ -223,7 +234,8 @@ if [[ "$INSECURE" == "1" ]]; then
     echo "error: could not download the smoke test script" >&2
     exit 2
   fi
-  if SMOKE_BASE_URL="http://localhost" python3 "$smoke_py"; then
+  if SMOKE_BASE_URL="http://localhost" SMOKE_API_KEY="${MD_BRIDGE_API_TOKEN:-}" \
+     python3 "$smoke_py"; then
     echo "==> Smoke test passed"
     rm -f "$smoke_py"
   else
@@ -241,6 +253,10 @@ if [[ "$INSECURE" != "1" ]]; then
   echo
   echo "Once DNS points $DOMAIN at this VM, verify the deploy end to end:"
   echo "  curl -fsSL $SMOKE_URL -o smoke.py"
-  echo "  SMOKE_BASE_URL=https://$DOMAIN python3 smoke.py"
+  if [[ -n "${MD_BRIDGE_API_TOKEN:-}" ]]; then
+    echo "  SMOKE_BASE_URL=https://$DOMAIN SMOKE_API_KEY=<your-token> python3 smoke.py"
+  else
+    echo "  SMOKE_BASE_URL=https://$DOMAIN python3 smoke.py"
+  fi
 fi
 echo "==================================================================="

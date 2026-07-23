@@ -65,7 +65,7 @@ _INSPECT_EXAMPLE = {
 @router.post(
     "/api/inspect-pdf",
     response_model=InspectPdfResponse,
-    dependencies=[Depends(enforce_rate_limit), Depends(require_api_key)],
+    dependencies=[Depends(require_api_key), Depends(enforce_rate_limit)],
     summary="Inspect a PDF (fonts, sizes, tagged, OCR hint)",
     description=INSPECT_DESCRIPTION,
     response_description="Diagnostics about the uploaded PDF.",

@@ -11,11 +11,12 @@ example.com {
     # prefix must be preserved. handle_path would strip `/api` and the
     # upstream would 404.
     handle /api/* {
-        # Cap the request body at the edge (matches nginx client_max_body_size
-        # and the API 500 MB upload limit) so an oversized upload is rejected
-        # before it spools to disk on the VM.
+        # Cap the request body at the edge so an oversized upload is rejected
+        # before FastAPI spools it to disk. Track your MD_BRIDGE_MAX_UPLOAD_MB
+        # plus ~2 MiB multipart overhead: 52 MiB here matches the 50 MB public
+        # default the bootstrap ships (raise both together if you raise the cap).
         request_body {
-            max_size 501MiB
+            max_size 52MiB
         }
         reverse_proxy api:8000
     }
