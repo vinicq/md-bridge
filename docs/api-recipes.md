@@ -22,8 +22,11 @@ working snippet" angle.
 Default host in every recipe is `http://localhost:8000`. Switch to
 your deployed host as needed.
 
-Upload limit on all `POST` endpoints is **500 MB** (`MAX_UPLOAD_BYTES`
-in `apps/api/app/config.py`).
+Upload limit on all `POST` endpoints is env-driven via
+`MD_BRIDGE_MAX_UPLOAD_MB` (read at startup in `apps/api/app/settings.py`).
+The code default is **500 MB**, so a bare local run is unchanged; the public
+deploy recipe lowers it (the Oracle bootstrap ships **50 MB**). An oversized
+upload returns `413 payload_too_large`.
 
 ## Health check
 

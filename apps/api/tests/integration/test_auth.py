@@ -43,6 +43,15 @@ def test_correct_key_is_accepted_when_token_set(client_factory):
     assert resp.status_code == 200, resp.text
 
 
+def test_rejected_request_still_carries_security_headers(client_factory):
+    # The access-control middleware is innermost, so its early 401 still passes
+    # back out through the security-headers wrapper.
+    client = client_factory(api_token="s3cret")
+    resp = client.post("/api/md-to-docx", files={"file": SMALL_MD})
+    assert resp.status_code == 401
+    assert resp.headers["X-Content-Type-Options"] == "nosniff"
+
+
 def test_health_stays_open_with_token_set(client_factory):
     # The compose healthcheck sends no header; guarding /api/health would break it.
     client = client_factory(api_token="s3cret")

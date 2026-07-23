@@ -7,6 +7,7 @@ import pymupdf
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
 from app import __version__
@@ -110,24 +111,11 @@ def create_app() -> FastAPI:
     # request.app.state.settings.
     app.state.settings = load_settings()
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=CORS_ORIGINS,
-        allow_credentials=False,
-        allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["*"],
-    )
-
-    # Baseline security headers on every API response. HSTS and a full CSP for
-    # the HTML belong at the TLS-terminating proxy (Caddy), not here where there
-    # is no TLS context; these three travel with the app on any deploy.
-    @app.middleware("http")
-    async def _security_headers(request, call_next):
-        response = await call_next(request)
-        response.headers.setdefault("X-Content-Type-Options", "nosniff")
-        response.headers.setdefault("Referrer-Policy", "no-referrer")
-        response.headers.setdefault("X-Frame-Options", "DENY")
-        return response
+    # Middleware is registered inner-to-outer: the LAST added wraps the others.
+    # Add access control FIRST so it is innermost, then security headers, then
+    # CORS last (outermost). That order still runs access control before the
+    # route (so before body parsing), while letting its early 401/429 responses
+    # travel back out through the header and CORS wrappers.
 
     # Access control BEFORE the route runs, so a missing key or an over-quota
     # client is rejected before FastAPI parses and spools the multipart body.
@@ -151,6 +139,25 @@ def create_app() -> FastAPI:
                     )
         return await call_next(request)
 
+    # Baseline security headers on every API response. HSTS and a full CSP for
+    # the HTML belong at the TLS-terminating proxy (Caddy), not here where there
+    # is no TLS context; these three travel with the app on any deploy.
+    @app.middleware("http")
+    async def _security_headers(request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        return response
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=CORS_ORIGINS,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["*"],
+    )
+
     app.add_exception_handler(ApiError, api_error_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
@@ -158,6 +165,40 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(convert.router)
     app.include_router(inspect.router)
+
+    # Document the X-API-Key scheme in OpenAPI as OPTIONAL. Enforcement lives in
+    # the middleware above, not a dependency, so the schema is not generated
+    # automatically. Declaring it optional (an empty requirement alongside the
+    # key) gives /docs an Authorize control and tells generated clients about
+    # the header, without claiming auth is mandatory on an open default deploy.
+    def _custom_openapi() -> dict:
+        if app.openapi_schema:
+            return app.openapi_schema
+        schema = get_openapi(
+            title=app.title,
+            version=app.version,
+            summary=app.summary,
+            description=app.description,
+            routes=app.routes,
+            tags=app.openapi_tags,
+        )
+        schema.setdefault("components", {}).setdefault("securitySchemes", {})["APIKeyHeader"] = {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-API-Key",
+            "description": (
+                "Required only when the server sets MD_BRIDGE_API_TOKEN. "
+                "Omit it on an open deployment."
+            ),
+        }
+        for path in _GUARDED_POST_PATHS:
+            operation = schema.get("paths", {}).get(path, {}).get("post")
+            if operation is not None:
+                operation["security"] = [{}, {"APIKeyHeader": []}]
+        app.openapi_schema = schema
+        return schema
+
+    app.openapi = _custom_openapi
 
     return app
 

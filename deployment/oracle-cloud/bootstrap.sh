@@ -44,6 +44,13 @@ for _var in PUBLIC_UPLOAD_MB PUBLIC_RATE_LIMIT PUBLIC_RATE_WINDOW; do
       ;;
   esac
 done
+# The app requires a positive upload cap and window (rate limit 0 = disabled),
+# so reject 0 here rather than let the API crash on startup. Values are already
+# digits-only, so the arithmetic comparison is safe.
+if [[ "$PUBLIC_UPLOAD_MB" -lt 1 || "$PUBLIC_RATE_WINDOW" -lt 1 ]]; then
+  echo "error: MD_BRIDGE_MAX_UPLOAD_MB and MD_BRIDGE_RATE_WINDOW_SECONDS must be >= 1" >&2
+  exit 1
+fi
 
 # Caddy rejects an oversized body at the edge before FastAPI spools it. Track
 # the app upload cap plus a little multipart overhead.
