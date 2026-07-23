@@ -1,7 +1,6 @@
 """PDF↔Markdown conversion routes."""
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import re
@@ -13,7 +12,9 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response
 from pydantic import ValidationError
 
+from app.concurrency import run_bounded
 from app.errors import ApiError
+from app.limits import check_pdf_page_cap
 from app.schemas.convert import (
     FormatInfo,
     MdToDocxOptions,
@@ -271,14 +272,17 @@ async def pdf_to_md(
     pdf_bytes = await _read_upload(
         file, ".pdf", "PDF", request.app.state.settings.max_upload_bytes
     )
+    max_pdf_pages = request.app.state.settings.max_pdf_pages
+    filename = file.filename or "document.pdf"
+
+    def _convert():
+        # Page cap runs inside the gated worker: off the event loop and bounded
+        # by the same semaphore as the conversion.
+        check_pdf_page_cap(pdf_bytes, max_pdf_pages)
+        return convert_pdf_bytes(pdf_bytes, filename=filename, options=opts, force=force)
+
     started = time.perf_counter()
-    result = await asyncio.to_thread(
-        convert_pdf_bytes,
-        pdf_bytes,
-        filename=file.filename or "document.pdf",
-        options=opts,
-        force=force,
-    )
+    result = await run_bounded(request.app, _convert)
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     log.info(
         "pdf-to-md filename=%s bytes=%d duration_ms=%d headings=%d tables=%d bullets=%d",
@@ -333,7 +337,7 @@ async def md_to_pdf(
         file, ".md", "Markdown", request.app.state.settings.max_upload_bytes
     )
     started = time.perf_counter()
-    pdf_bytes = await asyncio.to_thread(
+    pdf_bytes = await run_bounded(request.app,
         render_md_bytes, md_bytes, filename=file.filename or "document.md", options=opts
     )
     elapsed_ms = int((time.perf_counter() - started) * 1000)
@@ -423,7 +427,7 @@ async def md_to_docx(
         file, ".md", "Markdown", request.app.state.settings.max_upload_bytes
     )
     started = time.perf_counter()
-    docx_bytes = await asyncio.to_thread(
+    docx_bytes = await run_bounded(request.app,
         render_md_to_docx_bytes, md_bytes, filename=file.filename or "document.md", options=opts
     )
     elapsed_ms = int((time.perf_counter() - started) * 1000)

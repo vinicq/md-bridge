@@ -549,7 +549,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Upload exceeds the configured cap. */
             413: {
@@ -558,13 +565,18 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Validation Error */
+            /** @description Invalid options or a rejected input (e.g. too many pages). */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
                 };
             };
             /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
@@ -572,7 +584,44 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
+            };
+            /** @description Service at capacity. */
+            503: {
+                headers: {
+                    /** @description Seconds to wait before retrying. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
+            };
+            /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
         };
     };
@@ -611,7 +660,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Upload exceeds the configured cap. */
             413: {
@@ -620,19 +676,33 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Malformed `options` payload. */
+            /** @description Invalid options or a rejected input (e.g. too many pages). */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
             429: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Conversion failed. */
             500: {
@@ -640,6 +710,36 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Service at capacity. */
+            503: {
+                headers: {
+                    /** @description Seconds to wait before retrying. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
+            };
+            /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
         };
     };
@@ -688,7 +788,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Upload exceeds the configured cap. */
             413: {
@@ -697,19 +804,33 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Malformed `options` payload. */
+            /** @description Invalid options or a rejected input (e.g. too many pages). */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
             429: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Renderer failed (Chromium crashed, missing template, etc). */
             500: {
@@ -717,6 +838,36 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Service at capacity. */
+            503: {
+                headers: {
+                    /** @description Seconds to wait before retrying. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
+            };
+            /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
         };
     };
@@ -785,7 +936,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Upload exceeds the configured cap. */
             413: {
@@ -804,29 +962,18 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description Malformed `options` payload. */
+            /** @description Invalid options or a rejected input (e.g. too many pages). */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    /**
-                     * @example {
-                     *       "error": {
-                     *         "code": "invalid_options",
-                     *         "detail": [
-                     *           {
-                     *             "loc": [
-                     *               "page_break"
-                     *             ],
-                     *             "msg": "Input should be a valid boolean"
-                     *           }
-                     *         ],
-                     *         "message": "options payload failed validation"
-                     *       }
-                     *     }
-                     */
-                    "application/json": unknown;
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
                 };
             };
             /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
@@ -834,7 +981,44 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
+            };
+            /** @description Service at capacity. */
+            503: {
+                headers: {
+                    /** @description Seconds to wait before retrying. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
+            };
+            /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
         };
     };

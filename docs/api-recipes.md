@@ -418,16 +418,33 @@ with `--forwarded-allow-ips` and the proxy sets `X-Forwarded-For`. There
 is no shared store, so multi-worker or multi-instance counters do not
 add up.
 
-The conversion endpoints run the work in a thread pool via
-`asyncio.to_thread`, so concurrent requests do not block each other at
-the FastAPI layer, but they do share the host's CPU. Two practical knobs:
+### Work limits
 
-- **Process-level concurrency**: `uvicorn --workers N` runs N
-  separate Python processes. Each process serves requests in
-  parallel (and keeps its own rate-limit counters).
-- **Per-process thread cap**: the default thread-pool size is
-  `min(32, os.cpu_count() + 4)`. PDF conversions are CPU-bound, so
-  raising this past the core count rarely helps.
+Heavy conversions (PyMuPDF, Chromium, optional Tesseract) are gated so a
+large document or a burst cannot exhaust the box. These are in-process,
+per worker, and read at startup:
+
+| Env var | Default | Effect |
+|---|---|---|
+| `MD_BRIDGE_MAX_CONCURRENCY` | `2` | Simultaneous heavy conversions. Over it, requests wait. |
+| `MD_BRIDGE_QUEUE_MAX` | `8` | Requests allowed to wait for a slot; `0` rejects immediately when full. |
+| `MD_BRIDGE_QUEUE_WAIT_SECONDS` | `10` | How long a request waits before `503 service_busy` (with `Retry-After`). |
+| `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS` | `300` | Per-request wall clock; over it returns `504 conversion_timeout`. `0` disables. |
+| `MD_BRIDGE_MAX_PDF_PAGES` | `0` | Reject PDFs above this page count with `422 too_many_pages`. `0` = unlimited. |
+
+Unlike the auth and rate-limit knobs, concurrency and the timeout default to
+a safe value rather than off: unbounded concurrency is a resource footgun (two
+Chromium renders already compete), and a single-user local run never notices a
+cap of 2. The concurrency cap is a single global semaphore, so it does not
+multiply per route.
+
+Ceiling: a timed-out conversion returns 504 to the client but its worker
+thread cannot be cancelled, so it keeps its slot until it finishes. A hard kill
+would need per-subprocess isolation.
+
+- **Process-level concurrency**: `uvicorn --workers N` runs N separate
+  processes; each keeps its own semaphore and rate-limit counters, so the
+  effective caps are N times the configured values.
 
 For a shared per-IP limit across workers or instances, put a reverse
 proxy in front (nginx with `limit_req`, Traefik with the rate-limit

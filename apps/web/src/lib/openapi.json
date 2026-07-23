@@ -437,7 +437,7 @@
       "name": "md-bridge",
       "url": "https://github.com/vinicq/md-bridge"
     },
-    "description": "\n**md-bridge** is a small, opinionated HTTP service that converts between PDF\nand Markdown using hand-written heuristics. No external calls, deterministic\noutput: same input, same output, every run.\n\n## What it does\n\n- **`POST /api/pdf-to-md`**: extract structured Markdown from a PDF.\n- **`POST /api/md-to-pdf`**: render a Markdown file to PDF through Chromium.\n- **`POST /api/inspect-pdf`**: return diagnostics about a PDF (fonts, sizes, tagged-PDF check).\n- **`GET  /api/health`**: liveness probe.\n\n## Try it out\n\nThe interactive docs you are reading right now (powered by Swagger UI) let\nyou call any endpoint with a real file. Click **Try it out**, attach a file,\npress **Execute**.\n\nA walkthrough with `curl` examples lives in\n[docs/API.md](https://github.com/vinicq/md-bridge/blob/main/docs/API.md).\n\n## Limits\n\n- Upload cap: deployment-configurable via `MD_BRIDGE_MAX_UPLOAD_MB` (default 500 MB).\n- No persistence: every file is processed in a temporary directory and removed\n  before the response is returned.\n- No OCR (v1): scanned PDFs need Tesseract before being submitted.\n",
+    "description": "\n**md-bridge** is a small, opinionated HTTP service that converts between PDF\nand Markdown using hand-written heuristics. No external calls, deterministic\noutput: same input, same output, every run.\n\n## What it does\n\n- **`POST /api/pdf-to-md`**: extract structured Markdown from a PDF.\n- **`POST /api/md-to-pdf`**: render a Markdown file to PDF through Chromium.\n- **`POST /api/inspect-pdf`**: return diagnostics about a PDF (fonts, sizes, tagged-PDF check).\n- **`GET  /api/health`**: liveness probe.\n\n## Try it out\n\nThe interactive docs you are reading right now (powered by Swagger UI) let\nyou call any endpoint with a real file. Click **Try it out**, attach a file,\npress **Execute**.\n\nA walkthrough with `curl` examples lives in\n[docs/API.md](https://github.com/vinicq/md-bridge/blob/main/docs/API.md).\n\n## Limits\n\n- Upload cap: deployment-configurable via `MD_BRIDGE_MAX_UPLOAD_MB` (default 500 MB).\n- No persistence: every file is processed in a temporary directory and removed\n  when the conversion finishes, before the response in the normal case. The one\n  exception is a conversion that hits `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS`: the\n  504 returns while the abandoned worker still holds its temp directory, which\n  is removed when that worker exits.\n- No OCR (v1): scanned PDFs need Tesseract before being submitted.\n",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/licenses/MIT"
@@ -558,6 +558,33 @@
             "description": "Upload is not a PDF."
           },
           "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
           },
           "413": {
@@ -567,14 +594,129 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Invalid options or a rejected input (e.g. too many pages)."
           },
           "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Service at capacity.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS."
           }
         },
         "security": [
@@ -622,19 +764,168 @@
             "description": "Wrong file type or non-UTF-8 markdown."
           },
           "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
           },
           "413": {
             "description": "Upload exceeds the configured cap."
           },
           "422": {
-            "description": "Malformed `options` payload."
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Invalid options or a rejected input (e.g. too many pages)."
           },
           "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
           },
           "500": {
             "description": "Conversion failed."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Service at capacity.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS."
           }
         },
         "security": [
@@ -692,19 +983,168 @@
             "description": "Wrong file type."
           },
           "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
           },
           "413": {
             "description": "Upload exceeds the configured cap."
           },
           "422": {
-            "description": "Malformed `options` payload."
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Invalid options or a rejected input (e.g. too many pages)."
           },
           "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
           },
           "500": {
             "description": "Renderer failed (Chromium crashed, missing template, etc)."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Service at capacity.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS."
           }
         },
         "security": [
@@ -788,6 +1228,33 @@
             "description": "Upload is not a PDF."
           },
           "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
           },
           "413": {
@@ -806,26 +1273,130 @@
           "422": {
             "content": {
               "application/json": {
-                "example": {
-                  "error": {
-                    "code": "invalid_options",
-                    "detail": [
-                      {
-                        "loc": [
-                          "page_break"
-                        ],
-                        "msg": "Input should be a valid boolean"
-                      }
-                    ],
-                    "message": "options payload failed validation"
-                  }
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
                 }
               }
             },
-            "description": "Malformed `options` payload."
+            "description": "Invalid options or a rejected input (e.g. too many pages)."
           },
           "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Service at capacity.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS."
           }
         },
         "security": [

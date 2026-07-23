@@ -1,13 +1,14 @@
 """PDF diagnostics route."""
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 
 from fastapi import APIRouter, File, Request, UploadFile
 
+from app.concurrency import run_bounded
 from app.errors import ApiError
+from app.limits import check_pdf_page_cap
 from app.schemas.convert import InspectPdfResponse
 from app.services.inspect import inspect_pdf_bytes
 
@@ -98,8 +99,15 @@ async def inspect_pdf(
                 f"Upload exceeds {max_upload_bytes // (1024 * 1024)} MB limit.",
             )
 
+    max_pdf_pages = request.app.state.settings.max_pdf_pages
+    pdf = bytes(data)
+
+    def _inspect():
+        check_pdf_page_cap(pdf, max_pdf_pages)
+        return inspect_pdf_bytes(pdf, name)
+
     started = time.perf_counter()
-    result = await asyncio.to_thread(inspect_pdf_bytes, bytes(data), name)
+    result = await run_bounded(request.app, _inspect)
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     log.info(
         "inspect-pdf filename=%s bytes=%d duration_ms=%d pages=%d tagged=%s",

@@ -59,7 +59,10 @@ A walkthrough with `curl` examples lives in
 
 - Upload cap: deployment-configurable via `MD_BRIDGE_MAX_UPLOAD_MB` (default 500 MB).
 - No persistence: every file is processed in a temporary directory and removed
-  before the response is returned.
+  when the conversion finishes, before the response in the normal case. The one
+  exception is a conversion that hits `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS`: the
+  504 returns while the abandoned worker still holds its temp directory, which
+  is removed when that worker exits.
 - No OCR (v1): scanned PDFs need Tesseract before being submitted.
 """
 
@@ -164,6 +167,8 @@ def create_app() -> FastAPI:
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["*"],
+        # So a cross-origin browser client can read Retry-After on a 503.
+        expose_headers=["Retry-After"],
     )
 
     app.add_exception_handler(ApiError, api_error_handler)
@@ -201,19 +206,62 @@ def create_app() -> FastAPI:
                 "Omit it on an open deployment."
             ),
         }
+        error_content = {
+            "application/json": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "object",
+                            "properties": {
+                                "code": {"type": "string"},
+                                "message": {"type": "string"},
+                            },
+                            "required": ["code", "message"],
+                        }
+                    },
+                    "required": ["error"],
+                }
+            }
+        }
+        guarded_responses = {
+            "401": {
+                "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set).",
+                "content": error_content,
+            },
+            "429": {
+                "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set).",
+                "content": error_content,
+            },
+            "503": {
+                "description": "Service at capacity.",
+                "headers": {
+                    "Retry-After": {
+                        "schema": {"type": "string"},
+                        "description": "Seconds to wait before retrying.",
+                    }
+                },
+                "content": error_content,
+            },
+            "504": {
+                "description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS.",
+                "content": error_content,
+            },
+        }
         for path in _GUARDED_POST_PATHS:
             operation = schema.get("paths", {}).get(path, {}).get("post")
             if operation is not None:
                 operation["security"] = [{}, {"APIKeyHeader": []}]
                 responses = operation.setdefault("responses", {})
-                responses.setdefault(
-                    "401",
-                    {"description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."},
-                )
-                responses.setdefault(
-                    "429",
-                    {"description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."},
-                )
+                for status, body in guarded_responses.items():
+                    responses.setdefault(status, body)
+                # The app's 422 handler returns the same error envelope, not
+                # FastAPI's default HTTPValidationError, so override it to match
+                # (covers invalid options and rejected input like too_many_pages).
+                responses["422"] = {
+                    "description": "Invalid options or a rejected input (e.g. too many pages).",
+                    "content": error_content,
+                }
         app.openapi_schema = schema
         return schema
 
