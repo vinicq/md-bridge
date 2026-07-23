@@ -182,21 +182,30 @@ cd /opt/md-bridge
 sudo docker compose pull && sudo docker compose up -d
 ```
 
-Or re-run the bootstrap with the tag pinned. It is not left on the box, so
-download it again, and it needs your domain:
+This is the safe path: it touches only the image tags, not your token or the
+Caddy config.
+
+You can also re-run the bootstrap with the tag pinned, but it rewrites
+`api.env` from the environment, so you MUST pass `MD_BRIDGE_API_TOKEN` again
+(and any other env you had set) or the rollback turns authentication off.
+Download it first and make it executable:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vinicq/md-bridge/main/deployment/oracle-cloud/bootstrap.sh -o bootstrap.sh
-sudo MD_BRIDGE_DOMAIN="<your.domain>" MD_BRIDGE_IMAGE_TAG=0.11.0 ./bootstrap.sh
+chmod +x bootstrap.sh
+sudo MD_BRIDGE_DOMAIN="<your.domain>" MD_BRIDGE_IMAGE_TAG=0.11.0 \
+     MD_BRIDGE_API_TOKEN="<your-token>" ./bootstrap.sh
 ```
 
 GHCR tags are mutable: a workflow rerun can move a tag to a new digest. The
 `sha-<commit>` tag is the most stable handle; for a guaranteed-identical
-rollback, pin by digest instead:
+rollback, pin BOTH images by digest (the api and web images are built
+separately, so each has its own):
 
 ```bash
-docker buildx imagetools inspect ghcr.io/vinicq/md-bridge-api:0.11.0   # find the sha256
-# then use ghcr.io/vinicq/md-bridge-api@sha256:... in compose.yml
+docker buildx imagetools inspect ghcr.io/vinicq/md-bridge-api:0.11.0   # api digest
+docker buildx imagetools inspect ghcr.io/vinicq/md-bridge-web:0.11.0   # web digest
+# then pin ghcr.io/vinicq/md-bridge-api@sha256:... and -web@sha256:... in compose.yml
 ```
 
 ## Diagnosing a problem
@@ -231,11 +240,13 @@ and no stored documents). Back up:
 - `Caddyfile` (the proxy config and domain)
 - `api.env` (the API token, mode 0600)
 
-The archive contains the token, so lock it down to root-only:
+The archive contains the token, so create it root-only from the start (no
+window where it is world-readable). Pre-create the file at mode 0600, then let
+tar write into it (tar truncates but keeps the existing mode):
 
 ```bash
+sudo install -m 600 /dev/null md-bridge-config.tgz
 sudo tar czf md-bridge-config.tgz -C /opt md-bridge/compose.yml md-bridge/Caddyfile md-bridge/api.env
-sudo chmod 600 md-bridge-config.tgz
 ```
 
 Caddy's `caddy_data` volume holds the Let's Encrypt certificates; it is
