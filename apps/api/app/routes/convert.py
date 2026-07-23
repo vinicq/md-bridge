@@ -14,6 +14,7 @@ from fastapi.responses import Response
 from pydantic import ValidationError
 
 from app.errors import ApiError
+from app.rate_limit import enforce_rate_limit
 from app.schemas.convert import (
     FormatInfo,
     MdToDocxOptions,
@@ -202,7 +203,7 @@ def _download_headers(source_name: str | None, ext: str) -> dict[str, str]:
 @router.post(
     "/api/pdf-to-md",
     response_model=PdfToMdResponse,
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(enforce_rate_limit), Depends(require_api_key)],
     summary="Convert a PDF to structured Markdown",
     description=PDF_TO_MD_DESCRIPTION,
     response_description="The extracted Markdown plus front matter, warnings and stats.",
@@ -296,7 +297,7 @@ async def pdf_to_md(
 
 @router.post(
     "/api/md-to-pdf",
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(enforce_rate_limit), Depends(require_api_key)],
     summary="Render a Markdown file into a PDF",
     description=MD_TO_PDF_DESCRIPTION,
     response_description="A binary PDF (application/pdf).",
@@ -395,7 +396,7 @@ async def get_theme_css(slug: str) -> Response:
 
 @router.post(
     "/api/md-to-docx",
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(enforce_rate_limit), Depends(require_api_key)],
     summary="Render a Markdown file into a Word document (.docx)",
     description=(
         "Converts Markdown to a deterministic .docx: headings, bold/italic/inline "

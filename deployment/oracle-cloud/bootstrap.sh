@@ -13,6 +13,8 @@
 #   MD_BRIDGE_REF      Git ref the smoke test script is fetched from and run
 #                      as root in insecure mode (default: main). Pin it to the
 #                      same tag as the images for a reproducible bootstrap.
+#   MD_BRIDGE_API_TOKEN  If set, the conversion routes require a matching
+#                      X-API-Key header. Left unset the demo stays open.
 #
 # Exit codes:
 #   0  success
@@ -77,6 +79,15 @@ services:
     restart: unless-stopped
     environment:
       PYTHONUNBUFFERED: "1"
+      # Public-deploy defenses (see the README "Securing a public deployment").
+      # Lower upload cap than the 500 MB local default, and a per-instance
+      # request rate limit. MD_BRIDGE_API_TOKEN is passed through from the
+      # operator env: set it before running bootstrap to require X-API-Key on
+      # the conversion routes; leave it unset for an open demo.
+      MD_BRIDGE_MAX_UPLOAD_MB: "50"
+      MD_BRIDGE_RATE_LIMIT: "60"
+      MD_BRIDGE_RATE_WINDOW_SECONDS: "60"
+      MD_BRIDGE_API_TOKEN: "${MD_BRIDGE_API_TOKEN:-}"
     expose:
       - "8000"
     healthcheck:

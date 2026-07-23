@@ -26,17 +26,12 @@ def _int_env(name: str, default: int) -> int:
         return default
 
 
-def _bool_env(name: str) -> bool:
-    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
-
-
 @dataclass(frozen=True)
 class Settings:
     max_upload_bytes: int
     api_token: str | None
     rate_limit: int  # requests per window per client IP; 0 disables the limiter
     rate_window_seconds: int
-    trust_proxy: bool
 
     @property
     def auth_enabled(self) -> bool:
@@ -55,5 +50,4 @@ def load_settings() -> Settings:
         api_token=token,
         rate_limit=_int_env("MD_BRIDGE_RATE_LIMIT", 0),
         rate_window_seconds=_int_env("MD_BRIDGE_RATE_WINDOW_SECONDS", 60),
-        trust_proxy=_bool_env("MD_BRIDGE_TRUST_PROXY"),
     )

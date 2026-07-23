@@ -105,6 +105,17 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Baseline security headers on every API response. HSTS and a full CSP for
+    # the HTML belong at the TLS-terminating proxy (Caddy), not here where there
+    # is no TLS context; these three travel with the app on any deploy.
+    @app.middleware("http")
+    async def _security_headers(request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        return response
+
     app.add_exception_handler(ApiError, api_error_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
