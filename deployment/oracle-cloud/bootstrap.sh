@@ -52,6 +52,24 @@ if [[ "$PUBLIC_UPLOAD_MB" -lt 1 || "$PUBLIC_RATE_WINDOW" -lt 1 ]]; then
   exit 1
 fi
 
+# Work-limit knobs (#437): pass through if the operator set them, else leave
+# empty so the app uses its safe defaults. Validate digits-or-empty (they land
+# in the compose YAML, and the app also rejects a bad value at startup).
+WORK_MAX_CONCURRENCY="${MD_BRIDGE_MAX_CONCURRENCY:-}"
+WORK_QUEUE_MAX="${MD_BRIDGE_QUEUE_MAX:-}"
+WORK_QUEUE_WAIT="${MD_BRIDGE_QUEUE_WAIT_SECONDS:-}"
+WORK_CONVERT_TIMEOUT="${MD_BRIDGE_CONVERT_TIMEOUT_SECONDS:-}"
+WORK_MAX_PDF_PAGES="${MD_BRIDGE_MAX_PDF_PAGES:-}"
+for _var in WORK_MAX_CONCURRENCY WORK_QUEUE_MAX WORK_QUEUE_WAIT WORK_CONVERT_TIMEOUT WORK_MAX_PDF_PAGES; do
+  case "${!_var}" in
+    '') ;;  # unset: the app uses its default
+    *[!0-9]*)
+      echo "error: $_var must be a non-negative integer, got '${!_var}'" >&2
+      exit 1
+      ;;
+  esac
+done
+
 # The token goes into a Compose env_file, where a `$` would be interpolated
 # (turning e.g. `$UNSET` into an empty token and silently disabling auth) and
 # quotes/backslashes have their own meaning. Restrict it to a charset that is
@@ -127,6 +145,12 @@ services:
       MD_BRIDGE_MAX_UPLOAD_MB: "${PUBLIC_UPLOAD_MB}"
       MD_BRIDGE_RATE_LIMIT: "${PUBLIC_RATE_LIMIT}"
       MD_BRIDGE_RATE_WINDOW_SECONDS: "${PUBLIC_RATE_WINDOW}"
+      # Work limits (#437); empty = the app's safe default.
+      MD_BRIDGE_MAX_CONCURRENCY: "${WORK_MAX_CONCURRENCY}"
+      MD_BRIDGE_QUEUE_MAX: "${WORK_QUEUE_MAX}"
+      MD_BRIDGE_QUEUE_WAIT_SECONDS: "${WORK_QUEUE_WAIT}"
+      MD_BRIDGE_CONVERT_TIMEOUT_SECONDS: "${WORK_CONVERT_TIMEOUT}"
+      MD_BRIDGE_MAX_PDF_PAGES: "${WORK_MAX_PDF_PAGES}"
     env_file:
       - api.env
     expose:
