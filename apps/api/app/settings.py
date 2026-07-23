@@ -55,6 +55,11 @@ class Settings:
 def load_settings() -> Settings:
     max_mb = _int_env("MD_BRIDGE_MAX_UPLOAD_MB", DEFAULT_MAX_UPLOAD_MB, minimum=1)
     token = os.environ.get("MD_BRIDGE_API_TOKEN", "").strip() or None
+    if token is not None and not token.isascii():
+        # HTTP header values are latin-1; a non-ASCII token cannot round-trip
+        # reliably. Fail closed so the operator picks an ASCII token (hex/base64
+        # tokens already are) instead of silently rejecting every valid request.
+        raise ValueError("MD_BRIDGE_API_TOKEN must be ASCII")
     return Settings(
         max_upload_bytes=max_mb * 1024 * 1024,
         api_token=token,

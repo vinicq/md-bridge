@@ -155,9 +155,10 @@ COMPOSE
 
 # The API token goes in a root-only env file, referenced by compose env_file.
 # Written literally (KEY=VALUE), so a token with quotes or backslashes needs no
-# escaping, and 0600 keeps it off the umask-default world-readable path. Empty
-# when no token was supplied, which leaves auth off.
-printf 'MD_BRIDGE_API_TOKEN=%s\n' "${MD_BRIDGE_API_TOKEN:-}" > "$INSTALL_DIR/api.env"
+# escaping. Create it under umask 077 in a subshell so it is 0600 from the
+# moment it exists (no world-readable window before a later chmod). Empty when
+# no token was supplied, which leaves auth off.
+(umask 077 && printf 'MD_BRIDGE_API_TOKEN=%s\n' "${MD_BRIDGE_API_TOKEN:-}" > "$INSTALL_DIR/api.env")
 chmod 600 "$INSTALL_DIR/api.env"
 
 echo "==> Writing $INSTALL_DIR/Caddyfile"

@@ -557,6 +557,9 @@
           "400": {
             "description": "Upload is not a PDF."
           },
+          "401": {
+            "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
+          },
           "413": {
             "description": "Upload exceeds the configured cap."
           },
@@ -569,6 +572,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
           }
         },
         "security": [
@@ -615,11 +621,17 @@
           "400": {
             "description": "Wrong file type or non-UTF-8 markdown."
           },
+          "401": {
+            "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
+          },
           "413": {
             "description": "Upload exceeds the configured cap."
           },
           "422": {
             "description": "Malformed `options` payload."
+          },
+          "429": {
+            "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
           },
           "500": {
             "description": "Conversion failed."
@@ -679,11 +691,17 @@
             },
             "description": "Wrong file type."
           },
+          "401": {
+            "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
+          },
           "413": {
             "description": "Upload exceeds the configured cap."
           },
           "422": {
             "description": "Malformed `options` payload."
+          },
+          "429": {
+            "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
           },
           "500": {
             "description": "Renderer failed (Chromium crashed, missing template, etc)."
@@ -769,6 +787,9 @@
             },
             "description": "Upload is not a PDF."
           },
+          "401": {
+            "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."
+          },
           "413": {
             "content": {
               "application/json": {
@@ -802,6 +823,9 @@
               }
             },
             "description": "Malformed `options` payload."
+          },
+          "429": {
+            "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."
           }
         },
         "security": [

@@ -13,6 +13,9 @@ import hmac
 def api_key_ok(expected: str, provided: str | None) -> bool:
     if not provided:
         return False
-    # Compare as bytes: hmac.compare_digest's str form is ASCII-only and raises
-    # TypeError on a non-ASCII key or header, which would surface as a 500.
-    return hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))
+    # Starlette decodes request headers as latin-1, so `provided` is the raw
+    # header bytes reinterpreted as latin-1. Encode both sides with latin-1 to
+    # compare the original bytes. The configured token is validated ASCII at
+    # startup (settings.load_settings), and ASCII is a subset of latin-1, so a
+    # client sending the token's ASCII bytes matches exactly.
+    return hmac.compare_digest(provided.encode("latin-1"), expected.encode("latin-1"))

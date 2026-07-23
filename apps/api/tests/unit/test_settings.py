@@ -24,6 +24,12 @@ def test_negative_upload_cap_raises(monkeypatch):
         load_settings()
 
 
+def test_non_ascii_token_raises(monkeypatch):
+    monkeypatch.setenv("MD_BRIDGE_API_TOKEN", "señor")
+    with pytest.raises(ValueError):
+        load_settings()
+
+
 def test_defaults_are_safe(monkeypatch):
     for var in (
         "MD_BRIDGE_RATE_LIMIT",

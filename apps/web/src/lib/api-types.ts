@@ -544,6 +544,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Upload exceeds the configured cap. */
             413: {
                 headers: {
@@ -559,6 +566,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -592,6 +606,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Upload exceeds the configured cap. */
             413: {
                 headers: {
@@ -601,6 +622,13 @@ export interface operations {
             };
             /** @description Malformed `options` payload. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -655,6 +683,13 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Upload exceeds the configured cap. */
             413: {
                 headers: {
@@ -664,6 +699,13 @@ export interface operations {
             };
             /** @description Malformed `options` payload. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -738,6 +780,13 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Upload exceeds the configured cap. */
             413: {
                 headers: {
@@ -779,6 +828,13 @@ export interface operations {
                      */
                     "application/json": unknown;
                 };
+            };
+            /** @description Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

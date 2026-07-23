@@ -407,18 +407,28 @@ the origin making the call is not in that list.
 
 ## Rate limits and concurrency
 
-There is no built-in rate limiter. The conversion endpoints run the
-work in a thread pool via `asyncio.to_thread`, so concurrent
-requests do not block each other at the FastAPI layer, but they do
-share the host's CPU. Two practical knobs:
+There is a built-in, opt-in rate limiter, off by default. Set
+`MD_BRIDGE_RATE_LIMIT` to the number of requests allowed per window per
+client IP on the conversion routes, and `MD_BRIDGE_RATE_WINDOW_SECONDS`
+for the window (default 60). Over the limit, the route returns
+`429 rate_limited`. Counters live in the process, so the limit is per
+uvicorn worker: the shipped image runs one worker, and behind a reverse
+proxy every request arrives from the proxy's address unless uvicorn runs
+with `--forwarded-allow-ips` and the proxy sets `X-Forwarded-For`. There
+is no shared store, so multi-worker or multi-instance counters do not
+add up.
+
+The conversion endpoints run the work in a thread pool via
+`asyncio.to_thread`, so concurrent requests do not block each other at
+the FastAPI layer, but they do share the host's CPU. Two practical knobs:
 
 - **Process-level concurrency**: `uvicorn --workers N` runs N
   separate Python processes. Each process serves requests in
-  parallel.
+  parallel (and keeps its own rate-limit counters).
 - **Per-process thread cap**: the default thread-pool size is
   `min(32, os.cpu_count() + 4)`. PDF conversions are CPU-bound, so
   raising this past the core count rarely helps.
 
-If you need a real rate limit (per-IP, per-API-key), put a reverse
+For a shared per-IP limit across workers or instances, put a reverse
 proxy in front (nginx with `limit_req`, Traefik with the rate-limit
 middleware, or Caddy with `rate_limit`).

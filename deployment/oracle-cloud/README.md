@@ -181,12 +181,26 @@ sudo MD_BRIDGE_DOMAIN="mdbridge.example.com" \
 
 Two limits worth knowing:
 
-- **The token guards the API, not the browser UI.** An anonymous browser
-  has no key to send, so `X-API-Key` protects programmatic clients (curl,
-  scripts) but not the HTML pages. To lock the whole surface, including the
-  UI, put basic-auth or SSO at Caddy (`basic_auth` in the Caddyfile, or an
-  `oauth2-proxy` container in front). That is the "no unauthenticated access
-  to the pages" control.
+- **Setting a token disables the bundled UI, on purpose.** The web UI sends
+  its conversion requests without an `X-API-Key` (an anonymous browser has no
+  key), so once `MD_BRIDGE_API_TOKEN` is set, every conversion from the
+  bundled pages returns 401. The token is for an **API-only** deployment
+  (curl, scripts, CI). Choose one of two modes:
+    - **Public UI + abuse protection**: leave `MD_BRIDGE_API_TOKEN` unset and
+      rely on the rate limit and upload cap. The pages work for anyone; the
+      limits keep the box safe.
+    - **Locked surface (UI included)**: leave the app token unset and put
+      basic-auth or SSO at Caddy (`basic_auth` in the Caddyfile, or an
+      `oauth2-proxy` container in front). That gates the HTML and the API with
+      one credential the browser actually sends. Set the app token too only if
+      you also want a separate key for programmatic clients.
+- **The rate limit is per instance by default.** Counters live in the API
+  process, and behind Caddy every request arrives from Caddy's address, so
+  the limit throttles total load on the box rather than per client IP. That
+  protects the instance, which is the goal. For true per-IP limiting, run
+  uvicorn with `--forwarded-allow-ips` and have Caddy set `X-Forwarded-For`
+  to the real client; a shared store for multi-instance counters is out of
+  scope (self-hosted, no external state).
 - **The rate limit is per instance by default.** Counters live in the API
   process, and behind Caddy every request arrives from Caddy's address, so
   the limit throttles total load on the box rather than per client IP. That

@@ -205,6 +205,15 @@ def create_app() -> FastAPI:
             operation = schema.get("paths", {}).get(path, {}).get("post")
             if operation is not None:
                 operation["security"] = [{}, {"APIKeyHeader": []}]
+                responses = operation.setdefault("responses", {})
+                responses.setdefault(
+                    "401",
+                    {"description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."},
+                )
+                responses.setdefault(
+                    "429",
+                    {"description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."},
+                )
         app.openapi_schema = schema
         return schema
 

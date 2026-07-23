@@ -22,11 +22,6 @@ from collections.abc import Callable
 
 from fastapi import FastAPI
 
-# Sweep expired entries only once the key map exceeds this size, amortizing the
-# O(N) prune. Above it, memory is bounded to roughly the count of distinct IPs
-# seen within one window.
-_PRUNE_THRESHOLD = 10_000
-
 
 class FixedWindowLimiter:
     """Allow up to `limit` calls per `window_seconds` per key.
@@ -47,6 +42,7 @@ class FixedWindowLimiter:
         self._clock = clock
         # key -> (window_start, count)
         self._hits: dict[str, tuple[float, int]] = {}
+        self._last_prune: float | None = None
 
     def allow(self, key: str) -> bool:
         now = self._clock()
@@ -55,11 +51,13 @@ class FixedWindowLimiter:
             start, count = now, 0
         count += 1
         self._hits[key] = (start, count)
-        # Sweep expired entries only once the map grows past a threshold, so a
-        # burst from N distinct IPs is not O(N^2): the O(N) sweep is amortized
-        # across many calls instead of running on every request.
-        if len(self._hits) > _PRUNE_THRESHOLD:
+        # Sweep expired entries at most once per window (time-scheduled), not on
+        # every request. A flood of distinct IPs keeps the map large, but the
+        # O(N) sweep runs once per window rather than per request, so the
+        # abuse-protection path stays O(1) amortized regardless of map size.
+        if self._last_prune is None or now - self._last_prune >= self._window:
             self._prune(now)
+            self._last_prune = now
         return count <= self._limit
 
     def _prune(self, now: float) -> None:
