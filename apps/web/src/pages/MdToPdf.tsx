@@ -6,6 +6,8 @@ import { ConvertButton } from '../components/ConvertButton'
 import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
 import { PresetChips } from '../components/PresetChips'
+import { SettingRow } from '../components/SettingRow'
+import { Switch } from '../components/Switch'
 import { ThemedPreview } from '../components/ThemedPreview'
 import { DEFAULT_PAGE_SETUP } from '../components/pageSetup'
 import { ThemePicker } from '../components/ThemePicker'
@@ -31,6 +33,9 @@ export function MdToPdf() {
   const { t } = useTranslation()
   const [pasted, setPasted] = useState('')
   const [customCss, setCustomCss] = useState('')
+  // Opt-in Mermaid rendering (#439). Default off keeps today's behavior: a
+  // ```mermaid fence stays a code block unless the user turns this on.
+  const [renderMermaid, setRenderMermaid] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string; id: number } | null>(
     null,
@@ -85,7 +90,12 @@ export function MdToPdf() {
     convert: (file, signal) =>
       convertMdToPdf(
         file,
-        { theme: activeTheme, page_setup: DEFAULT_PAGE_SETUP, custom_css: customCss },
+        {
+          theme: activeTheme,
+          page_setup: DEFAULT_PAGE_SETUP,
+          custom_css: customCss,
+          render_mermaid: renderMermaid,
+        },
         signal,
       ),
     toBlobUrl: (blob) => URL.createObjectURL(blob),
@@ -127,12 +137,12 @@ export function MdToPdf() {
       await Promise.resolve()
       await batch.runAll()
     })()
-    // Re-run on an effective-theme change or a preset apply (applyTick), so a
-    // CSS-only preset does not leave a stale PDF. One effect keyed on both, so a
-    // preset that also changes the theme still re-runs exactly once. Batch
-    // helpers are stable refs.
+    // Re-run on an effective-theme change, a preset apply (applyTick), or the
+    // Mermaid toggle, so a CSS-only preset or a toggled option does not leave a
+    // stale PDF. One effect keyed on all three, so a preset that also changes
+    // the theme still re-runs exactly once. Batch helpers are stable refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTheme, applyTick])
+  }, [activeTheme, applyTick, renderMermaid])
 
   // Pick up the latest completed item so the preview follows the run. Derived
   // during render so the user's explicit selection wins when it is still
@@ -264,6 +274,25 @@ export function MdToPdf() {
         loading={themesStatus === 'loading'}
         loadError={themesStatus === 'error' ? (themesError ?? t.themePicker.loadError) : null}
       />
+
+      <div className="md-options">
+        <SettingRow
+          label={t.mdToPdf.renderMermaid}
+          hint={t.mdToPdf.renderMermaidHint}
+          hintId="md-mermaid-hint"
+          control={
+            <Switch
+              checked={renderMermaid}
+              onChange={setRenderMermaid}
+              label={t.mdToPdf.renderMermaid}
+              onText={t.preferences.on}
+              offText={t.preferences.off}
+              describedBy="md-mermaid-hint"
+              disabled={batch.running}
+            />
+          }
+        />
+      </div>
 
       <div className="grid-2">
         <div className="stack">

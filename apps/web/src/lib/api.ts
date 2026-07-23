@@ -43,6 +43,8 @@ export interface MdToPdfOptions {
   theme?: string
   page_setup?: PageSetup | null
   custom_css?: string
+  // Render fenced ```mermaid blocks to diagrams (#439). Default false server-side.
+  render_mermaid?: boolean
 }
 
 export interface MdToDocxOptions {

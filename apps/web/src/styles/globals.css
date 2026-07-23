@@ -189,6 +189,16 @@ pre {
   gap: var(--s-8);
 }
 
+/* Conversion options card on the md-to-pdf page (#439). The row supplies its
+   own vertical padding, so this only adds the card frame and side padding. */
+.md-options {
+  background: var(--c-bg-elev);
+  border: 1px solid var(--c-rule);
+  border-radius: var(--radius-1, 4px);
+  padding: 0 var(--s-4);
+  margin-bottom: var(--s-8);
+}
+
 @media (max-width: 720px) {
   .grid-2 {
     grid-template-columns: 1fr;

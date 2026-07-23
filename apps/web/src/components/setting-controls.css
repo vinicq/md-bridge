@@ -1,0 +1,92 @@
+/* Shared setting row + switch, used by Preferences and the md-to-pdf options
+   card. Moved verbatim from Preferences.css so both surfaces share one control
+   (and one a11y contract) instead of drifting copies. */
+
+.pref-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-2) 0;
+  border-bottom: 1px dashed var(--c-rule);
+}
+
+.pref-row:last-child {
+  border-bottom: none;
+}
+
+.pref-row__label {
+  font-size: 13px;
+}
+
+.pref-row__hint {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--c-ink-soft);
+}
+
+.pref-row__control {
+  justify-self: end;
+}
+
+/* Switch (role=switch) */
+.pref-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--c-ink-soft);
+  padding: 0;
+}
+
+.pref-switch__track {
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--c-rule);
+  position: relative;
+  transition: background var(--t-fast) var(--easing);
+}
+
+.pref-switch.is-on .pref-switch__track {
+  background: var(--c-accent);
+}
+
+.pref-switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  /* --c-bg keeps the thumb ≥3:1 (1.4.11) on the accent track in both themes;
+     a literal #fff drops to 2.28:1 on the light dark-theme accent (#447). */
+  background: var(--c-bg);
+  transition: transform var(--t-fast) var(--easing);
+}
+
+.pref-switch.is-on .pref-switch__thumb {
+  transform: translateX(16px);
+}
+
+.pref-switch__state {
+  min-width: 3.5ch;
+  text-align: left;
+}
+
+/* Narrow phones: stack label above the control so the segmented controls and
+   longer PT/ES labels never overflow or clip the 1fr auto grid (#447 review). */
+@media (max-width: 400px) {
+  .pref-row {
+    grid-template-columns: 1fr;
+    gap: var(--s-2);
+  }
+
+  .pref-row__control {
+    justify-self: start;
+  }
+}
