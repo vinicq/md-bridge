@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 import pymupdf
 from fastapi import FastAPI, HTTPException
@@ -29,6 +30,8 @@ from app.settings import load_settings
 _GUARDED_POST_PATHS = frozenset(
     {"/api/pdf-to-md", "/api/md-to-pdf", "/api/md-to-docx", "/api/inspect-pdf"}
 )
+
+log = logging.getLogger("app.access")
 
 
 def _error_response(status: int, code: str, message: str) -> JSONResponse:
@@ -170,6 +173,39 @@ def create_app() -> FastAPI:
         # So a cross-origin browser client can read Retry-After on a 503.
         expose_headers=["Retry-After"],
     )
+
+    # Access log for /api/* (added last = outermost, so it records the final
+    # status, including 401/429/503/504 from the inner middleware). One line per
+    # request with method, path, status, and duration - never document content -
+    # so a failure or timeout is diagnosable, not just the success path. Health
+    # probes are already dropped from the uvicorn access log, so skip them here
+    # too to keep the ~1/s noise out.
+    @app.middleware("http")
+    async def _access_log(request, call_next):
+        path = request.url.path
+        if not path.startswith("/api/") or path == "/api/health":
+            return await call_next(request)
+        started = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            elapsed_ms = int((time.perf_counter() - started) * 1000)
+            log.exception(
+                "request method=%s path=%s status=500 duration_ms=%d",
+                request.method,
+                path,
+                elapsed_ms,
+            )
+            raise
+        elapsed_ms = int((time.perf_counter() - started) * 1000)
+        log.info(
+            "request method=%s path=%s status=%d duration_ms=%d",
+            request.method,
+            path,
+            response.status_code,
+            elapsed_ms,
+        )
+        return response
 
     app.add_exception_handler(ApiError, api_error_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
