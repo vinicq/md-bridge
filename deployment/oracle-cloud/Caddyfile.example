@@ -6,10 +6,11 @@
 example.com {
     encode gzip
 
-    # API routes go to the FastAPI container. The handle_path strips the
-    # `/api` prefix before forwarding so the upstream sees the path it
-    # expects.
-    handle_path /api/* {
+    # API routes go to the FastAPI container. Use handle, not handle_path:
+    # the API serves every route under `/api` (e.g. `/api/health`), so the
+    # prefix must be preserved. handle_path would strip `/api` and the
+    # upstream would 404.
+    handle /api/* {
         reverse_proxy api:8000
     }
 

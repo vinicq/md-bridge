@@ -114,7 +114,10 @@ if [[ "$INSECURE" == "1" ]]; then
   cat > "$INSTALL_DIR/Caddyfile" <<CADDY
 :80 {
     encode gzip
-    handle_path /api/* {
+    # handle, not handle_path: the API serves routes under /api (e.g.
+    # /api/health), so the prefix must be preserved. handle_path would strip
+    # /api and the upstream would 404.
+    handle /api/* {
         reverse_proxy api:8000
     }
     handle {
@@ -126,7 +129,10 @@ else
   cat > "$INSTALL_DIR/Caddyfile" <<CADDY
 $DOMAIN {
     encode gzip
-    handle_path /api/* {
+    # handle, not handle_path: the API serves routes under /api (e.g.
+    # /api/health), so the prefix must be preserved. handle_path would strip
+    # /api and the upstream would 404.
+    handle /api/* {
         reverse_proxy api:8000
     }
     handle {
@@ -163,29 +169,39 @@ systemctl daemon-reload
 systemctl enable md-bridge.service
 
 scheme="https"
-smoke_base="https://$DOMAIN"
 if [[ "$INSECURE" == "1" ]]; then
   scheme="http"
-  # Caddy's `:80` site block answers on any Host, so the stack is reachable
-  # from the box itself without DNS.
-  smoke_base="http://localhost"
 fi
 
-# Post-deploy smoke test: hit the running stack over real HTTP.
-echo "==> Running post-deploy smoke test against $smoke_base"
-curl -fsSL "https://raw.githubusercontent.com/vinicq/md-bridge/main/scripts/smoke.py" \
-  -o /tmp/md-bridge-smoke.py || true
-if [[ -f /tmp/md-bridge-smoke.py ]] && \
-   SMOKE_BASE_URL="$smoke_base" python3 /tmp/md-bridge-smoke.py; then
-  echo "==> Smoke test passed"
-else
-  echo "==> Smoke test did not pass yet." >&2
-  if [[ "$INSECURE" != "1" ]]; then
-    # In secure mode the domain only answers once DNS points here and Caddy
-    # has a certificate (step 5 in the README), so a miss right after
-    # bootstrap is expected. Re-run once DNS has propagated.
-    echo "    Expected before DNS and TLS are live for $DOMAIN. Re-run after step 5:" >&2
-    echo "    SMOKE_BASE_URL=$smoke_base python3 /tmp/md-bridge-smoke.py" >&2
+SMOKE_URL="https://raw.githubusercontent.com/vinicq/md-bridge/main/scripts/smoke.py"
+
+# Post-deploy smoke test.
+#
+# Insecure mode: the stack answers at http://localhost (Caddy's `:80` block
+# serves any Host), so run the smoke now and FAIL the bootstrap if it does
+# not pass. Nothing about DNS or TLS can explain a failure in this mode, so
+# swallowing it would report a broken deploy as a success.
+#
+# Secure mode: the domain only answers once DNS points at this VM and Caddy
+# has a certificate (step 5 in the README). Aiming the check at $DOMAIN now
+# could hit a stale host that still holds the DNS record and print a false
+# pass, so do not auto-run; print the command for the operator to run once
+# DNS has propagated.
+if [[ "$INSECURE" == "1" ]]; then
+  echo "==> Running post-deploy smoke test against http://localhost"
+  smoke_py="$(mktemp)"
+  if ! curl -fsSL "$SMOKE_URL" -o "$smoke_py"; then
+    rm -f "$smoke_py"
+    echo "error: could not download the smoke test script" >&2
+    exit 2
+  fi
+  if SMOKE_BASE_URL="http://localhost" python3 "$smoke_py"; then
+    echo "==> Smoke test passed"
+    rm -f "$smoke_py"
+  else
+    rm -f "$smoke_py"
+    echo "error: smoke test failed against the local stack" >&2
+    exit 2
   fi
 fi
 
@@ -193,4 +209,10 @@ echo
 echo "==================================================================="
 echo "md-bridge is up at $scheme://$DOMAIN"
 echo "Caddy will fetch a Let's Encrypt cert on the first browser visit."
+if [[ "$INSECURE" != "1" ]]; then
+  echo
+  echo "Once DNS points $DOMAIN at this VM, verify the deploy end to end:"
+  echo "  curl -fsSL $SMOKE_URL -o smoke.py"
+  echo "  SMOKE_BASE_URL=https://$DOMAIN python3 smoke.py"
+fi
 echo "==================================================================="

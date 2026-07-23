@@ -20,6 +20,12 @@ problems the same-origin setup does not have: an API URL baked into the
 frontend bundle at build time, and CORS. Keep one origin and neither
 exists.
 
+The proxy must forward the full path. The API serves every route under
+`/api` (`/api/health`, `/api/md-to-pdf`, and so on), so a proxy that
+strips the `/api` prefix before forwarding returns 404 for every call.
+Caddy's `handle /api/*` and nginx's `location /api/` both preserve the
+prefix; Caddy's `handle_path` strips it, so do not use it here.
+
 ## Self-managed VPS (Hetzner, DigitalOcean, Linode, Vultr)
 
 Same recipe as the Oracle Cloud one, minus the OCI account and firewall
@@ -40,33 +46,51 @@ skip the local iptables lines.
 They run the same GHCR images (`ghcr.io/vinicq/md-bridge-api` and `-web`),
 so the image is never the problem. The catch is the same-origin rule:
 most managed platforms give each container its own hostname. To keep one
-origin, either
+origin you have two options.
 
-- deploy only the `web` image and let its built-in nginx proxy reach the
-  API over the platform's internal networking, or
-- put the platform's own path router in front, mapping `/api/*` to the API
-  service and everything else to the web service.
+- Deploy only the `web` image and let its nginx reach the API over the
+  platform's internal network. The shipped `apps/web/nginx.conf` hardcodes
+  `proxy_pass http://api:8000`, so this only works if the API service is
+  reachable at the hostname `api` on port 8000. Give the API service that
+  name (or a network alias) on the platform, or rebuild the web image with
+  your API's address baked into `nginx.conf`. Platforms that assign a fixed
+  generated hostname you cannot alias will hit an nginx resolution error.
+- Put the platform's own path router in front, mapping `/api/*` to the API
+  service and everything else to the web service, preserving the `/api`
+  prefix.
 
-If the platform cannot express a path rewrite, you are back to the
-two-origin problems above. Pick one that can, or use a VM.
+If the platform can express neither, you are back to the two-origin
+problems above. Pick one that can, or use a VM.
 
 ## Kubernetes
 
 For teams that already run a cluster: a Deployment plus Service for `api`,
 a Deployment plus Service for `web`, and an Ingress that routes `/api/*`
-to the api Service and `/` to the web Service. Same-origin holds as long
-as both sit behind one Ingress host. A Helm chart is on the backlog.
+to the api Service (prefix preserved) and `/` to the web Service.
+Same-origin holds as long as both sit behind one Ingress host. A Helm
+chart is on the backlog.
 
 ## Verifying any deploy
 
 Every recipe ends the same way: run the smoke test against the live URL.
+It checks `GET /api/health` and a small `POST /api/md-to-pdf` over real
+HTTP. Exit 0 means the deploy serves the app; exit 1 means something in
+the chain (proxy, API, or renderer) is broken.
+
+From a repository checkout:
 
 ```bash
 SMOKE_BASE_URL="https://your.domain" python3 scripts/smoke.py
 ```
 
-It checks `GET /api/health` and a small `POST /api/md-to-pdf` over real
-HTTP. Exit 0 means the deploy serves the app; exit 1 means something in
-the chain (proxy, API, or renderer) is broken.
-</content>
-</invoke>
+On a host that only has the images (no checkout), download the script
+first:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vinicq/md-bridge/main/scripts/smoke.py -o smoke.py
+SMOKE_BASE_URL="https://your.domain" python3 smoke.py
+```
+
+The Oracle Cloud `bootstrap.sh` downloads and runs it for you in insecure
+mode; in secure mode it prints the command to run once DNS points at the
+new host.

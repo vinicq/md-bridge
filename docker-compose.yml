@@ -38,6 +38,26 @@ services:
       api:
         condition: service_healthy
 
+  # Optional edge proxy that mirrors the production same-origin topology
+  # (Caddy in front: /api/* to the API, everything else to the web UI). Off
+  # by default; the CI deploy-smoke job starts it with `--profile edge` and
+  # smokes through it, so a handle_path-style prefix-strip regression in the
+  # proxy config fails CI (the direct nginx path on 5173 would not catch it).
+  caddy:
+    profiles: [edge]
+    image: caddy:2-alpine
+    container_name: md-bridge-caddy
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./deployment/oracle-cloud/Caddyfile.ci:/etc/caddy/Caddyfile:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+
   # Test runner for the backend pytest suite. Starts on demand:
   #   docker compose --profile test run --rm tests-api
   tests-api:
