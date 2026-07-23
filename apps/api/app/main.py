@@ -59,7 +59,10 @@ A walkthrough with `curl` examples lives in
 
 - Upload cap: deployment-configurable via `MD_BRIDGE_MAX_UPLOAD_MB` (default 500 MB).
 - No persistence: every file is processed in a temporary directory and removed
-  before the response is returned.
+  when the conversion finishes, before the response in the normal case. The one
+  exception is a conversion that hits `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS`: the
+  504 returns while the abandoned worker still holds its temp directory, which
+  is removed when that worker exits.
 - No OCR (v1): scanned PDFs need Tesseract before being submitted.
 """
 

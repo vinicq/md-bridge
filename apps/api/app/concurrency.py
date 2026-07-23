@@ -57,10 +57,26 @@ class ConcurrencyGate:
             # on the single-threaded event loop they are atomic.
             if self._waiters >= self._queue_max:
                 raise self._busy_error()
+            # Never wait past the request's own deadline: if the remaining wall
+            # clock is shorter than the queue wait, cap the wait at it and treat
+            # expiry as the conversion timeout, not "busy".
+            wait = self._queue_wait
+            deadline_bound = False
+            if deadline is not None:
+                remaining = deadline - loop.time()
+                if remaining < wait:
+                    wait = max(0.0, remaining)
+                    deadline_bound = True
             self._waiters += 1
             try:
-                await asyncio.wait_for(self._sem.acquire(), timeout=self._queue_wait)
+                await asyncio.wait_for(self._sem.acquire(), timeout=wait)
             except TimeoutError:
+                if deadline_bound:
+                    raise ApiError(
+                        504,
+                        "conversion_timeout",
+                        "The request exceeded its time limit while waiting for a slot.",
+                    ) from None
                 raise self._busy_error() from None
             finally:
                 self._waiters -= 1
