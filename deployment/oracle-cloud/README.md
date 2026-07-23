@@ -158,7 +158,15 @@ The compose file pins `:latest`, so any release published by the
 `docker-publish.yml` workflow on GitHub becomes available within
 minutes.
 
-After updating, re-run the smoke test to confirm the new images serve:
+`docker compose pull && up -d` keeps your existing `/opt/md-bridge/compose.yml`;
+it does not import changes the current bootstrap makes to that file. If your
+install predates the on-disk log-rotation limits (the `x-logging` block), add
+them by hand from the shipped `bootstrap.sh`, or re-run the bootstrap with your
+full env (domain, token, and any other vars) to regenerate the file.
+
+After updating, re-run the smoke test to confirm the new images serve. Use your
+public URL (`http://<PUBLIC_IP>` if you deployed with `MD_BRIDGE_INSECURE=1`,
+`https://<your.domain>` otherwise):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vinicq/md-bridge/main/scripts/smoke.py -o smoke.py
@@ -182,20 +190,11 @@ cd /opt/md-bridge
 sudo docker compose pull && sudo docker compose up -d
 ```
 
-This is the safe path: it touches only the image tags, not your token or the
-Caddy config.
-
-You can also re-run the bootstrap with the tag pinned, but it rewrites
-`api.env` from the environment, so you MUST pass `MD_BRIDGE_API_TOKEN` again
-(and any other env you had set) or the rollback turns authentication off.
-Download it first and make it executable:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/vinicq/md-bridge/main/deployment/oracle-cloud/bootstrap.sh -o bootstrap.sh
-chmod +x bootstrap.sh
-sudo MD_BRIDGE_DOMAIN="<your.domain>" MD_BRIDGE_IMAGE_TAG=0.11.0 \
-     MD_BRIDGE_API_TOKEN="<your-token>" ./bootstrap.sh
-```
+Edit the tags rather than re-running `bootstrap.sh`: the bootstrap regenerates
+`compose.yml`, `Caddyfile`, and `api.env` from scratch, so re-running it for a
+rollback would drop any customization you made (a token, Basic Auth or SSO you
+added to the Caddyfile). The compose-edit path above changes only the image
+tags and leaves everything else intact.
 
 GHCR tags are mutable: a workflow rerun can move a tag to a new digest. The
 `sha-<commit>` tag is the most stable handle; for a guaranteed-identical
@@ -218,9 +217,9 @@ sudo docker compose ps                     # up / restarting / unhealthy
 sudo docker compose logs --tail=200 api    # api access log: method, path, status, duration
 sudo docker compose logs --tail=200 caddy web
 # Liveness. Use the public URL (Caddy routes by domain, so http://localhost
-# does not match the site), or hit the api container directly, which needs
-# neither Caddy nor DNS:
-curl -fsS https://<your.domain>/api/health
+# does not match the site): https://<your.domain>/api/health, or
+# http://<PUBLIC_IP>/api/health if you deployed with MD_BRIDGE_INSECURE=1.
+# Or hit the api container directly, which needs neither Caddy nor DNS:
 sudo docker compose exec api \
   python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/api/health').read())"
 ```
@@ -241,12 +240,14 @@ and no stored documents). Back up:
 - `api.env` (the API token, mode 0600)
 
 The archive contains the token, so create it root-only from the start (no
-window where it is world-readable). Pre-create the file at mode 0600, then let
-tar write into it (tar truncates but keeps the existing mode):
+window where it is world-readable), and write to a temp file first so a failed
+run cannot destroy the previous good backup. `install` sets mode 0600, `tar`
+keeps it (truncate preserves the mode), and `mv` is atomic:
 
 ```bash
-sudo install -m 600 /dev/null md-bridge-config.tgz
-sudo tar czf md-bridge-config.tgz -C /opt md-bridge/compose.yml md-bridge/Caddyfile md-bridge/api.env
+sudo install -m 600 /dev/null md-bridge-config.tgz.tmp
+sudo tar czf md-bridge-config.tgz.tmp -C /opt md-bridge/compose.yml md-bridge/Caddyfile md-bridge/api.env
+sudo mv md-bridge-config.tgz.tmp md-bridge-config.tgz
 ```
 
 Caddy's `caddy_data` volume holds the Let's Encrypt certificates; it is
