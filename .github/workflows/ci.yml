@@ -180,3 +180,35 @@ jobs:
           name: playwright-report-${{ matrix.browser }}
           path: apps/web/playwright-report/
           retention-days: 14
+
+  deploy-smoke:
+    name: Deploy smoke (compose)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+
+      # Builds the real api and web images from this PR and brings the
+      # same-origin stack up (web on :5173 proxies /api to the api service).
+      # This is the deploy integrity gate: it hits the running services over
+      # real HTTP, no mocks.
+      - name: Build and start the compose stack
+        run: docker compose up -d --build --wait
+
+      - name: Run the post-deploy smoke test
+        env:
+          SMOKE_BASE_URL: http://localhost:5173
+        run: python scripts/smoke.py
+
+      - name: Dump compose logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

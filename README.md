@@ -232,6 +232,22 @@ The API listens on `http://localhost:8000` and the web UI on
 before starting, so the first call from the browser already has a live
 backend behind it.
 
+### Post-deploy smoke test
+
+`scripts/smoke.py` checks a running instance over real HTTP: `GET
+/api/health` plus a small `POST /api/md-to-pdf` that has to come back as a
+PDF. Point it at any origin:
+
+```bash
+SMOKE_BASE_URL="http://localhost:5173" python3 scripts/smoke.py   # local compose
+SMOKE_BASE_URL="https://your.domain"   python3 scripts/smoke.py   # live deploy
+```
+
+The Oracle Cloud `bootstrap.sh` runs it automatically after bringing the
+stack up, and CI runs it against the compose stack on every pull request.
+Exit 0 means the deploy serves the app end to end; exit 1 means the proxy,
+API, or renderer is broken.
+
 The compose stack runs the application, not the test suite by default.
 The healthchecks on each container only confirm that the service is
 reachable, not that it behaves correctly.

@@ -162,18 +162,31 @@ UNIT
 systemctl daemon-reload
 systemctl enable md-bridge.service
 
-# Smoke test: wait up to 60 s for the API to answer.
-echo "==> Waiting for the stack to come up"
-for i in $(seq 1 30); do
-  if curl -fsS "http://localhost:80/api/health" >/dev/null 2>&1; then
-    break
-  fi
-  sleep 2
-done
-
 scheme="https"
+smoke_base="https://$DOMAIN"
 if [[ "$INSECURE" == "1" ]]; then
   scheme="http"
+  # Caddy's `:80` site block answers on any Host, so the stack is reachable
+  # from the box itself without DNS.
+  smoke_base="http://localhost"
+fi
+
+# Post-deploy smoke test: hit the running stack over real HTTP.
+echo "==> Running post-deploy smoke test against $smoke_base"
+curl -fsSL "https://raw.githubusercontent.com/vinicq/md-bridge/main/scripts/smoke.py" \
+  -o /tmp/md-bridge-smoke.py || true
+if [[ -f /tmp/md-bridge-smoke.py ]] && \
+   SMOKE_BASE_URL="$smoke_base" python3 /tmp/md-bridge-smoke.py; then
+  echo "==> Smoke test passed"
+else
+  echo "==> Smoke test did not pass yet." >&2
+  if [[ "$INSECURE" != "1" ]]; then
+    # In secure mode the domain only answers once DNS points here and Caddy
+    # has a certificate (step 5 in the README), so a miss right after
+    # bootstrap is expected. Re-run once DNS has propagated.
+    echo "    Expected before DNS and TLS are live for $DOMAIN. Re-run after step 5:" >&2
+    echo "    SMOKE_BASE_URL=$smoke_base python3 /tmp/md-bridge-smoke.py" >&2
+  fi
 fi
 
 echo
