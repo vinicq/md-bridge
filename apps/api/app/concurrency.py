@@ -72,12 +72,14 @@ class ConcurrencyGate:
         task = asyncio.ensure_future(asyncio.to_thread(fn, *args, **kwargs))
         task.add_done_callback(lambda _: self._sem.release())
         try:
+            # shield in both branches so cancelling the awaiting coroutine (a
+            # wait_for timeout, or an ASGI host cancelling on client disconnect)
+            # does not cancel the underlying task. The worker thread keeps
+            # running regardless, and the slot must be released by the done
+            # callback when the thread actually finishes, never early.
             if self._timeout > 0:
-                # shield so wait_for's timeout does not cancel the task: the
-                # thread would keep running anyway, and cancelling would let the
-                # done callback double-release.
                 return await asyncio.wait_for(asyncio.shield(task), timeout=self._timeout)
-            return await task
+            return await asyncio.shield(task)
         except TimeoutError:
             raise ApiError(
                 504, "conversion_timeout", "The conversion took too long and was abandoned."

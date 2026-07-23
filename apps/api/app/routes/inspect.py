@@ -99,7 +99,7 @@ async def inspect_pdf(
                 f"Upload exceeds {max_upload_bytes // (1024 * 1024)} MB limit.",
             )
 
-    enforce_pdf_page_cap(bytes(data), request.app.state.settings.max_pdf_pages)
+    await enforce_pdf_page_cap(bytes(data), request.app.state.settings.max_pdf_pages)
 
     started = time.perf_counter()
     result = await run_bounded(request.app, inspect_pdf_bytes, bytes(data), name)

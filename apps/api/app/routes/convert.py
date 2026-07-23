@@ -272,7 +272,7 @@ async def pdf_to_md(
     pdf_bytes = await _read_upload(
         file, ".pdf", "PDF", request.app.state.settings.max_upload_bytes
     )
-    enforce_pdf_page_cap(pdf_bytes, request.app.state.settings.max_pdf_pages)
+    await enforce_pdf_page_cap(pdf_bytes, request.app.state.settings.max_pdf_pages)
     started = time.perf_counter()
     result = await run_bounded(request.app,
         convert_pdf_bytes,

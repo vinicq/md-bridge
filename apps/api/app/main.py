@@ -201,27 +201,55 @@ def create_app() -> FastAPI:
                 "Omit it on an open deployment."
             ),
         }
+        error_content = {
+            "application/json": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "error": {
+                            "type": "object",
+                            "properties": {
+                                "code": {"type": "string"},
+                                "message": {"type": "string"},
+                            },
+                            "required": ["code", "message"],
+                        }
+                    },
+                    "required": ["error"],
+                }
+            }
+        }
+        guarded_responses = {
+            "401": {
+                "description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set).",
+                "content": error_content,
+            },
+            "429": {
+                "description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set).",
+                "content": error_content,
+            },
+            "503": {
+                "description": "Service at capacity.",
+                "headers": {
+                    "Retry-After": {
+                        "schema": {"type": "string"},
+                        "description": "Seconds to wait before retrying.",
+                    }
+                },
+                "content": error_content,
+            },
+            "504": {
+                "description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS.",
+                "content": error_content,
+            },
+        }
         for path in _GUARDED_POST_PATHS:
             operation = schema.get("paths", {}).get(path, {}).get("post")
             if operation is not None:
                 operation["security"] = [{}, {"APIKeyHeader": []}]
                 responses = operation.setdefault("responses", {})
-                responses.setdefault(
-                    "401",
-                    {"description": "Missing or invalid API key (when MD_BRIDGE_API_TOKEN is set)."},
-                )
-                responses.setdefault(
-                    "429",
-                    {"description": "Rate limit exceeded (when MD_BRIDGE_RATE_LIMIT is set)."},
-                )
-                responses.setdefault(
-                    "503",
-                    {"description": "Service at capacity; a Retry-After header is included."},
-                )
-                responses.setdefault(
-                    "504",
-                    {"description": "Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS."},
-                )
+                for status, body in guarded_responses.items():
+                    responses.setdefault(status, body)
         app.openapi_schema = schema
         return schema
 

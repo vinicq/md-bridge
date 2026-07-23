@@ -549,7 +549,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Upload exceeds the configured cap. */
             413: {
@@ -572,21 +579,44 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
-            /** @description Service at capacity; a Retry-After header is included. */
+            /** @description Service at capacity. */
             503: {
                 headers: {
+                    /** @description Seconds to wait before retrying. */
+                    "Retry-After"?: string;
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
             504: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
         };
     };
@@ -625,7 +655,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Upload exceeds the configured cap. */
             413: {
@@ -646,7 +683,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Conversion failed. */
             500: {
@@ -655,19 +699,35 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Service at capacity; a Retry-After header is included. */
+            /** @description Service at capacity. */
             503: {
                 headers: {
+                    /** @description Seconds to wait before retrying. */
+                    "Retry-After"?: string;
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
             504: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
         };
     };
@@ -716,7 +776,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Upload exceeds the configured cap. */
             413: {
@@ -737,7 +804,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Renderer failed (Chromium crashed, missing template, etc). */
             500: {
@@ -746,19 +820,35 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Service at capacity; a Retry-After header is included. */
+            /** @description Service at capacity. */
             503: {
                 headers: {
+                    /** @description Seconds to wait before retrying. */
+                    "Retry-After"?: string;
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
             504: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
         };
     };
@@ -827,7 +917,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Upload exceeds the configured cap. */
             413: {
@@ -876,21 +973,44 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
-            /** @description Service at capacity; a Retry-After header is included. */
+            /** @description Service at capacity. */
             503: {
                 headers: {
+                    /** @description Seconds to wait before retrying. */
+                    "Retry-After"?: string;
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
             /** @description Conversion exceeded MD_BRIDGE_CONVERT_TIMEOUT_SECONDS. */
             504: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: {
+                            code: string;
+                            message: string;
+                        };
+                    };
+                };
             };
         };
     };
