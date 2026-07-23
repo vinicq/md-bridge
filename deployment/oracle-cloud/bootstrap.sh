@@ -132,6 +132,14 @@ mkdir -p "$INSTALL_DIR"
 cat > "$INSTALL_DIR/compose.yml" <<COMPOSE
 name: md-bridge
 
+# Cap on-disk logs so a long-running instance does not fill the boot volume.
+# Local only: the operator reads them with \`docker compose logs\`.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   api:
     image: ghcr.io/vinicq/md-bridge-api:${IMAGE_TAG}
@@ -161,6 +169,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    logging: *default-logging
 
   web:
     image: ghcr.io/vinicq/md-bridge-web:${IMAGE_TAG}
@@ -170,6 +179,7 @@ services:
         condition: service_healthy
     expose:
       - "80"
+    logging: *default-logging
 
   caddy:
     image: caddy:2-alpine
@@ -184,6 +194,7 @@ services:
     depends_on:
       - api
       - web
+    logging: *default-logging
 
 volumes:
   caddy_data:
