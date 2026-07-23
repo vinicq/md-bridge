@@ -37,5 +37,9 @@ COPY --from=build /web/dist /usr/share/nginx/html
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
+# Probe 127.0.0.1, not localhost: our custom default.conf keeps the packaged
+# entrypoint from adding a `listen [::]:80`, so nginx is IPv4-only. busybox
+# wget resolves `localhost` to ::1 first and the probe would hit nothing,
+# marking the container unhealthy even though it serves fine over IPv4.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget -q -O /dev/null http://localhost/ || exit 1
+    CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1

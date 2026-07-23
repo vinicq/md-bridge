@@ -195,11 +195,14 @@ jobs:
 
       # Builds the real api and web images from this PR and brings the
       # same-origin stack up (web on :5173 proxies /api to the api service).
-      # This is the deploy integrity gate: it hits the running services over
-      # real HTTP, no mocks.
+      # No --wait: the smoke test below polls /api/health over real HTTP,
+      # which is the gate we actually care about, and it does not couple this
+      # job to the web container's internal healthcheck.
       - name: Build and start the compose stack
-        run: docker compose up -d --build --wait
+        run: docker compose up -d --build
 
+      # The deploy integrity gate: hits the running services over real HTTP,
+      # no mocks. smoke.py waits up to 60s for health, then converts.
       - name: Run the post-deploy smoke test
         env:
           SMOKE_BASE_URL: http://localhost:5173
