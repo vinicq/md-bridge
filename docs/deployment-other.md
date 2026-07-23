@@ -37,9 +37,12 @@ steps:
    run the commands it contains by hand.
 4. Point a domain at the VM and let Caddy fetch a certificate.
 
-`bootstrap.sh` is host-agnostic apart from the iptables step. On a
-provider whose firewall lives in a cloud console, open 80/443 there and
-skip the local iptables lines.
+`bootstrap.sh` targets Ubuntu: it uses `apt-get`, Docker's Ubuntu package
+repository, `iptables-persistent`, and systemd. On another Ubuntu (or
+Debian-family) VM it runs as-is; on a provider whose firewall lives in a
+cloud console, open 80/443 there and drop the iptables lines. On a
+non-Debian distro, install Docker yourself and run the compose stack behind
+Caddy by hand, following the same same-origin pattern the script sets up.
 
 ## Managed container platforms (Cloud Run, App Runner, Container Apps)
 
@@ -48,13 +51,14 @@ so the image is never the problem. The catch is the same-origin rule:
 most managed platforms give each container its own hostname. To keep one
 origin you have two options.
 
-- Deploy only the `web` image and let its nginx reach the API over the
-  platform's internal network. The shipped `apps/web/nginx.conf` hardcodes
-  `proxy_pass http://api:8000`, so this only works if the API service is
-  reachable at the hostname `api` on port 8000. Give the API service that
-  name (or a network alias) on the platform, or rebuild the web image with
-  your API's address baked into `nginx.conf`. Platforms that assign a fixed
-  generated hostname you cannot alias will hit an nginx resolution error.
+- Deploy both images but expose only the `web` service publicly, and let
+  its nginx reach the API over the platform's internal network. The shipped
+  `apps/web/nginx.conf` hardcodes `proxy_pass http://api:8000`, so the API
+  service must be reachable at the hostname `api` on port 8000. Give the API
+  service that name (or a network alias) on the platform, or rebuild the web
+  image with your API's address baked into `nginx.conf`. Platforms that
+  assign a fixed generated hostname you cannot alias will hit an nginx
+  resolution error.
 - Put the platform's own path router in front, mapping `/api/*` to the API
   service and everything else to the web service, preserving the `/api`
   prefix.
