@@ -55,6 +55,32 @@ def test_md_to_pdf_renders_a_gfm_alert(client, chromium_ready):
     assert resp.content[:5] == b"%PDF-"
 
 
+def test_md_to_pdf_render_mermaid_reaches_the_pipeline(client, chromium_ready):
+    # #439: the render_mermaid option must flow API -> service -> convert, not
+    # just be accepted by the schema (ledger pattern 15). A document with a
+    # mermaid block renders differently with the option on vs off; determinism
+    # (same input, same bytes) makes the byte difference proof that the option
+    # took effect. Off leaves the fence as a code block; on renders a diagram.
+    import json
+
+    mermaid_md = b"# Doc\n\n```mermaid\nflowchart LR\n  A --> B\n```\n"
+    off = client.post(
+        "/api/md-to-pdf",
+        files={"file": ("d.md", mermaid_md, "text/markdown")},
+        data={"options": json.dumps({"render_mermaid": False})},
+    )
+    on = client.post(
+        "/api/md-to-pdf",
+        files={"file": ("d.md", mermaid_md, "text/markdown")},
+        data={"options": json.dumps({"render_mermaid": True})},
+    )
+    assert off.status_code == 200, off.text
+    assert on.status_code == 200, on.text
+    assert off.content[:5] == b"%PDF-"
+    assert on.content[:5] == b"%PDF-"
+    assert off.content != on.content
+
+
 def test_md_to_pdf_unknown_theme_returns_400(client):
     # An unknown theme is rejected at the service before any rendering, so this
     # needs no Chromium. Uses the documented error envelope.

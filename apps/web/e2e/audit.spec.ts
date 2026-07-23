@@ -752,3 +752,43 @@ test.describe('conversion presets a11y (#62)', () => {
     })
   }
 })
+
+test.describe('Mermaid toggle a11y (#439)', () => {
+  // The md-to-pdf render-Mermaid switch is a new a11y-attribute surface, so it
+  // gets a focused axe run in both states and themes on top of the static
+  // route sweep, per the a11y-attribute-change rule.
+  for (const theme of ['light', 'dark'] as const) {
+    test(`switch announces role/state, no critical axe violations [${theme}]`, async ({
+      page,
+    }) => {
+      await page.addInitScript((t) => {
+        window.localStorage.setItem('md-bridge:locale', 'en')
+        window.localStorage.setItem('md-bridge:theme', t)
+      }, theme)
+      await page.goto('/convert/md-to-pdf')
+
+      const sw = page.getByRole('switch', { name: /render mermaid/i })
+      await expect(sw).toBeVisible()
+      await expect(sw).toHaveAttribute('aria-checked', 'false')
+
+      const axeOff = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze()
+      expect(
+        axeOff.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious'),
+        `off-state violations [${theme}]`,
+      ).toHaveLength(0)
+
+      await sw.click()
+      await expect(sw).toHaveAttribute('aria-checked', 'true')
+
+      const axeOn = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze()
+      expect(
+        axeOn.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious'),
+        `on-state violations [${theme}]`,
+      ).toHaveLength(0)
+    })
+  }
+})

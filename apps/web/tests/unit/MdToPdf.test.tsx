@@ -227,4 +227,25 @@ describe('MdToPdf', () => {
     await waitFor(() => expect(convertMdToPdf).toHaveBeenCalled(), { timeout: 5000 })
     expect(vi.mocked(convertMdToPdf).mock.calls.at(-1)![1]).toMatchObject({ theme: 'academic' })
   }, 10000)
+
+  it('sends render_mermaid per the toggle and re-runs when it flips (#439)', async () => {
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+
+    // Default off: the conversion posts render_mermaid: false.
+    fireEvent.change(screen.getByLabelText('Pasted markdown'), { target: { value: '# Hi' } })
+    await user.click(screen.getByRole('button', { name: 'Convert' }))
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalled(), { timeout: 5000 })
+    expect(vi.mocked(convertMdToPdf).mock.calls.at(-1)![1]).toMatchObject({ render_mermaid: false })
+
+    // Turning the switch on re-runs the queue with render_mermaid: true.
+    await user.click(screen.getByRole('switch', { name: /render mermaid/i }))
+    await waitFor(
+      () =>
+        expect(vi.mocked(convertMdToPdf).mock.calls.at(-1)![1]).toMatchObject({
+          render_mermaid: true,
+        }),
+      { timeout: 5000 },
+    )
+  }, 10000)
 })
