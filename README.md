@@ -216,11 +216,6 @@ HTTPS is automatic via Let's Encrypt. See the
 [walkthrough](deployment/oracle-cloud/README.md) or the
 [docs site](https://vinicq.github.io/md-bridge/deployment/oracle-cloud/).
 
-For a no-VM, click-and-deploy option, see
-[Deploy to Render (free tier)](https://vinicq.github.io/md-bridge/deployment/render/).
-Render reads the existing `render.yaml` blueprint at the repo root and
-maps it to two services from the public GHCR images.
-
 The API listens on `http://localhost:8000` and the web UI on
 `http://localhost:5173`. The web container waits for the API healthcheck
 before starting, so the first call from the browser already has a live

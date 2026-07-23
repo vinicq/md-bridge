@@ -50,8 +50,8 @@ nav:
   - Heuristics: heuristics.md
   - FAQ: faq.md
   - Deploy:
-    - Render (free tier): deployment/render.md
-    - Fly.io and Railway: deployment-other.md
+    - Self-hosting (recommended): deployment/oracle-cloud.md
+    - Other hosts: deployment-other.md
   - API reference: API.md
   - API recipes: api-recipes.md
   - Design system: design/index.md
