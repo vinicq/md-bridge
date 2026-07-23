@@ -161,18 +161,20 @@ minutes.
 `docker compose pull && up -d` keeps your existing `/opt/md-bridge/compose.yml`;
 it does not import changes the current bootstrap makes to that file. If your
 install predates the on-disk log-rotation limits (the `x-logging` block), add
-them by hand from the shipped `bootstrap.sh`, or re-run the bootstrap with your
-full env (domain, token, and any other vars) to regenerate the file.
+them by hand from the shipped `bootstrap.sh`. Do not re-run the bootstrap on a
+customized install to get them: it regenerates `compose.yml`, `Caddyfile`, and
+`api.env` from scratch and would drop any manual Caddy directives (Basic
+Auth/SSO), which are not env-driven and cannot be passed back in.
 
 After updating, re-run the smoke test to confirm the new images serve. Use your
 public URL (`http://<PUBLIC_IP>` if you deployed with `MD_BRIDGE_INSECURE=1`,
-`https://<your.domain>` otherwise):
+`https://<your.domain>` otherwise). If you set `MD_BRIDGE_API_TOKEN`, put
+`SMOKE_API_KEY=<token>` on the command so the guarded md-to-pdf check is
+authorized (otherwise it returns 401):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vinicq/md-bridge/main/scripts/smoke.py -o smoke.py
-SMOKE_BASE_URL="https://<your.domain>" python3 smoke.py
-# If you set MD_BRIDGE_API_TOKEN, also export SMOKE_API_KEY=<token> so the
-# guarded md-to-pdf check is authorized (otherwise it returns 401).
+SMOKE_BASE_URL="https://<your.domain>" SMOKE_API_KEY="<token-if-set>" python3 smoke.py
 ```
 
 ## Rolling back
