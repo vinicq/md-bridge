@@ -135,7 +135,7 @@ export interface paths {
          *
          *     | field | required | description |
          *     |---|---|---|
-         *     | `file` | yes | A `.md` file (max 500 MB), UTF-8. |
+         *     | `file` | yes | A `.md` file up to the configured cap (default 500 MB), UTF-8. |
          *     | `options` | no | JSON: `{ "lang": "en" }`. |
          *
          *     ### Response
@@ -181,7 +181,7 @@ export interface paths {
          *
          *     | field | required | description |
          *     |---|---|---|
-         *     | `file` | yes | A `.pdf` file (max 500 MB). |
+         *     | `file` | yes | A `.pdf` file, up to the configured cap (default 500 MB). |
          *     | `options` | no | JSON string with the keys below. |
          *
          *     ```json
@@ -544,7 +544,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Upload exceeds the 500 MB cap. */
+            /** @description Upload exceeds the configured cap. */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -592,7 +592,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Upload exceeds the 500 MB cap. */
+            /** @description Upload exceeds the configured cap. */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -655,7 +655,7 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description Upload exceeds the 500 MB cap. */
+            /** @description Upload exceeds the configured cap. */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -738,7 +738,7 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description Upload exceeds the 500 MB cap. */
+            /** @description Upload exceeds the configured cap. */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -748,7 +748,7 @@ export interface operations {
                      * @example {
                      *       "error": {
                      *         "code": "payload_too_large",
-                     *         "message": "Upload exceeds 500 MB limit."
+                     *         "message": "Upload exceeds the configured limit."
                      *       }
                      *     }
                      */

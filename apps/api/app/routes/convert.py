@@ -47,7 +47,7 @@ PyMuPDF's table finder.
 
 | field | required | description |
 |---|---|---|
-| `file` | yes | A `.pdf` file (max 500 MB). |
+| `file` | yes | A `.pdf` file, up to the configured cap (default 500 MB). |
 | `options` | no | JSON string with the keys below. |
 
 ```json
@@ -88,7 +88,7 @@ The rendering uses a bundled A4 CSS theme
 
 | field | required | description |
 |---|---|---|
-| `file` | yes | A `.md` file (max 500 MB), UTF-8. |
+| `file` | yes | A `.md` file up to the configured cap (default 500 MB), UTF-8. |
 | `options` | no | JSON: `{ "lang": "en" }`. |
 
 ### Response
@@ -223,13 +223,13 @@ def _download_headers(source_name: str | None, ext: str) -> dict[str, str]:
             },
         },
         413: {
-            "description": "Upload exceeds the 500 MB cap.",
+            "description": "Upload exceeds the configured cap.",
             "content": {
                 "application/json": {
                     "example": {
                         "error": {
                             "code": "payload_too_large",
-                            "message": "Upload exceeds 500 MB limit.",
+                            "message": "Upload exceeds the configured limit.",
                         }
                     }
                 }
@@ -315,7 +315,7 @@ async def pdf_to_md(
                 }
             },
         },
-        413: {"description": "Upload exceeds the 500 MB cap."},
+        413: {"description": "Upload exceeds the configured cap."},
         422: {"description": "Malformed `options` payload."},
         500: {"description": "Renderer failed (Chromium crashed, missing template, etc)."},
     },
@@ -405,7 +405,7 @@ async def get_theme_css(slug: str) -> Response:
             "content": {DOCX_MIME: {"schema": {"type": "string", "format": "binary"}}},
         },
         400: {"description": "Wrong file type or non-UTF-8 markdown."},
-        413: {"description": "Upload exceeds the 500 MB cap."},
+        413: {"description": "Upload exceeds the configured cap."},
         422: {"description": "Malformed `options` payload."},
         500: {"description": "Conversion failed."},
     },

@@ -22,6 +22,11 @@ from collections.abc import Callable
 
 from fastapi import FastAPI
 
+# Sweep expired entries only once the key map exceeds this size, amortizing the
+# O(N) prune. Above it, memory is bounded to roughly the count of distinct IPs
+# seen within one window.
+_PRUNE_THRESHOLD = 10_000
+
 
 class FixedWindowLimiter:
     """Allow up to `limit` calls per `window_seconds` per key.
@@ -45,18 +50,19 @@ class FixedWindowLimiter:
 
     def allow(self, key: str) -> bool:
         now = self._clock()
-        self._prune(now)
         start, count = self._hits.get(key, (now, 0))
         if now - start >= self._window:
             start, count = now, 0
         count += 1
         self._hits[key] = (start, count)
+        # Sweep expired entries only once the map grows past a threshold, so a
+        # burst from N distinct IPs is not O(N^2): the O(N) sweep is amortized
+        # across many calls instead of running on every request.
+        if len(self._hits) > _PRUNE_THRESHOLD:
+            self._prune(now)
         return count <= self._limit
 
     def _prune(self, now: float) -> None:
-        # Drop expired windows so an IP-spray does not grow the dict without
-        # bound. ponytail: O(n) sweep on each call is fine at this scale; cap or
-        # switch to an LRU only if the key space gets large.
         expired = [k for k, (start, _) in self._hits.items() if now - start >= self._window]
         for k in expired:
             del self._hits[k]

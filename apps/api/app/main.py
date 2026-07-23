@@ -57,7 +57,7 @@ A walkthrough with `curl` examples lives in
 
 ## Limits
 
-- Upload cap: **500 MB** per request.
+- Upload cap: deployment-configurable via `MD_BRIDGE_MAX_UPLOAD_MB` (default 500 MB).
 - No persistence: every file is processed in a temporary directory and removed
   before the response is returned.
 - No OCR (v1): scanned PDFs need Tesseract before being submitted.
@@ -124,7 +124,15 @@ def create_app() -> FastAPI:
     # the (per-instance, shared behind a proxy) quota.
     @app.middleware("http")
     async def _access_control(request, call_next):
-        if request.method == "POST" and request.url.path in _GUARDED_POST_PATHS:
+        # Match on the root-path-relative path: under a mount prefix or uvicorn
+        # --root-path, request.url.path can carry that prefix while routing
+        # strips it, which would otherwise slip a prefixed request past the
+        # guard. Stripping is a no-op when root_path is empty (the shipped case).
+        path = request.url.path
+        root = request.scope.get("root_path", "")
+        if root and path.startswith(root):
+            path = path[len(root):] or "/"
+        if request.method == "POST" and path in _GUARDED_POST_PATHS:
             settings = request.app.state.settings
             if settings.auth_enabled and not api_key_ok(
                 settings.api_token, request.headers.get("X-API-Key")
@@ -181,6 +189,8 @@ def create_app() -> FastAPI:
             description=app.description,
             routes=app.routes,
             tags=app.openapi_tags,
+            contact=app.contact,
+            license_info=app.license_info,
         )
         schema.setdefault("components", {}).setdefault("securitySchemes", {})["APIKeyHeader"] = {
             "type": "apiKey",

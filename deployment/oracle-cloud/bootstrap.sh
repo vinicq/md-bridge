@@ -53,8 +53,9 @@ if [[ "$PUBLIC_UPLOAD_MB" -lt 1 || "$PUBLIC_RATE_WINDOW" -lt 1 ]]; then
 fi
 
 # Caddy rejects an oversized body at the edge before FastAPI spools it. Track
-# the app upload cap plus a little multipart overhead.
-CADDY_MAX_BODY_MB="$((PUBLIC_UPLOAD_MB + 2))"
+# the app upload cap plus a little multipart overhead. Force base 10 (10#) so a
+# value with a leading zero like 050 is not read as octal.
+CADDY_MAX_BODY_MB="$((10#$PUBLIC_UPLOAD_MB + 2))"
 
 if [[ -z "$DOMAIN" ]]; then
   echo "error: MD_BRIDGE_DOMAIN is not set" >&2

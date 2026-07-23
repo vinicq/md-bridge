@@ -69,7 +69,7 @@ _INSPECT_EXAMPLE = {
     responses={
         200: {"content": {"application/json": {"example": _INSPECT_EXAMPLE}}},
         400: {"description": "Upload is not a PDF."},
-        413: {"description": "Upload exceeds the 500 MB cap."},
+        413: {"description": "Upload exceeds the configured cap."},
     },
 )
 async def inspect_pdf(
