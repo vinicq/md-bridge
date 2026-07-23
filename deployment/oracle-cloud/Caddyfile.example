@@ -11,6 +11,12 @@ example.com {
     # prefix must be preserved. handle_path would strip `/api` and the
     # upstream would 404.
     handle /api/* {
+        # Cap the request body at the edge (matches nginx client_max_body_size
+        # and the API 500 MB upload limit) so an oversized upload is rejected
+        # before it spools to disk on the VM.
+        request_body {
+            max_size 501MiB
+        }
         reverse_proxy api:8000
     }
 

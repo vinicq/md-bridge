@@ -9,6 +9,10 @@
 #   MD_BRIDGE_INSECURE Set to 1 to serve over plain HTTP only (when you do
 #                      not have a real domain and only want a proof of life
 #                      via the public IP).
+#   MD_BRIDGE_IMAGE_TAG  Image tag to pull (default: latest).
+#   MD_BRIDGE_REF      Git ref the smoke test script is fetched from and run
+#                      as root in insecure mode (default: main). Pin it to the
+#                      same tag as the images for a reproducible bootstrap.
 #
 # Exit codes:
 #   0  success
@@ -21,6 +25,7 @@ DOMAIN="${MD_BRIDGE_DOMAIN:-}"
 INSECURE="${MD_BRIDGE_INSECURE:-0}"
 INSTALL_DIR="/opt/md-bridge"
 IMAGE_TAG="${MD_BRIDGE_IMAGE_TAG:-latest}"
+REF="${MD_BRIDGE_REF:-main}"
 
 if [[ -z "$DOMAIN" ]]; then
   echo "error: MD_BRIDGE_DOMAIN is not set" >&2
@@ -118,6 +123,12 @@ if [[ "$INSECURE" == "1" ]]; then
     # /api/health), so the prefix must be preserved. handle_path would strip
     # /api and the upstream would 404.
     handle /api/* {
+        # Cap the request body at the edge (matches nginx client_max_body_size
+        # and the API 500 MB upload limit) so an oversized upload is rejected
+        # before it spools to disk on the VM.
+        request_body {
+            max_size 501MiB
+        }
         reverse_proxy api:8000
     }
     handle {
@@ -133,6 +144,12 @@ $DOMAIN {
     # /api/health), so the prefix must be preserved. handle_path would strip
     # /api and the upstream would 404.
     handle /api/* {
+        # Cap the request body at the edge (matches nginx client_max_body_size
+        # and the API 500 MB upload limit) so an oversized upload is rejected
+        # before it spools to disk on the VM.
+        request_body {
+            max_size 501MiB
+        }
         reverse_proxy api:8000
     }
     handle {
@@ -173,7 +190,7 @@ if [[ "$INSECURE" == "1" ]]; then
   scheme="http"
 fi
 
-SMOKE_URL="https://raw.githubusercontent.com/vinicq/md-bridge/main/scripts/smoke.py"
+SMOKE_URL="https://raw.githubusercontent.com/vinicq/md-bridge/${REF}/scripts/smoke.py"
 
 # Post-deploy smoke test.
 #

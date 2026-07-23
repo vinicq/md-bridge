@@ -81,12 +81,26 @@ def _check_md_to_pdf(base: str) -> None:
     print("smoke: md-to-pdf ok - response starts with %PDF")
 
 
+def _check_web_ui(base: str) -> None:
+    try:
+        with urllib.request.urlopen(f"{base}/", timeout=10) as resp:
+            if resp.status != 200:
+                _fail(f"web UI returned status {resp.status}")
+            body = resp.read(4096).decode("utf-8", "replace").lower()
+    except (urllib.error.URLError, OSError) as exc:
+        _fail(f"web UI request failed: {exc}")
+    if "<!doctype html" not in body and "<html" not in body:
+        _fail("web UI did not return an HTML document")
+    print("smoke: web UI ok - / returns HTML")
+
+
 def main() -> None:
     base = os.environ.get("SMOKE_BASE_URL", "").rstrip("/")
     if not base:
         _fail("SMOKE_BASE_URL is not set (e.g. http://localhost:5173)")
     print(f"smoke: target {base}")
     _wait_healthy(base)
+    _check_web_ui(base)
     _check_md_to_pdf(base)
     print("smoke: PASS")
 
