@@ -57,11 +57,14 @@ def test_md_to_pdf_renders_a_gfm_alert(client, chromium_ready):
 
 def test_md_to_pdf_render_mermaid_reaches_the_pipeline(client, chromium_ready):
     # #439: the render_mermaid option must flow API -> service -> convert, not
-    # just be accepted by the schema (ledger pattern 15). A document with a
-    # mermaid block renders differently with the option on vs off; determinism
-    # (same input, same bytes) makes the byte difference proof that the option
-    # took effect. Off leaves the fence as a code block; on renders a diagram.
+    # just be accepted by the schema (ledger pattern 15). Assert structurally,
+    # not on raw bytes: PDF output is not byte-stable, so off.content != on.content
+    # could pass without a diagram actually rendering. The flowchart draws vector
+    # paths a plain code block never does, so the page's drawing count is the
+    # observable proof. Mirrors tests/regression/test_md_to_pdf_regression.py.
     import json
+
+    import fitz
 
     mermaid_md = b"# Doc\n\n```mermaid\nflowchart LR\n  A --> B\n```\n"
     off = client.post(
@@ -78,7 +81,16 @@ def test_md_to_pdf_render_mermaid_reaches_the_pipeline(client, chromium_ready):
     assert on.status_code == 200, on.text
     assert off.content[:5] == b"%PDF-"
     assert on.content[:5] == b"%PDF-"
-    assert off.content != on.content
+
+    on_doc = fitz.open(stream=on.content, filetype="pdf")
+    off_doc = fitz.open(stream=off.content, filetype="pdf")
+    on_paths = len(on_doc[0].get_drawings())
+    off_paths = len(off_doc[0].get_drawings())
+    # The rendered flowchart draws vector paths the plain code block never does.
+    assert on_paths > off_paths, f"diagram did not render (on={on_paths}, off={off_paths})"
+    # Off leaves the mermaid source visible as code text; on replaces it with a diagram.
+    assert "flowchart LR" in off_doc[0].get_text()
+    assert "flowchart LR" not in on_doc[0].get_text()
 
 
 def test_md_to_pdf_unknown_theme_returns_400(client):
