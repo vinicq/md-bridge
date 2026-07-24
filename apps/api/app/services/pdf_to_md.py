@@ -21,6 +21,7 @@ from app.schemas.convert import (
     PdfToMdOptions,
     PdfToMdResponse,
 )
+from app.services.document_parser import selected_document_parser
 from app.services.inspect import inspect_pdf_bytes
 from app.services.mupdf_log import capture_mupdf_warnings
 from app.services.ocr import ImageOcrProcessor, image_ocr_enabled, resolve_ocr_provider
@@ -166,6 +167,38 @@ def convert_pdf_bytes(
     page_ocr_superseded_image_ocr = False
     diagnostics = inspect_pdf_bytes(pdf_bytes, filename)
     if diagnostics.needs_ocr:
+        parser = selected_document_parser()
+        if parser is not None:
+            # LLM document-parser path (#457): the model returns Markdown for the
+            # whole document, so it supersedes both the searchable-PDF pre-pass and
+            # per-image OCR. Honor the same page cap as the tesseract path; over the
+            # cap a force request falls through to a raw conversion like tesseract.
+            cap = ocr_max_pages()
+            over_cap = bool(cap) and diagnostics.pages > cap
+            if not over_cap:
+                result = parser.parse(pdf_bytes, page_break=opts.page_break)
+                return PdfToMdResponse(
+                    md=result.md,
+                    front_matter=FrontMatter(source=filename, pages=diagnostics.pages),
+                    warnings=result.warnings,
+                    stats=_compute_stats(result.md),
+                    ocr_applied=True,
+                    ocr=OcrInfo(
+                        provider=result.provider,
+                        duration_ms=result.duration_ms,
+                        warnings=result.warnings,
+                    ),
+                )
+            if not force:
+                raise ApiError(
+                    413,
+                    "ocr_too_many_pages",
+                    f"This scan has {diagnostics.pages} pages, over the OCR cap of "
+                    f"{cap}. Raise or unset MD_BRIDGE_OCR_MAX_PAGES, or retry with "
+                    "force to convert it without OCR.",
+                    detail={"pages": diagnostics.pages, "max_pages": cap},
+                )
+            # force + over cap: fall through to a raw conversion (near-empty).
         # OCR rasterizes every page at 300 DPI, so a scan past the configured
         # page budget is a memory/time risk on a shared or hosted deployment.
         # The cap gates the OCR pre-pass, not conversion itself: over the cap we

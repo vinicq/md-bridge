@@ -393,7 +393,7 @@ export interface components {
             /** Duration Ms */
             duration_ms: number;
             /** Lang */
-            lang: string;
+            lang?: string | null;
             /** Provider */
             provider: string;
             /** Warnings */

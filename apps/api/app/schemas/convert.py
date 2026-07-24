@@ -194,9 +194,10 @@ class ConvertStats(BaseModel):
 class OcrInfo(BaseModel):
     # Metadata for the OCR pre-pass that actually ran (#441). Carries the
     # provider, language, duration, and any degradation warnings, never the
-    # recognized text, so surfacing it cannot leak document content.
+    # recognized text, so surfacing it cannot leak document content. `lang` is
+    # null for an LLM document parser (#457), which has no language setting.
     provider: str
-    lang: str
+    lang: str | None = None
     duration_ms: int
     warnings: list[str] = Field(default_factory=list)
 
