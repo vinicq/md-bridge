@@ -170,6 +170,42 @@ minimal local engine); an explicitly selected provider that is unknown or whose
 stack is not installed returns `503 ocr_provider_unavailable` rather than
 silently switching engines.
 
+#### LLM document parsers (optional)
+
+`MD_BRIDGE_OCR_PROVIDER` can also name an LLM document parser: `custom`,
+`unlimited`, or `deepseek`. Unlike the traditional engines (which produce a
+searchable PDF the converter then reads), a document parser sends each rendered
+page to an OpenAI-compatible `/chat/completions` endpoint the operator hosts and
+returns the model's Markdown directly. A native PDF with a text layer never
+calls it, and an install that configures no parser is unaffected. The `ocr`
+block reports the provider; `lang` is `null` for these.
+
+Each provider reads its endpoint from the environment under its own namespace,
+so nothing is baked into the image:
+
+| variable | required | notes |
+| --- | --- | --- |
+| `MD_BRIDGE_OCR_<PROVIDER>_URL` | yes | base URL, e.g. `http://ocr:8000/v1` |
+| `MD_BRIDGE_OCR_<PROVIDER>_KEY` | no | API key, sent as `Authorization: Bearer` |
+| `MD_BRIDGE_OCR_CUSTOM_MODEL` | yes (custom) | model name; the `unlimited`/`deepseek` recipes fix their own |
+| `MD_BRIDGE_OCR_CUSTOM_PROMPT` | no (custom) | per-page instruction |
+
+`MD_BRIDGE_OCR_MAX_PAGES` caps the page count for these too (over the cap returns
+`413 ocr_too_many_pages`). The URL and key are read server-side only and never
+appear in a response or a log. md-bridge follows no redirect from the endpoint
+and applies a request timeout, but it does not enforce network isolation: keep
+the parser endpoint on a trusted private network. `unlimited` (Unlimited-OCR) and
+`deepseek` (DeepSeek-OCR) are example recipes for open-weight models the operator
+self-hosts; md-bridge neither bundles nor endorses them, so verify each model's
+license on its own model card before use.
+
+Choosing a provider:
+
+| provider | runs on | per-page cost | best for |
+| --- | --- | --- | --- |
+| `tesseract` | local CPU, in the default OCR image | none | scanned text, the minimal offline setup |
+| `custom` / `unlimited` / `deepseek` | the operator's own model server (typically a GPU) | the operator's own hosting | complex layout, tables, and reading order the heuristics miss |
+
 ### Common errors
 
 | status | code              | when                                              |
