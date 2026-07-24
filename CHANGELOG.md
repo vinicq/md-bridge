@@ -19,70 +19,48 @@ If a section is empty in a release, the section is omitted entirely.
 
 This release makes md-bridge safe to run as a self-hosted public service:
 a same-origin deploy topology, optional access control and rate limiting,
-work and queue limits with safe defaults, and a local access log with rotation
-and operations docs. The web app also gains the Mermaid render toggle on the
-md-to-pdf screen.
+work and queue limits with safe defaults, and a local access log with an
+operations guide. The web app also gains the Mermaid render toggle on the
+md-to-pdf screen. The deploy guide (`deployment/oracle-cloud`) covers the
+public-deployment specifics.
 
 ### Added
 
-- **Same-origin production topology.** The official deploy serves the web app
-  and the API behind one origin with Caddy, and the request body cap is enforced
-  at every proxy edge (nginx and Caddy), not only at the app. The deploy smoke
-  check fetches the served `/` page as well as the API, so a broken web route
-  fails the check. `bootstrap.sh` can pin the smoke script to a ref
-  (`MD_BRIDGE_REF`, default `main`) so an operator can match it to the image tag
-  instead of always fetching `main`, and creates secret files with no
-  world-readable window. (#435)
-- **Access control and abuse protection.** Set `MD_BRIDGE_API_TOKEN` to require an
-  API key in the `X-API-Key` header on the conversion routes (`/api/pdf-to-md`,
-  `/api/md-to-pdf`, `/api/md-to-docx`, `/api/inspect-pdf`); the health, themes, and
-  formats routes stay open. `MD_BRIDGE_RATE_LIMIT` (with
-  `MD_BRIDGE_RATE_WINDOW_SECONDS`, default 60) rate-limits by client IP. Both run
-  in HTTP middleware before the upload body is parsed, so an unauthenticated or
-  over-quota request is rejected (401 or 429) before it spends memory. In the bare
-  app both default off; the official Oracle/Caddy deploy recipe (bootstrap.sh)
-  turns rate limiting on at 60 requests per window out of the box. Behind the
-  same-origin proxy the limiter sees the proxy's address unless trusted-proxy
-  forwarding is configured, so it bounds total load on the instance rather than per
-  real client (see the deploy guide). The upload cap is deployment-configurable via
-  `MD_BRIDGE_MAX_UPLOAD_MB` (default 500). The key is an API guard; a same-origin
-  browser UI is gated by the edge proxy (Caddy basic-auth or SSO), not the key. (#436)
+- **Same-origin production topology.** The official deploy serves the web app and
+  the API behind one origin with Caddy, with the request body cap enforced at the
+  proxy as well as the app and a deploy smoke check that fetches both the served
+  page and the API. See the deploy guide. (#435)
+- **Optional access control and rate limiting.** Set `MD_BRIDGE_API_TOKEN` to
+  require an API key (`X-API-Key` header) on the file-upload routes, and
+  `MD_BRIDGE_RATE_LIMIT` (with `MD_BRIDGE_RATE_WINDOW_SECONDS`, default 60) to
+  rate-limit requests. Both are off in the bare app; the official deploy recipe
+  enables rate limiting. The upload cap is configurable via
+  `MD_BRIDGE_MAX_UPLOAD_MB` (default 500). See the deploy guide for how these
+  behave behind the proxy. (#436)
 - **Work and queue limits.** Heavy conversions run behind a concurrency gate with
-  a bounded wait queue and a per-request timeout, tunable via
-  `MD_BRIDGE_MAX_CONCURRENCY` (default 2), `MD_BRIDGE_QUEUE_MAX` (default 8),
-  `MD_BRIDGE_QUEUE_WAIT_SECONDS` (default 10), and
-  `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS` (default 300). A request that waits too long
-  for a slot returns 503; one that exceeds the timeout returns 504.
-  `MD_BRIDGE_MAX_PDF_PAGES` (default 0, unlimited) rejects an oversized PDF with
-  422. (#437)
-- **Access log, log rotation, and an operations guide.** A middleware records one
-  line per `/api` request (method, path, status, duration), including failures and
-  timeouts and never the document content, so a problem is diagnosable from the
-  operator's own box. It skips the health probe, strips the proxy root path, and
-  escapes control characters in the client-supplied path. The bootstrap compose
-  caps on-disk logs (`json-file`, 10 MB x 3) so a long-running instance does not
-  fill the boot volume. The Oracle deploy guide gains rollback, diagnosis, and
-  config-backup sections. Local-only by the identity contract: no metrics
-  endpoint, no external exporter, no phone-home. (#438)
-- **Render Mermaid toggle on the md-to-pdf screen.** The md-to-pdf page exposes
-  the existing `render_mermaid` option as a switch, sends it to the API, and
-  keeps it off by default. A fenced ```mermaid block already in the Markdown
-  renders to a diagram; a block that fails to parse stays as its source code, and
-  one invalid block no longer stops the valid ones from rendering. (#439)
+  a wait queue and a per-request timeout: `MD_BRIDGE_MAX_CONCURRENCY` (default 2),
+  `MD_BRIDGE_QUEUE_MAX` (default 8), `MD_BRIDGE_QUEUE_WAIT_SECONDS` (default 10),
+  and `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS` (default 300). Over capacity returns 503
+  and an exceeded timeout returns 504; `MD_BRIDGE_MAX_PDF_PAGES` (default 0,
+  unlimited) rejects an oversized PDF with 422. (#437)
+- **Local access log and operations guide.** A middleware logs one line per `/api`
+  request (method, path, status, duration), never the document content. The
+  bootstrap compose caps on-disk logs, and the deploy guide gains rollback,
+  diagnosis, and backup sections. Local-only: no metrics endpoint, no external
+  exporter. (#438)
+- **Render Mermaid toggle on the md-to-pdf screen.** The md-to-pdf page exposes the
+  existing `render_mermaid` option as a switch, off by default. A fenced ```mermaid
+  block renders to a diagram; a block that fails to parse stays as its source
+  code. (#439)
 
 ### Changed
 
-- **Conversion concurrency and timeout now have safe defaults.** Unlike the
-  opt-in auth and rate-limit knobs, the work limits are on out of the box: at most
-  two heavy conversions run at once, and each request runs against a 300-second
-  wall clock that starts when it enters the work gate, so the queue wait counts
-  against that budget rather than on top of it: a full queue returns 503 and an
-  exceeded deadline returns 504. Multipart upload parsing happens before the gate,
-  so it sits outside the budget (bounding admission before the upload buffers is
-  #462). The worker thread cannot be cancelled, so an abandoned conversion keeps
-  its slot until it finishes on its own (hard cancellation is #459). A single-user local install is unaffected in practice; a
-  busy deployment no longer lets unbounded parallel renders compete for memory.
-  Tune with the env vars above, or set the timeout to `0` to disable it. (#437)
+- **Conversion concurrency and timeout now default on.** Unlike the opt-in auth
+  and rate-limit knobs, the work limits ship with safe defaults: at most two heavy
+  conversions at once and a 300-second per-request timeout. A single-user local
+  install is unaffected in practice; a busy deployment no longer lets unbounded
+  parallel renders compete for memory. Set the env vars above to tune, or the
+  timeout to `0` to disable it. (#437)
 
 ## [0.11.0] — 2026-07-22
 
