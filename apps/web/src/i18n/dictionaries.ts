@@ -350,7 +350,7 @@ const en: Dictionary = {
     success: 'PDF ready.',
     renderMermaid: 'Render Mermaid diagrams',
     renderMermaidHint:
-      'Turns fenced ```mermaid blocks already in your Markdown into diagrams. It does not create diagrams from plain text or UML.',
+      'Turns fenced ```mermaid blocks already in your Markdown into diagrams; a block that fails to render stays as code. It does not create diagrams from plain text or UML.',
   },
   mdToDocx: {
     title: 'Markdown to DOCX',
@@ -665,7 +665,7 @@ const pt: Dictionary = {
     success: 'PDF pronto.',
     renderMermaid: 'Renderizar diagramas Mermaid',
     renderMermaidHint:
-      'Transforma blocos ```mermaid que já estão no seu Markdown em diagramas. Não cria diagramas a partir de texto comum ou UML.',
+      'Transforma blocos ```mermaid que já estão no seu Markdown em diagramas; um bloco que falha continua como código. Não cria diagramas a partir de texto comum ou UML.',
   },
   mdToDocx: {
     title: 'Markdown para DOCX',
@@ -980,7 +980,7 @@ const es: Dictionary = {
     success: 'PDF listo.',
     renderMermaid: 'Renderizar diagramas Mermaid',
     renderMermaidHint:
-      'Convierte los bloques ```mermaid que ya están en tu Markdown en diagramas. No crea diagramas a partir de texto plano o UML.',
+      'Convierte los bloques ```mermaid que ya están en tu Markdown en diagramas; un bloque que falla se mantiene como código. No crea diagramas a partir de texto plano o UML.',
   },
   mdToDocx: {
     title: 'Markdown a DOCX',

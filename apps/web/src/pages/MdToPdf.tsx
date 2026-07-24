@@ -161,6 +161,21 @@ export function MdToPdf() {
   const handleFiles = (files: File[]) => batch.add(files)
 
   const onConvertAll = async () => {
+    // A mixed batch (some items already rendered, some freshly queued) would let
+    // a plain runAll() convert only the queued items with the current options
+    // while the done items keep their old-option PDFs, so per-row downloads and
+    // the ZIP would mix options under one visible setting (#464). Rebuild so
+    // every PDF uses the current options. runAll reads the synchronous itemsRef,
+    // so the re-added files are already visible to it (the await mirrors the
+    // other call sites).
+    const hasRendered = batch.items.some((it) => it.status === 'done' || it.status === 'error')
+    const hasQueued = batch.items.some((it) => it.status === 'queued')
+    if (hasRendered && hasQueued) {
+      const files = batch.items.map((it) => it.file)
+      batch.clear()
+      batch.add(files)
+      await Promise.resolve()
+    }
     const summary = await batch.runAll()
     // Only claim success when a conversion actually succeeded. A failed batch
     // already shows the error on the row, so a green toast would contradict it

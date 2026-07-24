@@ -292,4 +292,39 @@ describe('MdToPdf', () => {
     await new Promise((r) => setTimeout(r, 50))
     expect(convertMdToPdf).toHaveBeenCalledTimes(1)
   }, 10000)
+
+  it('re-renders completed items with the current option when converting a mixed batch (#464)', async () => {
+    // Convert one file, add a second, flip the option, then Convert all. Every
+    // resulting PDF must use the current option, not a mix of old and new, so
+    // downloads and the ZIP stay consistent with the visible setting.
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+
+    const fileA = new File(['# A'], 'a.md', { type: 'text/markdown' })
+    fireEvent.drop(screen.getByLabelText('Drop a Markdown file or click to choose'), {
+      dataTransfer: { files: [fileA], items: [] as unknown as DataTransferItemList },
+    })
+    await screen.findByTitle('a.md')
+    await user.click(screen.getByRole('button', { name: 'Convert all' }))
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalledTimes(1), { timeout: 5000 })
+    expect(vi.mocked(convertMdToPdf).mock.calls.at(-1)![1]).toMatchObject({ render_mermaid: false })
+
+    // Add a second file (queued) and turn Mermaid on; the auto-run stays suppressed.
+    const fileB = new File(['# B'], 'b.md', { type: 'text/markdown' })
+    fireEvent.drop(screen.getByLabelText('Drop a Markdown file or click to choose'), {
+      dataTransfer: { files: [fileB], items: [] as unknown as DataTransferItemList },
+    })
+    await screen.findByTitle('b.md')
+    await user.click(screen.getByRole('switch', { name: /render mermaid/i }))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(convertMdToPdf).toHaveBeenCalledTimes(1)
+
+    // Convert all rebuilds the mixed batch so both PDFs render with Mermaid on.
+    vi.mocked(convertMdToPdf).mockClear()
+    await user.click(screen.getByRole('button', { name: 'Convert all' }))
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalledTimes(2), { timeout: 5000 })
+    for (const call of vi.mocked(convertMdToPdf).mock.calls) {
+      expect(call[1]).toMatchObject({ render_mermaid: true })
+    }
+  }, 10000)
 })

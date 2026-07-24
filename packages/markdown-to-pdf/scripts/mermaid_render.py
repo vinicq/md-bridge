@@ -54,9 +54,18 @@ _INIT_JS = """
       theme: 'neutral',
       flowchart: { htmlLabels: false }
     });
-    await mermaid.run({ querySelector: '.mermaid' });
+    // Drop blocks that fail to parse so each stays as its original <pre> source
+    // instead of mermaid drawing an error diagram over it, and so one invalid
+    // block does not abort rendering of the valid ones. mermaid.parse with
+    // suppressErrors returns false instead of throwing (the vendored bundle
+    // ignores the config-level suppressErrorRendering flag).
+    for (const el of document.querySelectorAll('.mermaid')) {
+      const ok = await mermaid.parse(el.textContent, { suppressErrors: true });
+      if (!ok) el.classList.remove('mermaid');
+    }
+    await mermaid.run({ querySelector: '.mermaid', suppressErrors: true });
   } catch (e) {
-    /* leave the diagram source visible on failure */
+    /* leave any remaining diagram source visible on failure */
   } finally {
     window['__md_bridge_mermaid_ready'] = true;
   }
