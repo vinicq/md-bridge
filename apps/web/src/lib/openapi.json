@@ -325,8 +325,15 @@
             "type": "integer"
           },
           "lang": {
-            "title": "Lang",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lang"
           },
           "provider": {
             "title": "Provider",
@@ -342,7 +349,6 @@
         },
         "required": [
           "provider",
-          "lang",
           "duration_ms"
         ],
         "title": "OcrInfo",
