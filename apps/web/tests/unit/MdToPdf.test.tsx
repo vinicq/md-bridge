@@ -267,4 +267,29 @@ describe('MdToPdf', () => {
     await new Promise((r) => setTimeout(r, 50))
     expect(convertMdToPdf).not.toHaveBeenCalled()
   }, 10000)
+
+  it('does not auto-convert a queued file added to an already-converted batch (#464)', async () => {
+    // Mixed batch: one item already converted, a second dropped in and still
+    // queued. Toggling an option must not silently convert the queued file; the
+    // auto-refresh only fires when every item has already produced a result.
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+
+    // Convert a first file so the batch has a processed item.
+    fireEvent.change(screen.getByLabelText('Pasted markdown'), { target: { value: '# Hi' } })
+    await user.click(screen.getByRole('button', { name: 'Convert' }))
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalledTimes(1), { timeout: 5000 })
+
+    // Add a second file; it stays queued (no explicit Convert).
+    const file = new File(['# Later'], 'later.md', { type: 'text/markdown' })
+    fireEvent.drop(screen.getByLabelText('Drop a Markdown file or click to choose'), {
+      dataTransfer: { files: [file], items: [] as unknown as DataTransferItemList },
+    })
+    await screen.findByTitle('later.md')
+
+    // Toggling must not convert the queued file: the call count stays at 1.
+    await user.click(screen.getByRole('switch', { name: /render mermaid/i }))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(convertMdToPdf).toHaveBeenCalledTimes(1)
+  }, 10000)
 })

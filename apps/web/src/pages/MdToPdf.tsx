@@ -131,10 +131,12 @@ export function MdToPdf() {
     }
     const files = batch.items.map((it) => it.file)
     if (files.length === 0 || batch.running) return
-    // Only refresh a batch that already produced a result. A purely-queued batch
-    // (files dropped, never converted) must wait for the explicit Convert button,
-    // so toggling an option does not silently start the upload/conversion (#464).
-    if (!batch.items.some((it) => it.status === 'done' || it.status === 'error')) return
+    // Only refresh a batch whose every item already produced a result. If any
+    // file is still queued (dropped or added, never converted), skip the auto
+    // refresh so toggling an option never silently converts a file the user has
+    // not sent with the explicit Convert button, including a queued file added
+    // to an already-converted batch (#464).
+    if (!batch.items.every((it) => it.status === 'done' || it.status === 'error')) return
     batch.clear()
     batch.add(files)
     void (async () => {
