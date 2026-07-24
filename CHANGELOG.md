@@ -15,6 +15,60 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-07-24
+
+This release makes md-bridge safe to run as a self-hosted public service:
+a same-origin deploy topology, optional access control and rate limiting,
+work and queue limits with safe defaults, and a slimmer access log. The web
+app also gains the Mermaid render toggle on the md-to-pdf screen.
+
+### Added
+
+- **Same-origin production topology.** The official deploy serves the web app
+  and the API behind one origin with Caddy, and the request body cap is enforced
+  at every proxy edge (nginx and Caddy), not only at the app. The deploy smoke
+  check fetches the served `/` page as well as the API, so a broken web route
+  fails the check. `bootstrap.sh` pins the smoke script to a ref instead of
+  always running `main` as root, and creates secret files with no world-readable
+  window. (#435)
+- **Access control and abuse protection.** Set `MD_BRIDGE_API_TOKEN` to require a
+  bearer token on the API, and `MD_BRIDGE_RATE_LIMIT` (with
+  `MD_BRIDGE_RATE_WINDOW_SECONDS`, default 60) to cap requests per client IP per
+  window. Both run in HTTP middleware before the upload body is parsed, so an
+  unauthenticated or over-quota request is rejected (401 or 429) before it spends
+  memory. Both default off, so an existing install behaves as before. The upload
+  cap is now deployment-configurable via `MD_BRIDGE_MAX_UPLOAD_MB` (default 500).
+  The token guards the API; a same-origin browser UI is gated by the edge proxy
+  (Caddy basic-auth or SSO), not the token. (#436)
+- **Work and queue limits.** Heavy conversions run behind a concurrency gate with
+  a bounded wait queue and a per-request timeout, tunable via
+  `MD_BRIDGE_MAX_CONCURRENCY` (default 2), `MD_BRIDGE_QUEUE_MAX` (default 8),
+  `MD_BRIDGE_QUEUE_WAIT_SECONDS` (default 10), and
+  `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS` (default 300). A request that waits too long
+  for a slot returns 503; one that exceeds the timeout returns 504.
+  `MD_BRIDGE_MAX_PDF_PAGES` (default 0, unlimited) rejects an oversized PDF with
+  422. (#437)
+- **Render Mermaid toggle on the md-to-pdf screen.** The md-to-pdf page exposes
+  the existing `render_mermaid` option as a switch, sends it to the API, and
+  keeps it off by default. A fenced ```mermaid block already in the Markdown
+  renders to a diagram; a block that fails to parse stays as its source code, and
+  one invalid block no longer stops the valid ones from rendering. (#439)
+
+### Changed
+
+- **Conversion concurrency and timeout now have safe defaults.** Unlike the
+  opt-in auth and rate-limit knobs, the work limits are on out of the box: at most
+  two heavy conversions run at once and a conversion is capped at 300 seconds. A
+  single-user local install is unaffected in practice; a busy deployment no longer
+  lets unbounded parallel renders compete for memory. Tune with the env vars
+  above, or set the timeout to `0` to disable it. (#437)
+- **Successful health probes are dropped from the access log.** The web app polls
+  `GET /api/health` about once a second, which buried real requests in the log.
+  Those `200` probe lines are now filtered from the `uvicorn.access` log by
+  default, while any failing probe stays visible. Set `MD_BRIDGE_LOG_HEALTH=true`
+  to log every request. Ships with log-rotation guidance and an operations
+  guide. (#438)
+
 ## [0.11.0] — 2026-07-22
 
 The web app grows a settings home, a local history, and reusable presets, and
@@ -738,7 +792,8 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/vinicq/md-bridge/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/vinicq/md-bridge/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/vinicq/md-bridge/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/vinicq/md-bridge/compare/v0.8.0...v0.9.0
