@@ -112,6 +112,45 @@ def test_redirect_is_refused():
     assert exc.value.code == "ocr_failed"
 
 
+RECIPE_CASES = [
+    ("unlimited", "baidu/Unlimited-OCR", "<image>document parsing.", 35),
+    (
+        "deepseek",
+        "deepseek-ai/DeepSeek-OCR",
+        "<image>\n<|grounding|>Convert the document to markdown.",
+        30,
+    ),
+]
+
+
+@pytest.mark.parametrize("name, model, prompt, ngram", RECIPE_CASES)
+def test_named_recipe_payload_is_data_over_one_adapter(monkeypatch, name, model, prompt, ngram):
+    # A named recipe fixes the model, prompt, and decoding params; the URL still
+    # comes from the operator's env and MODEL is not required (the recipe sets it).
+    monkeypatch.setenv("MD_BRIDGE_OCR_PROVIDER", name)
+    monkeypatch.setenv(f"MD_BRIDGE_OCR_{name.upper()}_URL", "http://ocr:8000/v1")
+    monkeypatch.delenv(f"MD_BRIDGE_OCR_{name.upper()}_MODEL", raising=False)
+
+    seen: dict = {}
+    monkeypatch.setattr(
+        dp,
+        "_post_json",
+        lambda url, payload, *, key: seen.update(payload=payload)
+        or {"choices": [{"message": {"content": "# Page"}}]},
+    )
+    parser = dp.selected_document_parser()
+    assert parser is not None
+    assert parser.name == name
+    result = parser.parse(_one_page_pdf(), page_break=False)
+
+    assert result.provider == name
+    payload = seen["payload"]
+    assert payload["model"] == model
+    assert payload["messages"][0]["content"][0]["text"] == prompt
+    assert payload["vllm_xargs"]["ngram_size"] == ngram
+    assert payload["skip_special_tokens"] is False
+
+
 def test_parser_over_cap_returns_413_before_any_call(monkeypatch):
     # A parser-selected scan over MD_BRIDGE_OCR_MAX_PAGES is rejected with 413
     # before the model is called, mirroring the tesseract cap. Stub the inspector

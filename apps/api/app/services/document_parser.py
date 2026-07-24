@@ -117,20 +117,53 @@ def _clean_markdown(text: str) -> str:
     return text.strip()
 
 
+@dataclass(frozen=True)
+class _Recipe:
+    """A preset for the OpenAI-compatible adapter: the model, the per-page
+    prompt, and any extra request body (e.g. vllm_xargs). A recipe is plain
+    config data over the one adapter, so it carries no URL, key, or weights and
+    privileges no code path."""
+
+    model: str
+    prompt: str
+    extra_body: dict = field(default_factory=dict)
+
+
+# Presets for open-weight vision-OCR models an operator self-hosts. md-bridge
+# neither bundles nor endorses these models; the entries are example
+# configurations, and the operator must verify each model's own license on its
+# upstream model card before use. The URL and key still come from the operator's
+# environment; only the model name, prompt, and decoding params are fixed here.
+_RECIPES: dict[str, _Recipe] = {
+    "unlimited": _Recipe(
+        model="baidu/Unlimited-OCR",
+        prompt="<image>document parsing.",
+        extra_body={"skip_special_tokens": False, "vllm_xargs": {"ngram_size": 35, "window_size": 128}},
+    ),
+    "deepseek": _Recipe(
+        model="deepseek-ai/DeepSeek-OCR",
+        prompt="<image>\n<|grounding|>Convert the document to markdown.",
+        extra_body={
+            "skip_special_tokens": False,
+            "vllm_xargs": {"ngram_size": 30, "window_size": 90, "whitelist_token_ids": [128821, 128822]},
+        },
+    ),
+}
+
+
 class OpenAiCompatibleParser:
     """A document parser backed by an OpenAI-compatible chat endpoint.
 
-    All connection details come from the environment under the provider's own
-    namespace, so nothing is baked into the code:
-
-    - `MD_BRIDGE_OCR_<NAME>_URL`   (required) the base URL, e.g. http://ocr:8000/v1
-    - `MD_BRIDGE_OCR_<NAME>_MODEL` (required) the model name to request
-    - `MD_BRIDGE_OCR_<NAME>_KEY`   (optional) the API key, sent as Bearer auth
-    - `MD_BRIDGE_OCR_<NAME>_PROMPT` (optional) the per-page instruction
+    Connection details always come from the environment under the provider's own
+    namespace (`MD_BRIDGE_OCR_<NAME>_URL` required, `_KEY` optional Bearer auth).
+    A named recipe fixes the model, prompt, and decoding params; the generic
+    `custom` provider (no recipe) reads the model from
+    `MD_BRIDGE_OCR_CUSTOM_MODEL` and the optional prompt from `_PROMPT`.
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, recipe: _Recipe | None = None) -> None:
         self.name = name
+        self._recipe = recipe
 
     def _env(self, knob: str) -> str:
         return os.getenv(f"MD_BRIDGE_OCR_{self.name.upper()}_{knob}", "").strip()
@@ -149,15 +182,21 @@ class OpenAiCompatibleParser:
             )
         return value
 
-    def _payload(self, model: str, prompt: str, image: bytes) -> dict:
+    def _resolve_recipe(self) -> _Recipe:
+        if self._recipe is not None:
+            return self._recipe
+        # custom: the model and prompt come from the environment.
+        return _Recipe(model=self._require("MODEL"), prompt=self._env("PROMPT") or _DEFAULT_PROMPT)
+
+    def _payload(self, recipe: _Recipe, image: bytes) -> dict:
         data_url = "data:image/png;base64," + base64.b64encode(image).decode("ascii")
-        return {
-            "model": model,
+        payload = {
+            "model": recipe.model,
             "messages": [
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": prompt},
+                        {"type": "text", "text": recipe.prompt},
                         {"type": "image_url", "image_url": {"url": data_url}},
                     ],
                 }
@@ -165,12 +204,13 @@ class OpenAiCompatibleParser:
             "temperature": 0.0,
             "max_tokens": 8192,
         }
+        payload.update(recipe.extra_body)
+        return payload
 
     def parse(self, pdf_bytes: bytes, *, page_break: bool) -> ParseResult:
         start = time.monotonic()
         endpoint = self._require("URL").rstrip("/") + "/chat/completions"
-        model = self._require("MODEL")
-        prompt = self._env("PROMPT") or _DEFAULT_PROMPT
+        recipe = self._resolve_recipe()
         key = self._env("KEY")
 
         document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
@@ -178,7 +218,7 @@ class OpenAiCompatibleParser:
         try:
             for page_number, page in enumerate(document, start=1):
                 image = page.get_pixmap(dpi=300, alpha=False).tobytes("png")
-                response = _post_json(endpoint, self._payload(model, prompt, image), key=key)
+                response = _post_json(endpoint, self._payload(recipe, image), key=key)
                 content = self._content(response, page_number)
                 pages.append(_clean_markdown(content))
         finally:
@@ -205,10 +245,10 @@ class OpenAiCompatibleParser:
         return content
 
 
-# Registry of LLM document parsers. PR-1 ships only the generic operator
-# configured `custom` provider; the named recipes (unlimited, deepseek) land as
-# data in a follow-up, each resolving to the same OpenAI-compatible adapter.
-_PARSERS: dict[str, type] = {"custom": OpenAiCompatibleParser}
+# The selectable LLM document parsers: the generic operator-configured `custom`
+# plus the named recipes, all resolving to the SAME adapter parameterized by
+# data (no provider is privileged in the code path).
+_PARSER_NAMES: frozenset[str] = frozenset({"custom", *_RECIPES})
 
 
 def selected_document_parser() -> DocumentParserProvider | None:
@@ -218,7 +258,6 @@ def selected_document_parser() -> DocumentParserProvider | None:
     None means the caller keeps its existing (tesseract / searchable-PDF) path,
     so this is inert until an operator opts in explicitly."""
     name = os.getenv("MD_BRIDGE_OCR_PROVIDER", "").strip()
-    factory = _PARSERS.get(name)
-    if factory is None:
+    if name not in _PARSER_NAMES:
         return None
-    return factory(name)
+    return OpenAiCompatibleParser(name, _RECIPES.get(name))
