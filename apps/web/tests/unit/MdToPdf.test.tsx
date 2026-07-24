@@ -248,4 +248,23 @@ describe('MdToPdf', () => {
       { timeout: 5000 },
     )
   }, 10000)
+
+  it('does not auto-convert a purely-queued batch when an option toggles (#464)', async () => {
+    // Files dropped but never converted stay queued: toggling an option must not
+    // silently start the upload/conversion. The re-run effect only refreshes a
+    // batch that already produced a result; a queued-only batch waits for Convert.
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+
+    const file = new File(['# Hi'], 'sample.md', { type: 'text/markdown' })
+    fireEvent.drop(screen.getByLabelText('Drop a Markdown file or click to choose'), {
+      dataTransfer: { files: [file], items: [] as unknown as DataTransferItemList },
+    })
+    await screen.findByTitle('sample.md')
+
+    await user.click(screen.getByRole('switch', { name: /render mermaid/i }))
+    // Give the effect a tick to settle; a queued-only batch must not convert.
+    await new Promise((r) => setTimeout(r, 50))
+    expect(convertMdToPdf).not.toHaveBeenCalled()
+  }, 10000)
 })
