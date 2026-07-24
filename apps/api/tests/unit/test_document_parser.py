@@ -59,10 +59,9 @@ def test_parse_builds_markdown_and_carries_no_secret(monkeypatch):
 
     seen: dict = {}
 
-    def _fake_post(url, payload, *, key, key_header):
+    def _fake_post(url, payload, *, key):
         seen["url"] = url
         seen["key"] = key
-        seen["key_header"] = key_header
         seen["model"] = payload["model"]
         return {"choices": [{"message": {"content": "# Page"}}]}
 
@@ -71,7 +70,6 @@ def test_parse_builds_markdown_and_carries_no_secret(monkeypatch):
 
     assert seen["url"] == "http://ocr:8000/v1/chat/completions"
     assert seen["key"] == "secret-token"
-    assert seen["key_header"] == "Authorization"
     assert seen["model"] == "some/model"
     assert result.md == "# Page"
     assert result.provider == "custom"
@@ -114,17 +112,26 @@ def test_redirect_is_refused():
     assert exc.value.code == "ocr_failed"
 
 
-def test_non_default_header_sends_raw_key(monkeypatch):
+def test_parser_over_cap_returns_413_before_any_call(monkeypatch):
+    # A parser-selected scan over MD_BRIDGE_OCR_MAX_PAGES is rejected with 413
+    # before the model is called, mirroring the tesseract cap. Stub the inspector
+    # so no real multi-page scan is needed; _post_json is never reached.
+    from app.schemas.convert import InspectPdfResponse
+    from app.services import pdf_to_md
+
+    monkeypatch.setenv("MD_BRIDGE_OCR_PROVIDER", "custom")
     monkeypatch.setenv("MD_BRIDGE_OCR_CUSTOM_URL", "http://ocr:8000/v1")
     monkeypatch.setenv("MD_BRIDGE_OCR_CUSTOM_MODEL", "some/model")
-    monkeypatch.setenv("MD_BRIDGE_OCR_CUSTOM_KEY", "raw-key")
-    monkeypatch.setenv("MD_BRIDGE_OCR_CUSTOM_KEY_HEADER", "x-api-key")
-    seen: dict = {}
+    monkeypatch.setenv("MD_BRIDGE_OCR_MAX_PAGES", "1")
     monkeypatch.setattr(
-        dp,
-        "_post_json",
-        lambda url, payload, *, key, key_header: seen.update(header=key_header, key=key)
-        or {"choices": [{"message": {"content": "ok"}}]},
+        pdf_to_md,
+        "inspect_pdf_bytes",
+        lambda _b, _f: InspectPdfResponse(
+            pages=5, body_size_pt=0.0, heading_sizes_pt=[], fonts=[], tagged=False, needs_ocr=True
+        ),
     )
-    dp.OpenAiCompatibleParser("custom").parse(_one_page_pdf(), page_break=False)
-    assert seen["header"] == "x-api-key"
+
+    with pytest.raises(ApiError) as exc:
+        pdf_to_md.convert_pdf_bytes(b"%PDF-1.4 stub", filename="scan.pdf")
+    assert exc.value.status_code == 413
+    assert exc.value.code == "ocr_too_many_pages"

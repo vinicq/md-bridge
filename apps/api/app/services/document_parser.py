@@ -87,13 +87,13 @@ class _NoRedirect(HTTPRedirectHandler):
         )
 
 
-def _post_json(url: str, payload: dict, *, key: str, key_header: str) -> dict:
+def _post_json(url: str, payload: dict, *, key: str) -> dict:
     body = json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json"}
     if key:
-        # Default scheme is Authorization: Bearer <key>; a non-default header
-        # (e.g. x-api-key) carries the raw key. The key is read server-side only.
-        headers[key_header] = f"Bearer {key}" if key_header.lower() == "authorization" else key
+        # Authorization: Bearer <key>, read server-side only. A configurable
+        # header name is deferred until a non-Bearer gateway is a real need.
+        headers["Authorization"] = f"Bearer {key}"
     request = Request(url, data=body, headers=headers, method="POST")
     opener = build_opener(_NoRedirect())
     try:
@@ -125,8 +125,7 @@ class OpenAiCompatibleParser:
 
     - `MD_BRIDGE_OCR_<NAME>_URL`   (required) the base URL, e.g. http://ocr:8000/v1
     - `MD_BRIDGE_OCR_<NAME>_MODEL` (required) the model name to request
-    - `MD_BRIDGE_OCR_<NAME>_KEY`   (optional) the API key, sent as a header
-    - `MD_BRIDGE_OCR_<NAME>_KEY_HEADER` (optional, default Authorization)
+    - `MD_BRIDGE_OCR_<NAME>_KEY`   (optional) the API key, sent as Bearer auth
     - `MD_BRIDGE_OCR_<NAME>_PROMPT` (optional) the per-page instruction
     """
 
@@ -173,16 +172,13 @@ class OpenAiCompatibleParser:
         model = self._require("MODEL")
         prompt = self._env("PROMPT") or _DEFAULT_PROMPT
         key = self._env("KEY")
-        key_header = self._env("KEY_HEADER") or "Authorization"
 
         document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
         pages: list[str] = []
         try:
             for page_number, page in enumerate(document, start=1):
                 image = page.get_pixmap(dpi=300, alpha=False).tobytes("png")
-                response = _post_json(
-                    endpoint, self._payload(model, prompt, image), key=key, key_header=key_header
-                )
+                response = _post_json(endpoint, self._payload(model, prompt, image), key=key)
                 content = self._content(response, page_number)
                 pages.append(_clean_markdown(content))
         finally:
