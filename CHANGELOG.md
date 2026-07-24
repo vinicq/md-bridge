@@ -74,13 +74,13 @@ md-to-pdf screen.
 
 - **Conversion concurrency and timeout now have safe defaults.** Unlike the
   opt-in auth and rate-limit knobs, the work limits are on out of the box: at most
-  two heavy conversions run at once, and the gate bounds the queue wait plus the
-  conversion to 300 seconds, returning 503 when the queue is full and 504 when the
-  conversion exceeds the deadline. The deadline starts when the conversion begins,
-  so the multipart upload read sits outside it (bounding admission before the
-  upload buffers is #462), and the worker thread cannot be cancelled, so an
-  abandoned conversion keeps its slot until it finishes on its own (hard
-  cancellation is #459). A single-user local install is unaffected in practice; a
+  two heavy conversions run at once, and each request runs against a 300-second
+  wall clock that starts when it enters the work gate, so the queue wait counts
+  against that budget rather than on top of it: a full queue returns 503 and an
+  exceeded deadline returns 504. Multipart upload parsing happens before the gate,
+  so it sits outside the budget (bounding admission before the upload buffers is
+  #462). The worker thread cannot be cancelled, so an abandoned conversion keeps
+  its slot until it finishes on its own (hard cancellation is #459). A single-user local install is unaffected in practice; a
   busy deployment no longer lets unbounded parallel renders compete for memory.
   Tune with the env vars above, or set the timeout to `0` to disable it. (#437)
 
