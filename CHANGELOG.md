@@ -28,18 +28,22 @@ app also gains the Mermaid render toggle on the md-to-pdf screen.
   and the API behind one origin with Caddy, and the request body cap is enforced
   at every proxy edge (nginx and Caddy), not only at the app. The deploy smoke
   check fetches the served `/` page as well as the API, so a broken web route
-  fails the check. `bootstrap.sh` pins the smoke script to a ref instead of
-  always running `main` as root, and creates secret files with no world-readable
-  window. (#435)
-- **Access control and abuse protection.** Set `MD_BRIDGE_API_TOKEN` to require a
-  bearer token on the API, and `MD_BRIDGE_RATE_LIMIT` (with
-  `MD_BRIDGE_RATE_WINDOW_SECONDS`, default 60) to cap requests per client IP per
-  window. Both run in HTTP middleware before the upload body is parsed, so an
-  unauthenticated or over-quota request is rejected (401 or 429) before it spends
-  memory. Both default off, so an existing install behaves as before. The upload
-  cap is now deployment-configurable via `MD_BRIDGE_MAX_UPLOAD_MB` (default 500).
-  The token guards the API; a same-origin browser UI is gated by the edge proxy
-  (Caddy basic-auth or SSO), not the token. (#436)
+  fails the check. `bootstrap.sh` can pin the smoke script to a ref
+  (`MD_BRIDGE_REF`, default `main`) so an operator can match it to the image tag
+  instead of always fetching `main`, and creates secret files with no
+  world-readable window. (#435)
+- **Access control and abuse protection.** Set `MD_BRIDGE_API_TOKEN` to require an
+  API key in the `X-API-Key` header on the API, and `MD_BRIDGE_RATE_LIMIT` (with
+  `MD_BRIDGE_RATE_WINDOW_SECONDS`, default 60) to rate-limit by client IP. Both run
+  in HTTP middleware before the upload body is parsed, so an unauthenticated or
+  over-quota request is rejected (401 or 429) before it spends memory. Both default
+  off, so an existing install behaves as before. Behind the same-origin proxy the
+  limiter sees the proxy's address unless trusted-proxy forwarding is configured,
+  so it bounds total load on the instance rather than per real client (see the
+  deploy guide). The upload cap is deployment-configurable via
+  `MD_BRIDGE_MAX_UPLOAD_MB` (default 500). The API key guards the API, not the
+  same-origin browser UI, which is the edge proxy's job (Caddy basic-auth or
+  SSO). (#436)
 - **Work and queue limits.** Heavy conversions run behind a concurrency gate with
   a bounded wait queue and a per-request timeout, tunable via
   `MD_BRIDGE_MAX_CONCURRENCY` (default 2), `MD_BRIDGE_QUEUE_MAX` (default 8),
@@ -58,16 +62,18 @@ app also gains the Mermaid render toggle on the md-to-pdf screen.
 
 - **Conversion concurrency and timeout now have safe defaults.** Unlike the
   opt-in auth and rate-limit knobs, the work limits are on out of the box: at most
-  two heavy conversions run at once and a conversion is capped at 300 seconds. A
-  single-user local install is unaffected in practice; a busy deployment no longer
-  lets unbounded parallel renders compete for memory. Tune with the env vars
-  above, or set the timeout to `0` to disable it. (#437)
-- **Successful health probes are dropped from the access log.** The web app polls
-  `GET /api/health` about once a second, which buried real requests in the log.
-  Those `200` probe lines are now filtered from the `uvicorn.access` log by
-  default, while any failing probe stays visible. Set `MD_BRIDGE_LOG_HEALTH=true`
-  to log every request. Ships with log-rotation guidance and an operations
-  guide. (#438)
+  two heavy conversions run at once, and a request is held at most 300 seconds
+  before it returns 504. The worker thread cannot be cancelled, so an abandoned
+  conversion keeps its slot until it finishes on its own; hard cancellation is
+  tracked in #459. A single-user local install is unaffected in practice; a busy
+  deployment no longer lets unbounded parallel renders compete for memory. Tune
+  with the env vars above, or set the timeout to `0` to disable it. (#437)
+- **Successful health probes are dropped from the access log.** Container and
+  orchestrator health checks hit `GET /api/health` on a short interval, which
+  buried real requests in the log. Those successful (`200`) probe lines are now
+  filtered from the `uvicorn.access` log by default, while any failing probe stays
+  visible. Set `MD_BRIDGE_LOG_HEALTH=true` to log every request. Ships with
+  log-rotation guidance and an operations guide. (#438)
 
 ## [0.11.0] — 2026-07-22
 
