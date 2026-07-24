@@ -188,6 +188,25 @@ def test_pdf_to_md_applies_ocr_when_enabled(client, scanned_pdf_bytes: bytes, mo
     assert body["ocr_applied"] is True
     assert body["md"].strip()
     assert "OCR" in body["md"].upper()
+    # #441: the response reports the provider that actually ran, read back over
+    # HTTP so a mis-mapped field cannot pass silently.
+    assert body["ocr"]["provider"] == "tesseract"
+    assert body["ocr"]["lang"] == "eng"
+    assert body["ocr"]["duration_ms"] >= 0
+
+
+def test_unknown_ocr_provider_returns_503(client, scanned_pdf_bytes: bytes, monkeypatch):
+    # #441: an explicitly selected provider that does not exist is a typed 503 at
+    # the API layer, not a silent switch. The unknown factory raises before any
+    # binary is touched, so this needs no Tesseract.
+    monkeypatch.setenv("MD_BRIDGE_OCR_ENABLED", "1")
+    monkeypatch.setenv("MD_BRIDGE_OCR_PROVIDER", "no-such-engine")
+    resp = client.post(
+        "/api/pdf-to-md",
+        files={"file": ("scanned.pdf", scanned_pdf_bytes, "application/pdf")},
+    )
+    assert resp.status_code == 503, resp.text
+    assert resp.json()["error"]["code"] == "ocr_provider_unavailable"
 
 
 def test_pdf_to_md_ocr_runs_by_default_when_stack_installed(
