@@ -227,4 +227,104 @@ describe('MdToPdf', () => {
     await waitFor(() => expect(convertMdToPdf).toHaveBeenCalled(), { timeout: 5000 })
     expect(vi.mocked(convertMdToPdf).mock.calls.at(-1)![1]).toMatchObject({ theme: 'academic' })
   }, 10000)
+
+  it('sends render_mermaid per the toggle and re-runs when it flips (#439)', async () => {
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+
+    // Default off: the conversion posts render_mermaid: false.
+    fireEvent.change(screen.getByLabelText('Pasted markdown'), { target: { value: '# Hi' } })
+    await user.click(screen.getByRole('button', { name: 'Convert' }))
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalled(), { timeout: 5000 })
+    expect(vi.mocked(convertMdToPdf).mock.calls.at(-1)![1]).toMatchObject({ render_mermaid: false })
+
+    // Turning the switch on re-runs the queue with render_mermaid: true.
+    await user.click(screen.getByRole('switch', { name: /render mermaid/i }))
+    await waitFor(
+      () =>
+        expect(vi.mocked(convertMdToPdf).mock.calls.at(-1)![1]).toMatchObject({
+          render_mermaid: true,
+        }),
+      { timeout: 5000 },
+    )
+  }, 10000)
+
+  it('does not auto-convert a purely-queued batch when an option toggles (#464)', async () => {
+    // Files dropped but never converted stay queued: toggling an option must not
+    // silently start the upload/conversion. The re-run effect only refreshes a
+    // batch that already produced a result; a queued-only batch waits for Convert.
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+
+    const file = new File(['# Hi'], 'sample.md', { type: 'text/markdown' })
+    fireEvent.drop(screen.getByLabelText('Drop a Markdown file or click to choose'), {
+      dataTransfer: { files: [file], items: [] as unknown as DataTransferItemList },
+    })
+    await screen.findByTitle('sample.md')
+
+    await user.click(screen.getByRole('switch', { name: /render mermaid/i }))
+    // Give the effect a tick to settle; a queued-only batch must not convert.
+    await new Promise((r) => setTimeout(r, 50))
+    expect(convertMdToPdf).not.toHaveBeenCalled()
+  }, 10000)
+
+  it('does not auto-convert a queued file added to an already-converted batch (#464)', async () => {
+    // Mixed batch: one item already converted, a second dropped in and still
+    // queued. Toggling an option must not silently convert the queued file; the
+    // auto-refresh only fires when every item has already produced a result.
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+
+    // Convert a first file so the batch has a processed item.
+    fireEvent.change(screen.getByLabelText('Pasted markdown'), { target: { value: '# Hi' } })
+    await user.click(screen.getByRole('button', { name: 'Convert' }))
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalledTimes(1), { timeout: 5000 })
+
+    // Add a second file; it stays queued (no explicit Convert).
+    const file = new File(['# Later'], 'later.md', { type: 'text/markdown' })
+    fireEvent.drop(screen.getByLabelText('Drop a Markdown file or click to choose'), {
+      dataTransfer: { files: [file], items: [] as unknown as DataTransferItemList },
+    })
+    await screen.findByTitle('later.md')
+
+    // Toggling must not convert the queued file: the call count stays at 1.
+    await user.click(screen.getByRole('switch', { name: /render mermaid/i }))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(convertMdToPdf).toHaveBeenCalledTimes(1)
+  }, 10000)
+
+  it('re-renders completed items with the current option when converting a mixed batch (#464)', async () => {
+    // Convert one file, add a second, flip the option, then Convert all. Every
+    // resulting PDF must use the current option, not a mix of old and new, so
+    // downloads and the ZIP stay consistent with the visible setting.
+    const user = userEvent.setup()
+    render(wrap(<MdToPdf />, 'en'))
+
+    const fileA = new File(['# A'], 'a.md', { type: 'text/markdown' })
+    fireEvent.drop(screen.getByLabelText('Drop a Markdown file or click to choose'), {
+      dataTransfer: { files: [fileA], items: [] as unknown as DataTransferItemList },
+    })
+    await screen.findByTitle('a.md')
+    await user.click(screen.getByRole('button', { name: 'Convert all' }))
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalledTimes(1), { timeout: 5000 })
+    expect(vi.mocked(convertMdToPdf).mock.calls.at(-1)![1]).toMatchObject({ render_mermaid: false })
+
+    // Add a second file (queued) and turn Mermaid on; the auto-run stays suppressed.
+    const fileB = new File(['# B'], 'b.md', { type: 'text/markdown' })
+    fireEvent.drop(screen.getByLabelText('Drop a Markdown file or click to choose'), {
+      dataTransfer: { files: [fileB], items: [] as unknown as DataTransferItemList },
+    })
+    await screen.findByTitle('b.md')
+    await user.click(screen.getByRole('switch', { name: /render mermaid/i }))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(convertMdToPdf).toHaveBeenCalledTimes(1)
+
+    // Convert all rebuilds the mixed batch so both PDFs render with Mermaid on.
+    vi.mocked(convertMdToPdf).mockClear()
+    await user.click(screen.getByRole('button', { name: 'Convert all' }))
+    await waitFor(() => expect(convertMdToPdf).toHaveBeenCalledTimes(2), { timeout: 5000 })
+    for (const call of vi.mocked(convertMdToPdf).mock.calls) {
+      expect(call[1]).toMatchObject({ render_mermaid: true })
+    }
+  }, 10000)
 })

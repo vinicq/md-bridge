@@ -55,6 +55,74 @@ def test_md_to_pdf_renders_a_gfm_alert(client, chromium_ready):
     assert resp.content[:5] == b"%PDF-"
 
 
+def test_md_to_pdf_render_mermaid_reaches_the_pipeline(client, chromium_ready):
+    # #439: the render_mermaid option must flow API -> service -> convert, not
+    # just be accepted by the schema (ledger pattern 15). Assert structurally,
+    # not on raw bytes: PDF output is not byte-stable, so off.content != on.content
+    # could pass without a diagram actually rendering. The flowchart draws vector
+    # paths a plain code block never does, so the page's drawing count is the
+    # observable proof. Mirrors tests/regression/test_md_to_pdf_regression.py.
+    import json
+
+    import fitz
+
+    mermaid_md = b"# Doc\n\n```mermaid\nflowchart LR\n  A --> B\n```\n"
+    off = client.post(
+        "/api/md-to-pdf",
+        files={"file": ("d.md", mermaid_md, "text/markdown")},
+        data={"options": json.dumps({"render_mermaid": False})},
+    )
+    on = client.post(
+        "/api/md-to-pdf",
+        files={"file": ("d.md", mermaid_md, "text/markdown")},
+        data={"options": json.dumps({"render_mermaid": True})},
+    )
+    assert off.status_code == 200, off.text
+    assert on.status_code == 200, on.text
+    assert off.content[:5] == b"%PDF-"
+    assert on.content[:5] == b"%PDF-"
+
+    on_doc = fitz.open(stream=on.content, filetype="pdf")
+    off_doc = fitz.open(stream=off.content, filetype="pdf")
+    on_paths = len(on_doc[0].get_drawings())
+    off_paths = len(off_doc[0].get_drawings())
+    # The rendered flowchart draws vector paths the plain code block never does.
+    assert on_paths > off_paths, f"diagram did not render (on={on_paths}, off={off_paths})"
+    # Off leaves the mermaid source visible as code text; on replaces it with a diagram.
+    assert "flowchart LR" in off_doc[0].get_text()
+    assert "flowchart LR" not in on_doc[0].get_text()
+
+
+def test_md_to_pdf_invalid_mermaid_block_stays_as_code(client, chromium_ready):
+    # #439 acceptance criteria: a mermaid block that fails to render must not
+    # abort the conversion and must stay as its source code in the PDF, while a
+    # valid block in the same document still renders to a diagram. The renderer
+    # parse-gates each block and drops the class of the ones that fail to parse.
+    import json
+
+    import fitz
+
+    md = (
+        b"# Doc\n\n"
+        b"```mermaid\nflowchart LR\n  A --> B\n```\n\n"
+        b"```mermaid\nnot_a_valid_diagram_kind foo bar\n```\n"
+    )
+    resp = client.post(
+        "/api/md-to-pdf",
+        files={"file": ("d.md", md, "text/markdown")},
+        data={"options": json.dumps({"render_mermaid": True})},
+    )
+    assert resp.status_code == 200, resp.text
+    doc = fitz.open(stream=resp.content, filetype="pdf")
+    text = "".join(page.get_text() for page in doc)
+    # The invalid block's source survives as code text; mermaid's error graphic does not.
+    assert "not_a_valid_diagram_kind" in text, text
+    assert "Syntax error" not in text, text
+    # The valid flowchart rendered to a diagram, so its source directive is gone.
+    assert "flowchart LR" not in text, text
+    assert sum(len(page.get_drawings()) for page in doc) > 0
+
+
 def test_md_to_pdf_unknown_theme_returns_400(client):
     # An unknown theme is rejected at the service before any rendering, so this
     # needs no Chromium. Uses the documented error envelope.

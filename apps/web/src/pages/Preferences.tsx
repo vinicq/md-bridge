@@ -1,10 +1,11 @@
-import type { ReactNode } from 'react'
 import { useTranslation } from '../i18n'
 import { useTheme } from '../theme'
 import { usePrefs } from '../hooks/usePrefs'
 import { useThemes } from '../hooks/useThemes'
 import { clearAllPrefs } from '../lib/prefs'
 import { Button } from '../components/Button'
+import { Switch } from '../components/Switch'
+import { SettingRow } from '../components/SettingRow'
 import { Segmented } from '../components/Segmented'
 import { ThemePicker } from '../components/ThemePicker'
 import type { Locale } from '../i18n/dictionaries'
@@ -15,56 +16,6 @@ function prefersReducedMotion(): boolean {
     typeof window !== 'undefined' &&
     !!window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
-}
-
-function Row({
-  label,
-  hint,
-  control,
-}: {
-  label: string
-  hint: string
-  control: ReactNode
-}) {
-  return (
-    <div className="pref-row">
-      <div className="pref-row__text">
-        <b className="pref-row__label">{label}</b>
-        <p className="pref-row__hint">{hint}</p>
-      </div>
-      <div className="pref-row__control">{control}</div>
-    </div>
-  )
-}
-
-function Switch({
-  checked,
-  onChange,
-  label,
-  onText,
-  offText,
-}: {
-  checked: boolean
-  onChange: (next: boolean) => void
-  label: string
-  onText: string
-  offText: string
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      className={`pref-switch ${checked ? 'is-on' : ''}`}
-      onClick={() => onChange(!checked)}
-    >
-      <span className="pref-switch__track" aria-hidden="true">
-        <span className="pref-switch__thumb" />
-      </span>
-      <span className="pref-switch__state">{checked ? onText : offText}</span>
-    </button>
   )
 }
 
@@ -97,7 +48,7 @@ export function Preferences() {
       <section className="pref-section" aria-label={p.sections.defaults}>
         <h2 className="pref-section__head">// {p.sections.defaults}</h2>
 
-        <Row
+        <SettingRow
           label={p.defaultLanguage.label}
           hint={p.defaultLanguage.hint}
           control={
@@ -110,7 +61,7 @@ export function Preferences() {
           }
         />
 
-        <Row
+        <SettingRow
           label={p.defaultPdfTheme.label}
           hint={p.defaultPdfTheme.hint}
           control={
@@ -130,7 +81,7 @@ export function Preferences() {
       <section className="pref-section" aria-label={p.sections.ui}>
         <h2 className="pref-section__head">// {p.sections.ui}</h2>
 
-        <Row
+        <SettingRow
           label={p.darkMode.label}
           hint={p.darkMode.hint}
           control={
@@ -144,7 +95,7 @@ export function Preferences() {
           }
         />
 
-        <Row
+        <SettingRow
           label={p.reduceMotion.label}
           hint={p.reduceMotion.hint}
           control={

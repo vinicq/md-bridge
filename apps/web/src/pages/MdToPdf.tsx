@@ -6,6 +6,8 @@ import { ConvertButton } from '../components/ConvertButton'
 import { DropZone } from '../components/DropZone'
 import { MarkdownPreview } from '../components/MarkdownPreview'
 import { PresetChips } from '../components/PresetChips'
+import { SettingRow } from '../components/SettingRow'
+import { Switch } from '../components/Switch'
 import { ThemedPreview } from '../components/ThemedPreview'
 import { DEFAULT_PAGE_SETUP } from '../components/pageSetup'
 import { ThemePicker } from '../components/ThemePicker'
@@ -31,6 +33,9 @@ export function MdToPdf() {
   const { t } = useTranslation()
   const [pasted, setPasted] = useState('')
   const [customCss, setCustomCss] = useState('')
+  // Opt-in Mermaid rendering (#439). Default off keeps today's behavior: a
+  // ```mermaid fence stays a code block unless the user turns this on.
+  const [renderMermaid, setRenderMermaid] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ kind: 'ok' | 'warn'; message: string; id: number } | null>(
     null,
@@ -85,7 +90,12 @@ export function MdToPdf() {
     convert: (file, signal) =>
       convertMdToPdf(
         file,
-        { theme: activeTheme, page_setup: DEFAULT_PAGE_SETUP, custom_css: customCss },
+        {
+          theme: activeTheme,
+          page_setup: DEFAULT_PAGE_SETUP,
+          custom_css: customCss,
+          render_mermaid: renderMermaid,
+        },
         signal,
       ),
     toBlobUrl: (blob) => URL.createObjectURL(blob),
@@ -121,18 +131,24 @@ export function MdToPdf() {
     }
     const files = batch.items.map((it) => it.file)
     if (files.length === 0 || batch.running) return
+    // Only refresh a batch whose every item already produced a result. If any
+    // file is still queued (dropped or added, never converted), skip the auto
+    // refresh so toggling an option never silently converts a file the user has
+    // not sent with the explicit Convert button, including a queued file added
+    // to an already-converted batch (#464).
+    if (!batch.items.every((it) => it.status === 'done' || it.status === 'error')) return
     batch.clear()
     batch.add(files)
     void (async () => {
       await Promise.resolve()
       await batch.runAll()
     })()
-    // Re-run on an effective-theme change or a preset apply (applyTick), so a
-    // CSS-only preset does not leave a stale PDF. One effect keyed on both, so a
-    // preset that also changes the theme still re-runs exactly once. Batch
-    // helpers are stable refs.
+    // Re-run on an effective-theme change, a preset apply (applyTick), or the
+    // Mermaid toggle, so a CSS-only preset or a toggled option does not leave a
+    // stale PDF. One effect keyed on all three, so a preset that also changes
+    // the theme still re-runs exactly once. Batch helpers are stable refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTheme, applyTick])
+  }, [activeTheme, applyTick, renderMermaid])
 
   // Pick up the latest completed item so the preview follows the run. Derived
   // during render so the user's explicit selection wins when it is still
@@ -145,6 +161,21 @@ export function MdToPdf() {
   const handleFiles = (files: File[]) => batch.add(files)
 
   const onConvertAll = async () => {
+    // A mixed batch (some items already rendered, some freshly queued) would let
+    // a plain runAll() convert only the queued items with the current options
+    // while the done items keep their old-option PDFs, so per-row downloads and
+    // the ZIP would mix options under one visible setting (#464). Rebuild so
+    // every PDF uses the current options. runAll reads the synchronous itemsRef,
+    // so the re-added files are already visible to it (the await mirrors the
+    // other call sites).
+    const hasRendered = batch.items.some((it) => it.status === 'done' || it.status === 'error')
+    const hasQueued = batch.items.some((it) => it.status === 'queued')
+    if (hasRendered && hasQueued) {
+      const files = batch.items.map((it) => it.file)
+      batch.clear()
+      batch.add(files)
+      await Promise.resolve()
+    }
     const summary = await batch.runAll()
     // Only claim success when a conversion actually succeeded. A failed batch
     // already shows the error on the row, so a green toast would contradict it
@@ -264,6 +295,25 @@ export function MdToPdf() {
         loading={themesStatus === 'loading'}
         loadError={themesStatus === 'error' ? (themesError ?? t.themePicker.loadError) : null}
       />
+
+      <div className="md-options">
+        <SettingRow
+          label={t.mdToPdf.renderMermaid}
+          hint={t.mdToPdf.renderMermaidHint}
+          hintId="md-mermaid-hint"
+          control={
+            <Switch
+              checked={renderMermaid}
+              onChange={setRenderMermaid}
+              label={t.mdToPdf.renderMermaid}
+              onText={t.preferences.on}
+              offText={t.preferences.off}
+              describedBy="md-mermaid-hint"
+              disabled={batch.running}
+            />
+          }
+        />
+      </div>
 
       <div className="grid-2">
         <div className="stack">
