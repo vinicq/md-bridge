@@ -4,8 +4,11 @@ from __future__ import annotations
 import io
 import os
 import shutil
+import time
 from collections import OrderedDict
+from dataclasses import dataclass, field
 from hashlib import sha256
+from typing import Protocol
 
 import pymupdf
 
@@ -307,3 +310,90 @@ def ocr_pdf_bytes(pdf_bytes: bytes, lang: str = DEFAULT_OCR_LANG) -> bytes:
     finally:
         out.close()
         src.close()
+
+
+# --- Interchangeable traditional OCR provider contract (#441) ----------------
+#
+# A provider turns PDF bytes into a searchable-PDF layer plus metadata, so the
+# engine can change without rewriting the caller. This contract owns ONLY the
+# searchable-PDF path; LLM document parsers (#457) and visual UML-to-Mermaid
+# (#440) are separate contracts. Tesseract stays the minimal local default.
+
+
+@dataclass(frozen=True)
+class OcrResult:
+    """The output of an OcrProvider. Carries no document text and no filename,
+    so passing it around (and into the response schema) cannot leak content."""
+
+    pdf_bytes: bytes
+    provider: str
+    lang: str
+    duration_ms: int
+    warnings: list[str] = field(default_factory=list)
+
+
+class OcrProvider(Protocol):
+    name: str
+
+    def available(self) -> bool: ...
+
+    def ocr(self, pdf_bytes: bytes, *, lang: str) -> OcrResult: ...
+
+
+class TesseractOcrProvider:
+    """The default provider: wraps `ocr_pdf_bytes` unchanged and times it. The
+    300 DPI rasterize, the language handling, and the timeout-vs-error split all
+    stay in `ocr_pdf_bytes`; this only adds the contract shape around it."""
+
+    name = "tesseract"
+
+    def available(self) -> bool:
+        return ocr_stack_available()
+
+    def ocr(self, pdf_bytes: bytes, *, lang: str) -> OcrResult:
+        start = time.monotonic()
+        out = ocr_pdf_bytes(pdf_bytes, lang=lang)
+        duration_ms = int((time.monotonic() - start) * 1000)
+        return OcrResult(
+            pdf_bytes=out,
+            provider=self.name,
+            lang=lang,
+            duration_ms=duration_ms,
+            warnings=[],
+        )
+
+
+# Registry of the built-in providers. #442 (PaddleOCR) and #457 (LLM parsers)
+# register their own; today Tesseract is the only traditional one.
+_PROVIDERS: dict[str, type] = {"tesseract": TesseractOcrProvider}
+
+
+def ocr_provider_name() -> str:
+    return os.getenv("MD_BRIDGE_OCR_PROVIDER", "tesseract").strip() or "tesseract"
+
+
+def resolve_ocr_provider() -> OcrProvider:
+    """Return the configured traditional OCR provider.
+
+    Defaults to Tesseract, so an install that sets nothing behaves exactly as
+    before. An explicitly selected provider that is unknown or whose stack is
+    missing raises a typed 503 rather than silently falling back to another
+    engine (a selected provider must not switch under the operator; #441). A
+    fallback policy across providers lands with the second provider (#442)."""
+    name = ocr_provider_name()
+    factory = _PROVIDERS.get(name)
+    if factory is None:
+        raise ApiError(
+            503,
+            "ocr_provider_unavailable",
+            f"OCR provider {name!r} is not available. "
+            f"Known providers: {', '.join(sorted(_PROVIDERS))}.",
+        )
+    provider: OcrProvider = factory()
+    if not provider.available():
+        raise ApiError(
+            503,
+            "ocr_provider_unavailable",
+            f"OCR provider {name!r} is selected but its stack is not installed.",
+        )
+    return provider
