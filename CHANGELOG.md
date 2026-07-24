@@ -43,8 +43,9 @@ public-deployment specifics.
   and `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS` (default 300). Over capacity returns 503
   and an exceeded timeout returns 504; `MD_BRIDGE_MAX_PDF_PAGES` (default 0,
   unlimited) rejects an oversized PDF with 422. (#437)
-- **Local access log and operations guide.** A middleware logs one line per `/api`
-  request (method, path, status, duration), never the document content. The
+- **Local access log and operations guide.** A middleware logs one line per
+  non-health `/api` request (method, path, status, duration), never the document
+  content. The
   bootstrap compose caps on-disk logs, and the deploy guide gains rollback,
   diagnosis, and backup sections. Local-only: no metrics endpoint, no external
   exporter. (#438)
