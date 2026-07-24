@@ -335,9 +335,11 @@ class OcrResult:
 class OcrProvider(Protocol):
     name: str
 
-    def available(self) -> bool: ...
+    def available(self) -> bool:
+        """True when this provider's stack is installed and usable."""
 
-    def ocr(self, pdf_bytes: bytes, *, lang: str) -> OcrResult: ...
+    def ocr(self, pdf_bytes: bytes, *, lang: str) -> OcrResult:
+        """Run OCR over the PDF and return a searchable PDF plus metadata."""
 
 
 class TesseractOcrProvider:

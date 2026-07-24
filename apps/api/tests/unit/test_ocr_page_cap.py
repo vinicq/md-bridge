@@ -60,10 +60,16 @@ def ocr_enabled_no_binary(monkeypatch):
     two paths apart."""
     monkeypatch.setattr(pdf_to_md, "ocr_enabled", lambda: True)
 
-    def _boom(*_args, **_kwargs):
-        raise RuntimeError("no tesseract in unit tier")
+    class _BoomProvider:
+        name = "tesseract"
 
-    monkeypatch.setattr(pdf_to_md, "ocr_pdf_bytes", _boom)
+        def available(self) -> bool:
+            return True
+
+        def ocr(self, pdf_bytes, *, lang):
+            raise RuntimeError("no tesseract in unit tier")
+
+    monkeypatch.setattr(pdf_to_md, "resolve_ocr_provider", lambda: _BoomProvider())
 
 
 def test_scan_over_cap_is_rejected_before_ocr(monkeypatch, ocr_enabled_no_binary):
