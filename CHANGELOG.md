@@ -15,6 +15,54 @@ If a section is empty in a release, the section is omitted entirely.
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-07-24
+
+This release makes md-bridge safe to run as a self-hosted public service:
+a same-origin deploy topology, optional access control and rate limiting,
+work and queue limits with safe defaults, and a local access log with an
+operations guide. The web app also gains the Mermaid render toggle on the
+md-to-pdf screen. The deploy guide (`deployment/oracle-cloud`) covers the
+public-deployment specifics.
+
+### Added
+
+- **Same-origin production topology.** The official deploy serves the web app and
+  the API behind one origin with Caddy, with the request body cap enforced at the
+  proxy as well as the app and a deploy smoke check that fetches both the served
+  page and the API. See the deploy guide. (#435)
+- **Optional access control and rate limiting.** Set `MD_BRIDGE_API_TOKEN` to
+  require an API key (`X-API-Key` header) on the file-upload routes, and
+  `MD_BRIDGE_RATE_LIMIT` (with `MD_BRIDGE_RATE_WINDOW_SECONDS`, default 60) to
+  rate-limit requests. Both are off in the bare app; the official deploy recipe
+  enables rate limiting. The upload cap is configurable via
+  `MD_BRIDGE_MAX_UPLOAD_MB` (default 500). See the deploy guide for how these
+  behave behind the proxy. (#436)
+- **Work and queue limits.** Heavy conversions run behind a concurrency gate with
+  a wait queue and a per-request timeout: `MD_BRIDGE_MAX_CONCURRENCY` (default 2),
+  `MD_BRIDGE_QUEUE_MAX` (default 8), `MD_BRIDGE_QUEUE_WAIT_SECONDS` (default 10),
+  and `MD_BRIDGE_CONVERT_TIMEOUT_SECONDS` (default 300). Over capacity returns 503
+  and an exceeded timeout returns 504; `MD_BRIDGE_MAX_PDF_PAGES` (default 0,
+  unlimited) rejects an oversized PDF with 422. (#437)
+- **Local access log and operations guide.** A middleware logs one line per
+  non-health `/api` request (method, path, status, duration), never the document
+  content. The
+  bootstrap compose caps on-disk logs, and the deploy guide gains rollback,
+  diagnosis, and backup sections. Local-only: no metrics endpoint, no external
+  exporter. (#438)
+- **Render Mermaid toggle on the md-to-pdf screen.** The md-to-pdf page exposes the
+  existing `render_mermaid` option as a switch, off by default. A fenced ```mermaid
+  block renders to a diagram; a block that fails to parse stays as its source
+  code. (#439)
+
+### Changed
+
+- **Conversion concurrency and timeout now default on.** Unlike the opt-in auth
+  and rate-limit knobs, the work limits ship with safe defaults: at most two heavy
+  conversions at once and a 300-second per-request timeout. A single-user local
+  install is unaffected in practice; a busy deployment no longer lets unbounded
+  parallel renders compete for memory. Set the env vars above to tune, or the
+  timeout to `0` to disable it. (#437)
+
 ## [0.11.0] — 2026-07-22
 
 The web app grows a settings home, a local history, and reusable presets, and
@@ -738,7 +786,8 @@ converter with a FastAPI backend and a React frontend.
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/dependabot.yml`,
   issue and PR templates, `.editorconfig`.
 
-[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/vinicq/md-bridge/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/vinicq/md-bridge/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/vinicq/md-bridge/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/vinicq/md-bridge/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/vinicq/md-bridge/compare/v0.8.0...v0.9.0
