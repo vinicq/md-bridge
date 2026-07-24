@@ -161,6 +161,15 @@ curl -X POST http://localhost:8000/api/pdf-to-md \
 converter extracted little text (signal of a scanned PDF) or when image
 extraction was requested but cannot round-trip through the HTTP layer.
 
+When the full-page OCR pre-pass runs on a scanned PDF, the response also carries
+an `ocr` block with the engine that ran it: `{"provider": "tesseract", "lang":
+"eng+por+spa", "duration_ms": 1234, "warnings": []}`. It is absent (`null`) for a
+native PDF that needs no OCR, and it never contains the recognized text. The
+provider is selected with `MD_BRIDGE_OCR_PROVIDER` (default `tesseract`, the
+minimal local engine); an explicitly selected provider that is unknown or whose
+stack is not installed returns `503 ocr_provider_unavailable` rather than
+silently switching engines.
+
 ### Common errors
 
 | status | code              | when                                              |
