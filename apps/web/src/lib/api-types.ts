@@ -388,11 +388,23 @@ export interface components {
             /** Tagged */
             tagged: boolean;
         };
+        /** OcrInfo */
+        OcrInfo: {
+            /** Duration Ms */
+            duration_ms: number;
+            /** Lang */
+            lang: string;
+            /** Provider */
+            provider: string;
+            /** Warnings */
+            warnings?: string[];
+        };
         /** PdfToMdResponse */
         PdfToMdResponse: {
             front_matter?: components["schemas"]["FrontMatter"];
             /** Md */
             md: string;
+            ocr?: components["schemas"]["OcrInfo"] | null;
             /**
              * Ocr Applied
              * @default false

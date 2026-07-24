@@ -17,12 +17,13 @@ from app.errors import ApiError
 from app.schemas.convert import (
     ConvertStats,
     FrontMatter,
+    OcrInfo,
     PdfToMdOptions,
     PdfToMdResponse,
 )
 from app.services.inspect import inspect_pdf_bytes
 from app.services.mupdf_log import capture_mupdf_warnings
-from app.services.ocr import ImageOcrProcessor, image_ocr_enabled, ocr_pdf_bytes
+from app.services.ocr import ImageOcrProcessor, image_ocr_enabled, resolve_ocr_provider
 from app.services.ocr import get_lang as ocr_lang
 from app.services.ocr import get_max_pages as ocr_max_pages
 from app.services.ocr import is_enabled as ocr_enabled
@@ -161,6 +162,7 @@ def convert_pdf_bytes(
     # instead of an empty file. `force=True` is the explicit escape hatch for
     # the false positive (e.g. an image-only cover that the user wants anyway).
     ocr_applied = False
+    ocr_info: OcrInfo | None = None
     page_ocr_superseded_image_ocr = False
     diagnostics = inspect_pdf_bytes(pdf_bytes, filename)
     if diagnostics.needs_ocr:
@@ -178,10 +180,19 @@ def convert_pdf_bytes(
             # error instead of a code-less 500. The shipped runtime-ocr image is
             # complete, so this guards hand-rolled installs.
             try:
-                pdf_bytes = ocr_pdf_bytes(pdf_bytes, lang=ocr_lang())
+                provider = resolve_ocr_provider()
+                result = provider.ocr(pdf_bytes, lang=ocr_lang())
+                pdf_bytes = result.pdf_bytes
+                ocr_info = OcrInfo(
+                    provider=result.provider,
+                    lang=result.lang,
+                    duration_ms=result.duration_ms,
+                    warnings=result.warnings,
+                )
             except ApiError:
-                # ocr_pdf_bytes already raised a typed error (e.g. the per-page
-                # timeout naming the page, #364); let it through unwrapped.
+                # The provider (or ocr_pdf_bytes underneath it) already raised a
+                # typed error, e.g. an unavailable selected provider (#441) or the
+                # per-page timeout naming the page (#364); let it through unwrapped.
                 raise
             except Exception as exc:
                 raise ApiError(
@@ -301,4 +312,5 @@ def convert_pdf_bytes(
         # page pre-pass signal it has always been; image OCR reports separately.
         ocr_applied=ocr_applied,
         ocr_images_applied=image_ocr.applied if image_ocr is not None else False,
+        ocr=ocr_info,
     )

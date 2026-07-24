@@ -195,8 +195,24 @@ def test_page_ocr_supersedes_image_ocr(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(pdf_to_md, "image_ocr_enabled", lambda: True)
     monkeypatch.setattr(pdf_to_md, "ocr_max_pages", lambda: 0)
     # Page OCR "succeeds" but returns the same bytes: no real Tesseract, and the
-    # source embedded image survives so any leaked image OCR would still fire.
-    monkeypatch.setattr(pdf_to_md, "ocr_pdf_bytes", lambda pdf_bytes, lang: pdf_bytes)
+    # source embedded image survives so any leaked image OCR would still fire. The
+    # provider seam (#441) is stubbed to an identity OcrResult.
+    from app.services.ocr import OcrResult
+
+    monkeypatch.setattr(
+        pdf_to_md,
+        "resolve_ocr_provider",
+        lambda: SimpleNamespace(
+            name="tesseract",
+            ocr=lambda pdf_bytes, *, lang: OcrResult(
+                pdf_bytes=pdf_bytes,
+                provider="tesseract",
+                lang=lang,
+                duration_ms=0,
+                warnings=[],
+            ),
+        ),
+    )
 
     @contextlib.contextmanager
     def _safe_tempdir():

@@ -191,6 +191,16 @@ class ConvertStats(BaseModel):
     bullets: int = 0
 
 
+class OcrInfo(BaseModel):
+    # Metadata for the OCR pre-pass that actually ran (#441). Carries the
+    # provider, language, duration, and any degradation warnings, never the
+    # recognized text, so surfacing it cannot leak document content.
+    provider: str
+    lang: str
+    duration_ms: int
+    warnings: list[str] = Field(default_factory=list)
+
+
 class PdfToMdResponse(BaseModel):
     md: str
     front_matter: FrontMatter = Field(default_factory=FrontMatter)
@@ -201,6 +211,9 @@ class PdfToMdResponse(BaseModel):
     # Whether per-image OCR transcribed at least one embedded image (#140). A
     # separate signal so ocr_applied keeps its page-level meaning.
     ocr_images_applied: bool = False
+    # The OCR provider that ran the page pre-pass, or null when OCR did not run
+    # (#441). Native PDFs with a text layer leave this null.
+    ocr: OcrInfo | None = None
 
 
 class FontUsage(BaseModel):
