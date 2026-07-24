@@ -25,6 +25,21 @@ def test_pdf_to_md_returns_markdown(client, istqb_pdf: Path):
     assert stats["headings"] + stats["bullets"] + stats["tables"] > 0, "expected some structure"
 
 
+def test_native_pdf_reports_no_ocr(client, istqb_pdf: Path):
+    # #441: a native PDF with a text layer never runs the OCR pre-pass, so no
+    # provider is resolved and the response carries no `ocr` block. This pins that
+    # the provider seam stays off the deterministic path.
+    with istqb_pdf.open("rb") as fh:
+        resp = client.post(
+            "/api/pdf-to-md",
+            files={"file": (istqb_pdf.name, fh, "application/pdf")},
+        )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["ocr_applied"] is False
+    assert body["ocr"] is None
+
+
 # Real-world fixture corpus (#28). Each spans a distinct PDF generation path;
 # provenance and licences are documented in apps/api/tests/fixtures/SOURCES.md.
 FIXTURE_CORPUS = [

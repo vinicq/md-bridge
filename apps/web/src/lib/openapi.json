@@ -1,4 +1,4 @@
-{
+﻿{
   "components": {
     "schemas": {
       "Body_inspect_pdf_api_inspect_pdf_post": {
@@ -318,6 +318,36 @@
         "title": "InspectPdfResponse",
         "type": "object"
       },
+      "OcrInfo": {
+        "properties": {
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "lang": {
+            "title": "Lang",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "provider",
+          "lang",
+          "duration_ms"
+        ],
+        "title": "OcrInfo",
+        "type": "object"
+      },
       "PdfToMdResponse": {
         "properties": {
           "front_matter": {
@@ -326,6 +356,16 @@
           "md": {
             "title": "Md",
             "type": "string"
+          },
+          "ocr": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OcrInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "ocr_applied": {
             "default": false,
