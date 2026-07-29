@@ -24,6 +24,6 @@
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e"
   },
   "devDependencies": {
-    "concurrently": "^10.0.3"
+    "concurrently": "^10.0.4"
   }
 }
