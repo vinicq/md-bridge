@@ -15,7 +15,7 @@ dependencies = [
     # gate (1.27 -> 1.28 drifts 7-48% across the corpus), so it is capped below
     # the next minor. A bump is a reviewed PR that regenerates the golden via
     # --update-golden, same policy as python-docx below.
-    "PyMuPDF>=1.27.2.3,<1.28",
+    "PyMuPDF>=1.27.2.3,<1.29",
     # pypdf 6.10.2+ closes 22 GHSAs accumulated through the 5.x and 6.x lines
     # (XMP exhaustion, FlateDecode/startxref long-runtimes, outline loops).
     "pypdf>=6.10.2",
