@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Re-verify main once a week. Without this, main is only ever checked on push,
+  # so a floating dependency can break it and the badge stays green until the
+  # next commit. That is how an uncapped playwright broke md-to-pdf for 13 days
+  # (#483). Runs an hour before the Scorecard cron.
+  schedule:
+    - cron: "0 6 * * 1"  # Mondays at 06:00 UTC
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -26,6 +33,34 @@ jobs:
       - name: Install backend dependencies
         working-directory: apps/api
         run: python -m pip install -e ".[dev,ocr,grid-tables]"
+
+      # md-to-pdf renders with the Chromium baked into the playwright/python
+      # image pinned in apps/api/Dockerfile, which never runs `playwright
+      # install`. If the pip package and the image drift apart in major.minor,
+      # the browser is not where the package looks for it and the route answers
+      # 500. This turns that into a named failure here instead of an opaque 500
+      # in the deploy smoke. Mirrors the web-axis guard in visual-regression.yml.
+      #
+      # major.minor is the right granularity, not the full version: Playwright
+      # pins browser revisions per minor. Checked browsers.json across every
+      # minor that has a patch release (1.25.0/1/2, 1.32.0/1, 1.41.0/1/2,
+      # 1.45.0/1, 1.49.0/1) and chromium, firefox and webkit revisions are
+      # identical within each. Comparing full versions would only make a
+      # playwright patch release red the CI until someone bumps the image tag.
+      - name: Verify playwright matches the api container image
+        run: |
+          set -euo pipefail
+          img=$(sed -n 's|.*playwright/python:v\([0-9][0-9]*\.[0-9][0-9]*\).*|\1|p' apps/api/Dockerfile)
+          if [ -z "$img" ]; then
+            echo "::error::could not read the playwright/python tag from apps/api/Dockerfile"
+            exit 1
+          fi
+          pkg=$(python -c "import importlib.metadata as m; print(m.version('playwright'))")
+          echo "playwright pip: $pkg (image: v$img)"
+          case "$pkg" in
+            "$img".*) ;;
+            *) echo "::error::playwright $pkg does not match the v$img image in apps/api/Dockerfile. Bump the image tag and the pyproject ceiling together."; exit 1 ;;
+          esac
 
       - name: Install Tesseract
         run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-por tesseract-ocr-spa
