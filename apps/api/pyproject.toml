@@ -21,7 +21,13 @@ dependencies = [
     "pypdf>=6.10.2",
     # markdown 3.8.1+ closes GHSA-5wmx-573v-2qwq (uncaught exception).
     "markdown>=3.8.1",
-    "playwright>=1.49",
+    # Chromium comes from the playwright/python image pinned in
+    # apps/api/Dockerfile, which never runs `playwright install`, so the pip
+    # package has to stay inside that image's minor. An open upper bound
+    # installed 1.62 inside the v1.61 image and md-to-pdf started answering 500
+    # with no repo change, the day 1.62.0 hit PyPI. Bump this together with the
+    # image tag.
+    "playwright>=1.49,<1.63",
     # python-docx renders Markdown -> DOCX (#60). Pure Python, no native
     # dependency, so it adds nothing to the Docker image beyond the wheel. Pinned
     # below the next major because the committed golden depends on its XML output;
