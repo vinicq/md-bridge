@@ -40,6 +40,13 @@ jobs:
       # the browser is not where the package looks for it and the route answers
       # 500. This turns that into a named failure here instead of an opaque 500
       # in the deploy smoke. Mirrors the web-axis guard in visual-regression.yml.
+      #
+      # major.minor is the right granularity, not the full version: Playwright
+      # pins browser revisions per minor. Checked browsers.json across every
+      # minor that has a patch release (1.25.0/1/2, 1.32.0/1, 1.41.0/1/2,
+      # 1.45.0/1, 1.49.0/1) and chromium, firefox and webkit revisions are
+      # identical within each. Comparing full versions would only make a
+      # playwright patch release red the CI until someone bumps the image tag.
       - name: Verify playwright matches the api container image
         run: |
           set -euo pipefail

@@ -84,7 +84,9 @@ def _check_md_to_pdf(base: str) -> None:
     # API error envelope. Formatting only the exception threw that away, which
     # is why a Chromium-not-found 500 read as a bare "HTTP Error 500" (#483).
     except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", "replace")[:800]
+        # Bounded read, not read()-then-slice: a misconfigured proxy or a
+        # streamed error body would otherwise be consumed whole before the slice.
+        detail = exc.read(800).decode("utf-8", "replace")
         _fail(f"md-to-pdf request failed: {exc} - {detail}")
     except (urllib.error.URLError, OSError) as exc:
         _fail(f"md-to-pdf request failed: {exc}")
