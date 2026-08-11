@@ -80,6 +80,12 @@ def _check_md_to_pdf(base: str) -> None:
             if resp.status != 200:
                 _fail(f"md-to-pdf returned status {resp.status}")
             head = resp.read(5)
+    # HTTPError first: it is a subclass of URLError, and its body carries the
+    # API error envelope. Formatting only the exception threw that away, which
+    # is why a Chromium-not-found 500 read as a bare "HTTP Error 500" (#483).
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace")[:800]
+        _fail(f"md-to-pdf request failed: {exc} - {detail}")
     except (urllib.error.URLError, OSError) as exc:
         _fail(f"md-to-pdf request failed: {exc}")
     if not head.startswith(b"%PDF"):
