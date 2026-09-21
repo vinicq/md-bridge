@@ -27,7 +27,7 @@ dependencies = [
     # installed 1.62 inside the v1.61 image and md-to-pdf started answering 500
     # with no repo change, the day 1.62.0 hit PyPI. Bump this together with the
     # image tag.
-    "playwright>=1.49,<1.63",
+    "playwright>=1.49,<1.64",
     # python-docx renders Markdown -> DOCX (#60). Pure Python, no native
     # dependency, so it adds nothing to the Docker image beyond the wheel. Pinned
     # below the next major because the committed golden depends on its XML output;
