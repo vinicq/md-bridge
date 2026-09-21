@@ -24,6 +24,6 @@ pypdf>=6.10.2
 markdown>=3.8.1
 # Must stay inside the minor of the playwright/python image in
 # apps/api/Dockerfile, which supplies Chromium. See pyproject.toml.
-playwright>=1.49,<1.63
+playwright>=1.49,<1.64
 # markdown-to-pdf parses YAML front matter with safe_load (#150).
 PyYAML>=6.0
