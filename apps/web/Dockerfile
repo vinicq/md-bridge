@@ -5,7 +5,7 @@
 # vitest's jsdom env leaves window.localStorage undefined there, failing every
 # DOM test. CI runs vitest directly (not this image), so that regression would
 # only surface when someone builds the `--profile test` runner by hand.
-FROM node:26-alpine@sha256:ef24c5053d50fdc3e4e56eb4e7ddb7861874ab0fdc797046ba897581deb8e868 AS deps
+FROM node:26-alpine@sha256:6f08a523443ddedf52941874c203475b0ad503e859ad70cb26ab8be9a517dbd5 AS deps
 WORKDIR /web
 
 # Cache npm deps separately from source changes. Use `npm ci` so the image
@@ -32,7 +32,7 @@ FROM source AS test
 CMD ["npm", "run", "test"]
 
 # ---- Stage 5: serve the static bundle via nginx (default runtime) ---------
-FROM nginx:1.31-alpine@sha256:72ba65eb42c10344912a84ff42408db7d34f2feb642204570ab8fc5ffd29f1d3 AS runtime
+FROM nginx:1.31-alpine@sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d AS runtime
 COPY --from=build /web/dist /usr/share/nginx/html
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
