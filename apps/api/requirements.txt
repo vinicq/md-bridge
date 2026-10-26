@@ -17,7 +17,7 @@ pydantic>=2.9
 python-multipart>=0.0.27
 # Capped below the next minor on purpose: 1.28 shifts text extraction enough to
 # trip the 2% drift gate. See the longer note in pyproject.toml.
-PyMuPDF>=1.27.2.3,<1.28
+PyMuPDF>=1.27.2.3,<2.1
 # pypdf 6.10.2+ closes 22 GHSAs across the 5.x/6.x lines.
 pypdf>=6.10.2
 # markdown 3.8.1+ closes GHSA-5wmx-573v-2qwq.
