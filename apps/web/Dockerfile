@@ -5,7 +5,7 @@
 # vitest's jsdom env leaves window.localStorage undefined there, failing every
 # DOM test. CI runs vitest directly (not this image), so that regression would
 # only surface when someone builds the `--profile test` runner by hand.
-FROM node:26-alpine@sha256:ef24c5053d50fdc3e4e56eb4e7ddb7861874ab0fdc797046ba897581deb8e868 AS deps
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS deps
 WORKDIR /web
 
 # Cache npm deps separately from source changes. Use `npm ci` so the image
